@@ -3,95 +3,130 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-    <title>Expense Capture — AI-Ready</title>
+    <title>Cascade Expense Capture</title>
+
+    <!-- Tailwind CDN (utility classes) -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Zod UMD (exposes window.zod) -->
     <script src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js"></script>
+
+    <!-- Tesseract.js for client-side OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs" type="module"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <link rel="stylesheet" href="./styles.css" />
+
+    <!-- Basic component styles (no Tailwind @apply; pure CSS for custom class names) -->
+    <style>
+      :root { --ring: 0 0% 9%; }
+      html.dark { color-scheme: dark; }
+      html.dark body { background-color: #0a0a0a; color: #e5e5e5; }
+      html.hc *:focus { outline: 2px solid #ff9900 !important; outline-offset: 2px; }
+
+      .card { background:#fff; border:1px solid #e5e7eb; border-radius:1rem; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+      .dark .card { background:#171717; border-color:#262626; }
+      .card-header { padding:.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:500; }
+      .dark .card-header { border-color:#262626; }
+      .card-body { padding: .75rem 1rem; }
+
+      .input, .textarea {
+        width:100%; border:1px solid #d1d5db; background:#fff; color:inherit; border-radius:.5rem; padding:.5rem .75rem; outline:none;
+      }
+      .dark .input, .dark .textarea { background:#0a0a0a; border-color:#374151; }
+      .input:focus, .textarea:focus { box-shadow:0 0 0 3px hsla(0,0%,9%,.06); border-color:#525252; }
+
+      .checkbox { height:1rem; width:1rem; border:1px solid #d1d5db; border-radius:.25rem; }
+      .dark .checkbox { border-color:#374151; }
+
+      .btn, .btn-secondary {
+        display:inline-flex; align-items:center; justify-content:center;
+        border-radius:.5rem; padding:.375rem .75rem; font-size:.875rem; line-height:1.25rem; border:1px solid transparent;
+      }
+      .btn { background:#0a0a0a; color:#fff; border-color:#d1d5db; }
+      .dark .btn { background:#fff; color:#0a0a0a; border-color:#374151; }
+      .btn-secondary { background:#fff; color:inherit; border-color:#d1d5db; }
+      .dark .btn-secondary { background:#0a0a0a; border-color:#374151; }
+
+      .tab { padding:.5rem .75rem; border-radius:.5rem; font-size:.875rem; border:1px solid transparent; }
+      .tab.active { background:#0a0a0a; color:#fff; }
+      .dark .tab.active { background:#fff; color:#0a0a0a; }
+      .tab:not(.active):hover { border-color:#d1d5db; }
+      .dark .tab:not(.active):hover { border-color:#374151; }
+
+      .th { text-align:left; font-weight:500; padding:.5rem .75rem; border-bottom:1px solid #e5e7eb; }
+      .dark .th { border-color:#262626; }
+      td { padding:.5rem .75rem; border-bottom:1px solid #e5e7eb; }
+      .dark td { border-color:#262626; }
+
+      .badge-ok { display:inline-flex; align-items:center; padding:.125rem .5rem; border-radius:.375rem; background:#dcfce7; color:#166534; font-size:.75rem; }
+      .badge-err { display:inline-flex; align-items:center; padding:.125rem .5rem; border-radius:.375rem; background:#fee2e2; color:#991b1b; font-size:.75rem; }
+      .empty { color:#6b7280; font-size:.875rem; }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .fade-in { animation: fadeIn .15s ease-out; }
+        @keyframes fadeIn { from { opacity:0; transform: translateY(2px);} to { opacity:1; transform:none; } }
+      }
+    </style>
   </head>
-  <body class="h-full bg-neutral-50 text-neutral-900">
-    <header class="sticky top-0 z-20 bg-white/90 backdrop-blur border-b">
+
+  <body class="h-full bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
+    <header class="sticky top-0 z-20 bg-white/90 backdrop-blur border-b dark:bg-neutral-900/90 dark:border-neutral-800">
       <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
-        <h1 class="text-xl font-semibold">Expense Data Capture</h1>
-        <div class="flex items-center gap-3">
-          <button id="themeToggle" class="px-3 py-1.5 rounded border text-sm">Theme</button>
+        <h1 class="text-xl font-semibold tracking-tight">Cascade Expense Capture</h1>
+        <div class="flex items-center gap-2">
+          <button id="themeToggle" class="btn-secondary text-sm" title="Toggle Theme">Theme</button>
+          <button id="hcToggle" class="btn-secondary text-sm" title="High Contrast">HC</button>
           <span id="appStatus" class="text-xs text-neutral-500" aria-live="polite"></span>
         </div>
       </div>
+      <nav class="border-t dark:border-neutral-800">
+        <div class="mx-auto max-w-7xl px-4">
+          <div role="tablist" aria-label="Expense sections" class="flex gap-1 overflow-x-auto py-1">
+            <button role="tab" id="tab-capture" data-tab="capture" class="tab active" aria-selected="true">Capture</button>
+            <button role="tab" id="tab-form" data-tab="form" class="tab" aria-selected="false">Form</button>
+            <button role="tab" id="tab-batch" data-tab="batch" class="tab" aria-selected="false">Batch</button>
+            <button role="tab" id="tab-settings" data-tab="settings" class="tab" aria-selected="false">Settings</button>
+          </div>
+        </div>
+      </nav>
     </header>
 
-    <main class="mx-auto max-w-7xl px-4 py-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <section class="lg:col-span-1 space-y-4">
-        <div class="card">
+    <main class="mx-auto max-w-7xl px-4 py-4 space-y-4">
+      <!-- Capture Panel -->
+      <section id="panel-capture" role="tabpanel" aria-labelledby="tab-capture" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card lg:col-span-1">
           <div class="card-header">Ingest</div>
           <div class="card-body space-y-3">
             <label class="block">
-              <span class="label">Upload images/PDF</span>
+              <span class="block text-sm font-medium mb-1">Upload images/PDF</span>
               <input id="fileInput" type="file" accept=".pdf,image/*" multiple class="input" />
             </label>
 
             <div>
-              <div class="flex items-center justify-between">
-                <span class="label">Paste raw text / email</span>
+              <div class="flex items-center justify-between mb-1">
+                <span class="block text-sm font-medium">Paste raw text / email</span>
                 <button id="parsePasteBtn" class="btn-secondary text-xs">Parse</button>
               </div>
               <textarea id="pasteBox" rows="6" class="textarea" placeholder="Paste any receipt text, bank line item, or email here..."></textarea>
             </div>
 
             <div class="text-xs text-neutral-500">
-              OCR runs locally by default. LLM parsing is off unless enabled in Settings.
+              OCR runs locally when enabled in Settings. LLM parsing is off unless enabled.
             </div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">Settings</div>
-          <div class="card-body space-y-3">
-            <div class="grid grid-cols-2 gap-3">
-              <label class="block col-span-2">
-                <span class="label">Default Drive Folder ID (optional)</span>
-                <input id="driveFolderId" class="input" placeholder="e.g. 1ZVwc58gkaNWW8rw2tbbCUJRIQWhkPEnz" />
-              </label>
-
-              <label class="block">
-                <span class="label">Google Client ID</span>
-                <input id="googleClientId" class="input" placeholder="OAuth Client ID" />
-              </label>
-
-              <div class="flex items-end gap-2">
-                <button id="googleSignIn" class="btn">Sign in</button>
-                <span id="googleUser" class="text-xs text-neutral-500"></span>
-              </div>
-
-              <label class="block col-span-2">
-                <span class="label">Gemini API Key (optional)</span>
-                <input id="geminiKey" class="input" placeholder="GEMINI_API_KEY" />
-              </label>
-
-              <div class="col-span-2 grid grid-cols-2 gap-2">
-                <label class="flex items-center gap-2 text-sm">
-                  <input id="toggleTesseract" type="checkbox" class="checkbox" checked />
-                  <span>Use Tesseract (client OCR)</span>
-                </label>
-                <label class="flex items-center gap-2 text-sm">
-                  <input id="toggleLLM" type="checkbox" class="checkbox" />
-                  <span>Allow LLM network</span>
-                </label>
-                <label class="flex items-center gap-2 text-sm col-span-2">
-                  <input id="toggleHighContrast" type="checkbox" class="checkbox" />
-                  <span>High contrast</span>
-                </label>
-              </div>
-
-              <button id="saveSettings" class="btn col-span-2">Save Settings</button>
-            </div>
+        <div class="card lg:col-span-2">
+          <div class="card-header flex items-center justify-between">
+            <span>Quick Parse Preview</span>
+            <div class="text-xs text-neutral-500">Drop files anywhere to add</div>
+          </div>
+          <div id="ingestPreview" class="card-body min-h-24 text-sm text-neutral-600">
+            Nothing ingested yet.
           </div>
         </div>
       </section>
 
-      <section class="lg:col-span-1">
+      <!-- Form Panel -->
+      <section id="panel-form" role="tabpanel" aria-labelledby="tab-form" class="hidden">
         <div class="card">
           <div class="card-header flex items-center justify-between">
             <span>Expense Form</span>
@@ -102,62 +137,62 @@
             </div>
           </div>
           <div class="card-body">
-            <form id="expenseForm" class="grid grid-cols-2 gap-3" autocomplete="off">
+            <form id="expenseForm" class="grid grid-cols-1 md:grid-cols-2 gap-3" autocomplete="off" novalidate>
               <label class="block">
-                <span class="label">Date</span>
+                <span class="block text-sm font-medium mb-1">Date</span>
                 <input name="date" type="date" class="input" required />
               </label>
               <label class="block">
-                <span class="label">Vendor</span>
+                <span class="block text-sm font-medium mb-1">Vendor</span>
                 <input name="vendor" class="input" placeholder="Merchant" />
               </label>
               <label class="block">
-                <span class="label">Description</span>
+                <span class="block text-sm font-medium mb-1">Description</span>
                 <input name="description" class="input" placeholder="What was this?" />
               </label>
               <label class="block">
-                <span class="label">Category</span>
+                <span class="block text-sm font-medium mb-1">Category</span>
                 <input name="category" class="input" list="categoryList" placeholder="Select or type…" />
                 <datalist id="categoryList"></datalist>
               </label>
               <label class="block">
-                <span class="label">Subcategory</span>
+                <span class="block text-sm font-medium mb-1">Subcategory</span>
                 <input name="subcategory" class="input" placeholder="Optional" />
               </label>
               <label class="block">
-                <span class="label">Amount</span>
-                <input name="amount" type="number" step="0.01" class="input" required />
+                <span class="block text-sm font-medium mb-1">Amount</span>
+                <input name="amount" type="number" step="0.01" class="input" required inputmode="decimal" />
               </label>
               <label class="block">
-                <span class="label">Currency</span>
+                <span class="block text-sm font-medium mb-1">Currency</span>
                 <input name="currency" class="input" value="PHP" />
               </label>
               <label class="block">
-                <span class="label">Payment Method</span>
+                <span class="block text-sm font-medium mb-1">Payment Method</span>
                 <input name="payment_method" class="input" placeholder="e.g. Lloyd CC" />
               </label>
               <label class="block">
-                <span class="label">Invoice #</span>
+                <span class="block text-sm font-medium mb-1">Invoice #</span>
                 <input name="invoice_number" class="input" />
               </label>
               <label class="block">
-                <span class="label">Reference ID</span>
+                <span class="block text-sm font-medium mb-1">Reference ID</span>
                 <input name="reference_id" class="input" />
               </label>
               <label class="block">
-                <span class="label">Tax Amount</span>
+                <span class="block text-sm font-medium mb-1">Tax Amount</span>
                 <input name="tax_amount" type="number" step="0.01" class="input" value="0" />
               </label>
               <label class="block">
-                <span class="label">Tip Amount</span>
+                <span class="block text-sm font-medium mb-1">Tip Amount</span>
                 <input name="tip_amount" type="number" step="0.01" class="input" value="0" />
               </label>
               <label class="block">
-                <span class="label">Location</span>
+                <span class="block text-sm font-medium mb-1">Location</span>
                 <input name="location" class="input" />
               </label>
-              <label class="block col-span-2">
-                <span class="label">Notes</span>
+              <label class="block md:col-span-2">
+                <span class="block text-sm font-medium mb-1">Notes</span>
                 <textarea name="notes" rows="2" class="textarea"></textarea>
               </label>
               <input type="hidden" name="source_type" />
@@ -173,29 +208,26 @@
         </div>
       </section>
 
-      <section class="lg:col-span-1 space-y-4">
+      <!-- Batch Panel -->
+      <section id="panel-batch" role="tabpanel" aria-labelledby="tab-batch" class="hidden">
         <div class="card">
           <div class="card-header flex items-center justify-between">
             <span>Preview & Batch</span>
             <div class="flex gap-2">
               <button id="validateAllBtn" class="btn-secondary">Validate All</button>
               <button id="dedupeBtn" class="btn-secondary">Deduplicate</button>
+              <button id="clearAllBtn" class="btn-secondary">Clear</button>
             </div>
           </div>
           <div class="card-body">
             <div class="flex items-center justify-between mb-2">
-              <div class="text-sm text-neutral-600">
+              <div class="text-sm text-neutral-600 dark:text-neutral-400">
                 <span id="recordCount">0</span> items · Total <span id="recordTotal">₱0.00</span>
               </div>
-              <div class="flex gap-2">
-                <button id="exportJsonBtn" class="btn-secondary">Export JSON</button>
-                <button id="exportCsvBtn" class="btn-secondary">Export CSV</button>
-                <button id="uploadDriveBtn" class="btn">Upload to Drive</button>
-              </div>
             </div>
-            <div class="overflow-auto max-h-[50vh] border rounded">
+            <div class="overflow-auto max-h-[60vh] border rounded dark:border-neutral-800">
               <table class="w-full text-sm">
-                <thead class="bg-neutral-100 sticky top-0">
+                <thead class="bg-neutral-100 sticky top-0 dark:bg-neutral-800">
                   <tr>
                     <th class="th">Date</th>
                     <th class="th">Vendor</th>
@@ -208,15 +240,537 @@
                 <tbody id="previewTable"></tbody>
               </table>
             </div>
+            <div class="flex justify-end gap-2 mt-3">
+              <button id="exportJsonBtn" class="btn-secondary">Export JSON</button>
+              <button id="exportCsvBtn" class="btn-secondary">Export CSV</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Panel -->
+      <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="hidden">
+        <div class="card">
+          <div class="card-header">Settings</div>
+          <div class="card-body space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label class="block md:col-span-2">
+                <span class="block text-sm font-medium mb-1">Default Drive Folder ID (optional)</span>
+                <input id="driveFolderId" class="input" placeholder="e.g. 1ZVwc58gkaNWW8rw2tbbCUJRIQWhkPEnz" />
+              </label>
+              <label class="block">
+                <span class="block text-sm font-medium mb-1">Google Client ID</span>
+                <input id="googleClientId" class="input" placeholder="OAuth Client ID" />
+              </label>
+              <div class="flex items-end gap-2">
+                <button id="googleSignIn" class="btn">Sign in</button>
+                <span id="googleUser" class="text-xs text-neutral-500"></span>
+              </div>
+              <label class="block md:col-span-2">
+                <span class="block text-sm font-medium mb-1">Gemini API Key (optional)</span>
+                <input id="geminiKey" class="input" placeholder="GEMINI_API_KEY" />
+              </label>
+              <div class="md:col-span-2 grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 text-sm">
+                  <input id="toggleTesseract" type="checkbox" class="checkbox" />
+                  <span>Use Tesseract (client OCR)</span>
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                  <input id="toggleLLM" type="checkbox" class="checkbox" />
+                  <span>Allow LLM network</span>
+                </label>
+              </div>
+              <button id="saveSettings" class="btn md:col-span-2">Save Settings</button>
+            </div>
           </div>
         </div>
       </section>
     </main>
 
     <footer class="mx-auto max-w-7xl px-4 py-6 text-xs text-neutral-500">
-      Privacy-first: all OCR runs locally unless you enable LLM.
+      Privacy-first: all OCR runs locally if enabled. No server required.
     </footer>
 
-    <script type="module" src="./app.js"></script>
+    <!-- App JS (inline for single-file distribution) -->
+    <script>
+    (() => {
+      const $ = (sel, root = document) => root.querySelector(sel);
+      const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+      const fmtMoney = (n, ccy = "PHP") =>
+        new Intl.NumberFormat(undefined, { style: "currency", currency: ccy || "PHP" }).format(Number(n || 0));
+
+      const storage = {
+        get(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
+        set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} },
+        del(key) { try { localStorage.removeItem(key); } catch {} },
+      };
+
+      // Zod fix: UMD exposes window.zod, not global z
+      const zExport = (window.zod && (window.zod.z || window.zod)) || null;
+      const z = zExport && zExport.object ? (window.zod.z || window.zod) : null;
+
+      const schema = z
+        ? z.object({
+            date: z.string().min(1, "Date required"),
+            vendor: z.string().trim().min(1, "Vendor required"),
+            description: z.string().trim().optional(),
+            category: z.string().trim().min(1, "Category required"),
+            subcategory: z.string().trim().optional(),
+            amount: z.preprocess((v) => Number(v), z.number().finite().positive("Amount must be > 0")),
+            currency: z.string().trim().min(1, "Currency required").max(8),
+            payment_method: z.string().trim().optional(),
+            invoice_number: z.string().trim().optional(),
+            reference_id: z.string().trim().optional(),
+            tax_amount: z.preprocess((v) => Number(v ?? 0), z.number().nonnegative()),
+            tip_amount: z.preprocess((v) => Number(v ?? 0), z.number().nonnegative()),
+            location: z.string().trim().optional(),
+            notes: z.string().trim().optional(),
+          })
+        : null;
+
+      function validateRecord(rec) {
+        if (schema) {
+          const r = schema.safeParse(rec);
+          return r.success ? { ok: true, data: r.data } : { ok: false, errors: r.error.errors.map(e => e.message) };
+        }
+        const errs = [];
+        if (!rec.date) errs.push("Date required");
+        if (!rec.vendor?.trim()) errs.push("Vendor required");
+        if (!rec.category?.trim()) errs.push("Category required");
+        const amt = Number(rec.amount);
+        if (!(amt > 0)) errs.push("Amount must be > 0");
+        if (!rec.currency?.trim()) errs.push("Currency required");
+        if (Number(rec.tax_amount) < 0) errs.push("Tax must be ≥ 0");
+        if (Number(rec.tip_amount) < 0) errs.push("Tip must be ≥ 0");
+        return { ok: errs.length === 0, errors: errs, data: { ...rec, amount: amt } };
+      }
+
+      let records = storage.get("cx:records", []);
+      let settings = storage.get("cx:settings", {
+        folderId: "",
+        googleClientId: "",
+        geminiKey: "",
+        useTesseract: false,
+        allowLLM: false,
+        theme: (matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light",
+        highContrast: false,
+        lastTab: "capture",
+      });
+
+      // theme/HC apply
+      document.documentElement.classList.toggle("dark", settings.theme === "dark");
+      document.documentElement.classList.toggle("hc", !!settings.highContrast);
+
+      const switchTab = (id) => {
+        $$(".tab").forEach(b => {
+          const active = b.dataset.tab === id;
+          b.classList.toggle("active", active);
+          b.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        ["capture","form","batch","settings"].forEach(t => {
+          const panel = $("#panel-" + t);
+          if (panel) panel.classList.toggle("hidden", t !== id);
+        });
+        settings.lastTab = id;
+        storage.set("cx:settings", settings);
+      };
+
+      window.addEventListener("DOMContentLoaded", () => {
+        // Tabs
+        $$(".tab").forEach(btn => {
+          btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+          btn.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+              const tabs = $$(".tab");
+              const i = tabs.indexOf(btn);
+              const n = e.key === "ArrowRight" ? (i + 1) % tabs.length : (i - 1 + tabs.length) % tabs.length;
+              tabs[n].focus();
+            }
+          });
+        });
+        switchTab(settings.lastTab || "capture");
+
+        // Settings
+        $("#driveFolderId").value = settings.folderId || "";
+        $("#googleClientId").value = settings.googleClientId || "";
+        $("#geminiKey").value = settings.geminiKey || "";
+        $("#toggleTesseract").checked = !!settings.useTesseract;
+        $("#toggleLLM").checked = !!settings.allowLLM;
+
+        $("#saveSettings").addEventListener("click", () => {
+          settings.folderId = $("#driveFolderId").value.trim();
+          settings.googleClientId = $("#googleClientId").value.trim();
+          settings.geminiKey = $("#geminiKey").value.trim();
+          settings.useTesseract = $("#toggleTesseract").checked;
+          settings.allowLLM = $("#toggleLLM").checked;
+          storage.set("cx:settings", settings);
+          toast("Settings saved");
+        });
+
+        // Theme & HC
+        $("#themeToggle").addEventListener("click", () => {
+          settings.theme = settings.theme === "dark" ? "light" : "dark";
+          document.documentElement.classList.toggle("dark", settings.theme === "dark");
+          storage.set("cx:settings", settings);
+        });
+        $("#hcToggle").addEventListener("click", () => {
+          settings.highContrast = !settings.highContrast;
+          document.documentElement.classList.toggle("hc", settings.highContrast);
+          storage.set("cx:settings", settings);
+        });
+
+        // Form buttons
+        $("#newEntryBtn").addEventListener("click", clearForm);
+        $("#validateBtn").addEventListener("click", () => validateCurrentForm(true));
+        $("#addToListBtn").addEventListener("click", addCurrentFormToList);
+
+        // Batch buttons
+        $("#validateAllBtn").addEventListener("click", validateAll);
+        $("#dedupeBtn").addEventListener("click", dedupe);
+        $("#clearAllBtn").addEventListener("click", () => { if (confirm("Clear all records?")) { records = []; persistAndRender(); } });
+
+        // Export
+        $("#exportJsonBtn").addEventListener("click", () => download("expenses.json", jsonBlob(records)));
+        $("#exportCsvBtn").addEventListener("click", () => download("expenses.csv", csvBlob(records)));
+
+        // Ingest
+        $("#fileInput").addEventListener("change", onFiles);
+        document.addEventListener("dragover", (e) => { e.preventDefault(); });
+        document.addEventListener("drop", (e) => {
+          e.preventDefault();
+          if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files);
+        });
+        $("#parsePasteBtn").addEventListener("click", parseFromPaste);
+
+        // Categories / existing data
+        refreshCategoryDatalist();
+        renderTable();
+        updateStats();
+      });
+
+      let statusTimer = null;
+      function toast(msg) {
+        const el = $("#appStatus");
+        if (!el) return;
+        el.textContent = msg;
+        clearTimeout(statusTimer);
+        statusTimer = setTimeout(() => (el.textContent = ""), 3000);
+      }
+
+      // Form helpers
+      function formToRec() {
+        const f = $("#expenseForm");
+        const fd = new FormData(f);
+        const rec = Object.fromEntries(fd.entries());
+        rec.amount = Number(rec.amount || 0);
+        rec.tax_amount = Number(rec.tax_amount || 0);
+        rec.tip_amount = Number(rec.tip_amount || 0);
+        rec.validated = String(false);
+        rec.validation_errors = "";
+        if (!rec.created_at) rec.created_at = new Date().toISOString();
+        return rec;
+      }
+
+      function clearForm() {
+        $("#expenseForm").reset();
+        $("#formErrors").textContent = "";
+      }
+
+      function validateCurrentForm(showErrors) {
+        const rec = formToRec();
+        const v = validateRecord(rec);
+        if (v.ok) {
+          $("#formErrors").textContent = "";
+          toast("Form is valid");
+          return true;
+        } else {
+          if (showErrors) $("#formErrors").textContent = v.errors.join(" · ");
+          return false;
+        }
+      }
+
+      function addCurrentFormToList() {
+        if (!validateCurrentForm(true)) {
+          toast("Fix form errors");
+          return;
+        }
+        const rec = formToRec();
+        rec.processed_at = new Date().toISOString();
+        const v = validateRecord(rec);
+        rec.validated = String(v.ok);
+        rec.validation_errors = v.ok ? "" : (v.errors || []).join("; ");
+        records.push(rec);
+        persistAndRender();
+        toast("Added to list");
+        switchTab("batch");
+      }
+
+      // Batch ops
+      function renderTable() {
+        const tbody = $("#previewTable");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        if (!records.length) {
+          tbody.innerHTML = \`<tr><td colspan="6" class="empty">No records yet.</td></tr>\`;
+          return;
+        }
+        records.forEach((r, i) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = \`
+            <td>\${r.date || ""}</td>
+            <td>\${escapeHtml(r.vendor || "")}</td>
+            <td>\${escapeHtml(r.category || "")}</td>
+            <td>\${fmtMoney(r.amount, r.currency)}</td>
+            <td>\${r.validated === "true" ? \`<span class="badge-ok">OK</span>\` : \`<span class="badge-err">Needs fix</span>\`}</td>
+            <td class="space-x-2">
+              <button class="btn-secondary text-xs" data-action="edit" data-index="\${i}">Edit</button>
+              <button class="btn-secondary text-xs" data-action="delete" data-index="\${i}">Delete</button>
+            </td>
+          \`;
+          tbody.appendChild(tr);
+        });
+        tbody.addEventListener("click", onRowAction);
+      }
+
+      function onRowAction(e) {
+        const b = e.target.closest("button[data-action]");
+        if (!b) return;
+        const idx = Number(b.dataset.index);
+        const action = b.dataset.action;
+        if (action === "delete") {
+          records.splice(idx, 1);
+          persistAndRender();
+        } else if (action === "edit") {
+          const r = records[idx];
+          fillForm(r);
+          switchTab("form");
+          toast("Loaded into form");
+        }
+      }
+
+      function fillForm(r) {
+        const f = $("#expenseForm");
+        for (const [k, v] of Object.entries(r)) {
+          const el = f.elements.namedItem(k);
+          if (!el) continue;
+          if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") el.value = v ?? "";
+        }
+      }
+
+      function updateStats() {
+        $("#recordCount").textContent = String(records.length);
+        const sum = records.reduce((a, r) => a + Number(r.amount || 0), 0);
+        const ccy = records[0]?.currency || "PHP";
+        $("#recordTotal").textContent = fmtMoney(sum, ccy);
+      }
+
+      function validateAll() {
+        let changed = 0;
+        records = records.map(r => {
+          const v = validateRecord(r);
+          if (String(v.ok) !== r.validated || (v.errors || []).join("; ") !== (r.validation_errors || "")) changed++;
+          return {
+            ...r,
+            validated: String(v.ok),
+            validation_errors: v.ok ? "" : (v.errors || []).join("; "),
+          };
+        });
+        persistAndRender();
+        toast(\`Validated \${records.length} item(s)\${changed ? \`, updated \${changed}\` : ""}\`);
+      }
+
+      function dedupe() {
+        const seen = new Set();
+        const out = [];
+        for (const r of records) {
+          const key = [r.date || "", (r.vendor || "").trim().toLowerCase(), Number(r.amount || 0)].join("|");
+          if (seen.has(key)) continue;
+          seen.add(key); out.push(r);
+        }
+        const removed = records.length - out.length;
+        records = out;
+        persistAndRender();
+        toast(removed ? \`Removed \${removed} duplicate(s)\` : "No duplicates found");
+      }
+
+      function persistAndRender() {
+        storage.set("cx:records", records);
+        renderTable();
+        updateStats();
+        refreshCategoryDatalist();
+      }
+
+      function refreshCategoryDatalist() {
+        const set = new Set(records.map(r => (r.category || "").trim()).filter(Boolean));
+        const dl = $("#categoryList");
+        if (!dl) return;
+        dl.innerHTML = Array.from(set).sort().map(c => \`<option value="\${escapeHtml(c)}"></option>\`).join("");
+      }
+
+      // Export helpers
+      function jsonBlob(data) { return new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" }); }
+      function csvBlob(data) {
+        const cols = [
+          "date","vendor","description","category","subcategory","amount","currency","payment_method",
+          "invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors",
+          "source_type","source_filename","attachment_drive_file_id","created_at","processed_at",
+        ];
+        const csv = [cols.join(",")].concat(
+          data.map(r => cols.map(c => csvCell(r[c])).join(","))
+        ).join("\\r\\n");
+        return new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], { type: "text/csv;charset=utf-8" });
+      }
+      function csvCell(v) {
+        const s = (v ?? "").toString().replace(/"/g, '""');
+        return /[",\\r\\n]/.test(s) ? \`"\${s}"\` : s;
+      }
+      function download(filename, blob) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+      }
+
+      // --- Ingest + OCR (option A)
+      function onFiles(e) {
+        handleFiles(e.target.files);
+        e.target.value = "";
+      }
+
+      async function handleFiles(fileList) {
+        if (!fileList?.length) return;
+        const files = Array.from(fileList);
+        const container = $("#ingestPreview");
+        container.innerHTML = "";
+
+        for (const f of files) {
+          if (settings.useTesseract && f.type.startsWith("image/")) {
+            await processImageWithOCR(f, container);
+          } else {
+            const row = document.createElement("div");
+            row.className = "fade-in mb-2 p-2 border rounded text-sm bg-white dark:bg-neutral-900 dark:border-neutral-800";
+            row.innerHTML = \`
+              <div class="flex items-center justify-between">
+                <div>• \${escapeHtml(f.name)} <span class="text-xs text-neutral-500">(\${(f.size/1024).toFixed(1)} KB)</span></div>
+                <span class="text-xs text-neutral-500">\${f.type.startsWith("application/pdf") ? "PDF OCR not supported here" : "No OCR (disabled in Settings)"}</span>
+              </div>\`;
+            container.appendChild(row);
+          }
+        }
+
+        toast(\`\${files.length} file(s) processed\`);
+      }
+
+      async function processImageWithOCR(file, container) {
+        const id = Math.random().toString(36).slice(2);
+        const card = document.createElement("div");
+        card.className = "fade-in mb-2 p-2 border rounded bg-white dark:bg-neutral-900 dark:border-neutral-800";
+        card.innerHTML = \`
+          <div class="flex items-center justify-between mb-1">
+            <div class="text-sm font-medium">\${escapeHtml(file.name)}</div>
+            <div class="text-xs text-neutral-500">image OCR</div>
+          </div>
+          <div id="p-\${id}" class="h-2 rounded bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+            <div id="bar-\${id}" class="h-2 bg-neutral-900 dark:bg-neutral-100" style="width: 0%"></div>
+          </div>
+          <div id="txt-\${id}" class="mt-2 text-sm text-neutral-700 dark:text-neutral-300 italic">Recognizing…</div>
+          <div class="mt-2 flex gap-2">
+            <button id="use-\${id}" class="btn-secondary text-xs" disabled>Parse into form</button>
+            <button id="copy-\${id}" class="btn-secondary text-xs" disabled>Copy text</button>
+          </div>
+        \`;
+        container.appendChild(card);
+
+        try {
+          const progressBar = $("#bar-" + id);
+          const textEl = $("#txt-" + id);
+          const res = await Tesseract.recognize(file, "eng", {
+            logger: (m) => {
+              if (m.status === "recognizing text") {
+                const p = Math.max(0, Math.min(1, m.progress || 0));
+                progressBar.style.width = (p * 100).toFixed(0) + "%";
+              }
+            }
+          });
+          const text = (res?.data?.text || "").trim();
+          textEl.textContent = text ? text.slice(0, 500) + (text.length > 500 ? "…" : "") : "(no text)";
+          const useBtn = $("#use-" + id);
+          const copyBtn = $("#copy-" + id);
+          useBtn.disabled = !text;
+          copyBtn.disabled = !text;
+          useBtn.addEventListener("click", () => {
+            const rec = roughParse(text);
+            rec.source_type = "ocr";
+            rec.source_filename = file.name;
+            fillForm(rec);
+            switchTab("form");
+            toast("Parsed OCR into form");
+          });
+          copyBtn.addEventListener("click", async () => {
+            try { await navigator.clipboard.writeText(text); toast("Copied OCR text"); } catch {}
+          });
+        } catch (err) {
+          $("#txt-" + id).textContent = "OCR failed";
+        }
+      }
+
+      function parseFromPaste() {
+        const text = ($("#pasteBox").value || "").trim();
+        if (!text) { toast("Nothing to parse"); return; }
+        const rec = roughParse(text);
+        rec.source_type = "paste";
+        rec.source_filename = "";
+        fillForm(rec);
+        switchTab("form");
+        toast("Parsed into form");
+      }
+
+      function roughParse(text) {
+        const amtMatch = text.match(/(?:PHP|₱)\\s?([\\d,]+(?:\\.\\d{2})?)/i) || text.match(/\\b([\\d,]+(?:\\.\\d{2})?)\\b/);
+        const dateMatch = text.match(/\\b(20\\d{2}[-\\/]\\d{1,2}[-\\/]\\d{1,2})\\b/) || text.match(/\\b(\\d{1,2}[-\\/]\\d{1,2}[-\\/](?:20)?\\d{2})\\b/);
+        const vendorMatch = text.match(/(?:from|at|merchant|vendor)[:\\s]+([^\\n,]+)/i) || text.match(/^\\s*([A-Za-z][A-Za-z0-9 &'.-]{2,})/m);
+        const amount = amtMatch ? Number(amtMatch[1].replace(/,/g, "")) : 0;
+        const dateISO = dateMatch ? toISO(dateMatch[1]) : "";
+        const vendor = vendorMatch ? vendorMatch[1].trim() : "";
+        return {
+          date: dateISO,
+          vendor,
+          description: "",
+          category: "",
+          subcategory: "",
+          amount,
+          currency: "PHP",
+          payment_method: "",
+          invoice_number: "",
+          reference_id: "",
+          tax_amount: 0,
+          tip_amount: 0,
+          location: "",
+          notes: text.length > 140 ? text.slice(0, 140) + "…" : text,
+          created_at: new Date().toISOString(),
+          processed_at: "",
+          validated: "false",
+          validation_errors: "",
+          source_type: "",
+          source_filename: "",
+          attachment_drive_file_id: "",
+        };
+      }
+
+      function toISO(s) {
+        const n = s.replace(/[./]/g, "-");
+        const parts = n.split("-").map(x => x.padStart(2, "0"));
+        if (parts[0].length === 4) return [parts[0], parts[1], parts[2]].join("-");
+        if (parts[2].length === 4) { return [parts[2], parts[1], parts[0]].join("-"); }
+        return "";
+      }
+
+      function escapeHtml(s) {
+        return (s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+      }
+    })();
+    </script>
   </body>
 </html>

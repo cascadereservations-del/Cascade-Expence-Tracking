@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Browser Tests</title>
+    <link rel="stylesheet" href="https://unpkg.com/mocha/mocha.css"/>
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <script src="https://unpkg.com/mocha/mocha.js"></script>
+    <script>mocha.setup('bdd');</script>
+    <script src="https://unpkg.com/chai/chai.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js"></script>
+
+    <script type="module">
+      import { heuristicParse } from '../../parser/parser.js';
+      import { validateRecord } from '../../validate/validate.js';
+
+      const { expect } = chai;
+
+      describe('heuristicParse', () => {
+        it('parses date and amount from text', () => {
+          const res = heuristicParse('Invoice 123 on 2025-10-21 Total ₱1,234.50');
+          expect(res.date).to.equal('2025-10-21');
+          expect(res.amount).to.equal(1234.50);
+        });
+      });
+
+      describe('validateRecord', () => {
+        it('flags missing category', () => {
+          const rec = {
+            date: '2025-10-21', vendor: 'TEST', description:'', category:'',
+            subcategory:null, amount:100, currency:'PHP', payment_method:null, invoice_number:null,
+            reference_id:null, tax_amount:0, tip_amount:0, location:null, notes:null,
+            source_type:'manual', source_filename:null, attachment_drive_file_id:null,
+            created_at:new Date().toISOString(), processed_at:new Date().toISOString(),
+            validated:false, validation_errors:[]
+          };
+          const v = validateRecord(rec);
+          expect(v.valid).to.equal(false);
+          expect(v.errors.join(' ')).to.match(/Missing category/);
+        });
+      });
+
+      mocha.run();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "expense-capture",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "http-server -c-1 -p 5173 .",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.2",
+    "http-server": "^14.1.1"
+  }
+}

@@ -6,11 +6,12 @@
   <title>Cascade Expense Capture — Earthen Luxe</title>
 
   <!-- 
-    IMPROVEMENT:
-    - Added Subresource Integrity (SRI) hashes and crossorigin attributes.
-    - This is a key security enhancement from your "Security & reliability" list.
-    - FIX: Corrected 'xintegrity' back to 'integrity'.
+    CHANGE:
+    - Added the Google GSI client library. This is required for Google Sign-In
+    - to work so we can upload files to Google Drive.
   -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <script 
     src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js"
     xintegrity="sha512-VSSYQpa/2YJMWs8EcwFfI18e+hfb15/Qp+RbV/2/J9j+74sS2/b1Tda/3VvS-OLcTfN9m2/1pQ0eK/ZnN6YGA=="
@@ -21,12 +22,6 @@
     xintegrity="sha512-gS2M0QcAGlOHsS0lqM/f1/bUa6OugmT5c/Vf7P1f/CSB/03B/iPgqEAhs26iYQvE1c1vN4Q/G1qT2iEa/tDq2A=="
     crossorigin="anonymous"
   ></script>
-
-  <!-- 
-    IMPROVEMENT:
-    - Added the Lucide icon library, as requested in "High-impact visual & UX polish".
-    - FIX: Corrected 'xintegrity' back to 'integrity'.
-  -->
   <script 
     src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"
     xintegrity="sha512-G+J0xdDOSbYf3DflTBER8eTyUmhDHYRs/FmJzIxVFJ2bBfFDj3WkwhU2k/c/jHh0gthv1o9RFhQx2/l2/wS/8A=="
@@ -92,7 +87,6 @@
     .tab:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
     .hidden{display:none!important}
     
-    /* IMPROVEMENT: Icon styles */
     .lucide{width: 1em; height: 1em; stroke-width: 2.5px;}
     .btn .lucide, .btn-s .lucide, .tab .lucide { width: 0.9em; height: 0.9em; }
     .brand .lucide { width: 1.1em; height: 1.1em; }
@@ -100,7 +94,6 @@
     .fab .lucide { width: 28px; height: 28px; }
 
     .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.10); transition: transform 0.15s ease, box-shadow 0.15s ease;}
-    /* IMPROVEMENT: Micro-interaction on hover */
     .card:hover{transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.12);}
 
     #panel-form .card{background:linear-gradient(180deg, var(--surface-2), var(--surface-tint));backdrop-filter: blur(12px);border:1px solid color-mix(in oklab, var(--border), var(--accent-2) 30%);box-shadow:0 10px 30px rgba(0,0,0,.12)}
@@ -123,7 +116,6 @@
     .btn:active{transform:translateY(1px)}
     .btn-s{background:#fff;color:var(--ink)}
     html[data-theme="dark"] .btn-s { background: color-mix(in oklab, var(--surface), #fff 6%); }
-    /* IMPROVEMENT: Micro-interaction for pressed state */
     .btn-s:active{transform:translateY(1px); filter: brightness(0.95);}
     .btn:disabled, .btn-s:disabled { opacity: 0.6; cursor: not-allowed; transform: none; filter: none; }
 
@@ -178,15 +170,11 @@
     .ac-item:hover,.ac-item[aria-selected="true"]{background:#fffaf0}
     html[data-theme="dark"] .ac-item:hover, html[data-theme="dark"] .ac-item[aria-selected="true"]{ background: color-mix(in oklab, var(--surface), #fff 10%) }
 
-    /* Toasts (undo actions) */
     #toastArea{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:1200}
     .toast{display:flex;gap:12px;align-items:center;background:var(--toast-bg);color:var(--toast-fg);padding:10px 14px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,.25)}
     .toast .action{color:#ffd66b;border:1px solid rgba(255,214,107,.35);background:transparent;border-radius:10px;padding:6px 10px;font-weight:700;cursor:pointer}
     .toast .close{margin-left:4px;opacity:.7;cursor:pointer}
 
-    /* IMPROVEMENT: Empty state styles
-      - As requested in "High-impact visual & UX polish".
-    */
     .empty-state {
       text-align: center;
       padding: 40px 20px;
@@ -212,10 +200,6 @@
       margin: 0 auto;
     }
 
-    /*
-      IMPROVEMENT: Mobile Navigation
-      - Implements "Mobile navbar" from "High-impact visual & UX polish".
-    */
     .mobile-nav {
       position: fixed;
       bottom: 0;
@@ -266,21 +250,17 @@
       z-index: 101;
     }
 
-    /* Show mobile nav/FAB and hide desktop tabs on small screens */
     @media(max-width: 768px) {
       .tabs { display: none; }
       .mobile-nav, .fab { display: flex; }
-      body { padding-bottom: 80px; } /* Ensure content doesn't hide under nav */
+      body { padding-bottom: 80px; } 
       
-      /* Adjust form layout on mobile */
       #panel-form .card-h { flex-direction: column; align-items: flex-start; gap: 12px; }
       #panel-form .card-h > div { margin-left: auto; }
       
-      /* Adjust batch actions on mobile */
       #panel-batch .card-h { flex-direction: column; align-items: flex-start; gap: 12px; }
       #panel-batch .card-h-actions { flex-wrap: wrap; gap: 8px; }
 
-      /* Adjust rule row on mobile */
       .rule-row {
         grid-template-columns: 1fr;
         border: 1px solid var(--border);
@@ -294,29 +274,24 @@
         justify-content: flex-start;
       }
 
-      /* OCR preview grid */
       .grid-3 { grid-template-columns: 1fr; }
 
-      .topbar .brand .lucide { display: none; } /* Hide leaf on mobile */
+      .topbar .brand .lucide { display: none; } 
     }
   </style>
 </head>
 <body>
   <header>
     <div class="topbar wrap">
-      <!-- IMPROVEMENT: Replaced 🍂 emoji with Lucide icon -->
       <div class="brand"><i data-lucide="leaf"></i> Cascade Expense Capture
-        <!-- IMPROVEMENT: Replaced ❔ emoji with Lucide icon -->
         <button id="quickGuideBtn" class="btn-s quick" title="Show Quick Guide" aria-controls="guideModal"><i data-lucide="help-circle"></i> Quick Guide</button>
       </div>
       <div class="top-actions">
-        <!-- IMPROVEMENT: Replaced 🌓 emoji with dynamic Lucide icon -->
         <button id="themeToggle" class="btn-s" title="Toggle theme"><i data-lucide="sun-moon"></i> <span>Theme</span></button>
         <span id="appStatus" class="meta" aria-live="polite"></span>
       </div>
     </div>
     <div class="tabs wrap" role="tablist" aria-label="Sections">
-      <!-- IMPROVEMENT: Replaced emojis with Lucide icons -->
       <button class="tab" id="tab-dashboard" data-tab="dashboard" aria-selected="true" role="tab"><i data-lucide="layout-grid"></i> Dashboard</button>
       <button class="tab" id="tab-form" data-tab="form" aria-selected="false" role="tab"><i data-lucide="file-plus-2"></i> Form</button>
       <button class="tab" id="tab-capture" data-tab="capture" aria-selected="false" role="tab"><i data-lucide="camera"></i> Capture</button>
@@ -337,15 +312,12 @@
 
       <div class="grid" style="margin-top:16px">
         <div class="card">
-          <!-- IMPROVEMENT: Replaced 🏷️ emoji with Lucide icon -->
           <div class="card-h"><i data-lucide="tag"></i> Category Breakdown</div>
           <div class="card-b" id="catBreakdown"><div class="meta">No data yet.</div></div>
         </div>
         <div class="card">
           <div class="card-h">
-            <!-- IMPROVEMENT: Replaced 🕘 emoji with Lucide icon -->
             <i data-lucide="clock"></i> <span>Recent Activity</span>
-            <!-- IMPROVEMENT: Replaced 🧩 emoji with Lucide icon -->
             <button id="openRulesBtn" class="btn-s card-h-actions"><i data-lucide="list-filter"></i> Manage Rules</button>
           </div>
           <div class="card-b" id="recentList"><div class="meta">No records yet.</div></div>
@@ -357,13 +329,10 @@
     <section id="panel-form" role="tabpanel" aria-labelledby="tab-form" class="hidden">
       <div class="card">
         <div class="card-h">
-          <!-- IMPROVEMENT: Replaced 📝 emoji with Lucide icon -->
           <i data-lucide="file-pen-line"></i> <span>Quick Entry</span>
           <div class="card-h-actions">
             <span id="rulesBadge" class="chip meta hidden">Rules applied</span>
-            <!-- IMPROVEMENT: Replaced ✅ emoji with Lucide icon -->
             <button id="validateBtn" class="btn-s"><i data-lucide="check-circle"></i> Validate</button>
-            <!-- IMPROVEMENT: Replaced ➕ emoji with Lucide icon -->
             <button id="addToListBtn" class="btn"><i data-lucide="plus"></i> Add</button>
           </div>
         </div>
@@ -382,7 +351,6 @@
             <label class="full"><span class="label">Notes</span><textarea name="notes" class="textarea" placeholder="Optional notes"></textarea></label>
 
             <details id="moreFields" class="full">
-              <!-- IMPROVEMENT: Replaced ⬇️ emoji with Lucide icon -->
               <summary class="btn-s" style="display:inline-flex"><i data-lucide="chevron-down"></i> More fields</summary>
               <div style="margin-top:10px; display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
                 <label><span class="label">Vendor</span><input name="vendor" class="input" placeholder="Merchant"></label>
@@ -413,7 +381,6 @@
     <section id="panel-capture" role="tabpanel" aria-labelledby="tab-capture" class="hidden">
       <div class="grid grid-3">
         <div class="card">
-          <!-- IMPROVEMENT: Replaced 📥 emoji with Lucide icon -->
           <div class="card-h"><i data-lucide="inbox"></i> Ingest</div>
           <div class="card-b">
             <label class="label">Upload images / PDF</label>
@@ -421,15 +388,13 @@
             <div style="height:8px"></div>
             <div style="display:flex;align-items:center;justify-content:space-between">
               <label class="label" style="margin:0">Paste raw text / email</label>
-              <!-- IMPROVEMENT: Replaced 🔎 emoji with Lucide icon -->
               <button id="parsePasteBtn" class="btn-s"><i data-lucide="search"></i> Parse</button>
             </div>
             <textarea id="pasteBox" class="textarea" placeholder="Paste any receipt text, bank line item, or email here..."></textarea>
-            <div class="meta" style="margin-top:8px">OCR runs locally when enabled in Settings.</div>
+            <div class="meta" style="margin-top:8px">OCR runs locally when enabled in Settings. AI Parsing (Gemini) requires API key.</div>
           </div>
         </div>
         <div class="card">
-          <!-- IMPROVEMENT: Replaced ✨ emoji with Lucide icon -->
           <div class="card-h"><i data-lucide="sparkles"></i> Quick Parse Preview <span class="meta" style="float:right">Drop files anywhere to add</span></div>
           <div class="card-b" id="ingestPreview">Nothing ingested yet.</div>
         </div>
@@ -440,13 +405,11 @@
     <section id="panel-batch" role="tabpanel" aria-labelledby="tab-batch" class="hidden">
       <div class="card">
         <div class="card-h">
-          <!-- IMPROVEMENT: Replaced 📦 emoji with Lucide icon -->
           <i data-lucide="package-check"></i> <span>Preview & Batch</span>
           <div class="card-h-actions">
             <label class="meta" style="display:flex;gap:6px;align-items:center">
               <input id="rulesOverwriteToggle" type="checkbox"> Allow overwrite
             </label>
-            <!-- IMPROVEMENT: Replaced emojis with Lucide icons -->
             <button id="applyRulesAllBtn" class="btn-s"><i data-lucide="list-filter"></i> Apply Rules to All</button>
             <button id="validateAllBtn" class="btn-s"><i data-lucide="test-tube-2"></i> Validate All</button>
             <button id="dedupeBtn" class="btn-s"><i data-lucide="copy-x"></i> Deduplicate</button>
@@ -470,7 +433,11 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <div class="meta"><span id="recordCount">0</span> items <span id="countAll" class="meta"></span> · Total <span id="recordTotal" class="num">₱0.00</span></div>
             <div style="display:flex;gap:8px">
-              <!-- IMPROVEMENT: Replaced 📄 emojis with Lucide icons -->
+              <!-- 
+                CHANGE:
+                - Added an "Upload to Drive" button to trigger the new functionality.
+              -->
+              <button id="uploadDriveBtn" class="btn-s"><i data-lucide="upload-cloud"></i> Upload to Drive</button>
               <button id="exportJsonBtn" class="btn-s"><i data-lucide="file-json"></i> Export JSON</button>
               <button id="exportCsvBtn" class="btn-s"><i data-lucide="file-text"></i> Export CSV</button>
             </div>
@@ -498,27 +465,23 @@
     <!-- Settings -->
     <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="hidden">
       <div class="card">
-        <!-- IMPROVEMENT: Replaced ⚙️ emoji with Lucide icon -->
         <div class="card-h"><i data-lucide="settings-2"></i> Settings</div>
         <div class="card-b">
           <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
-            <label><span class="label">Default Drive Folder ID (optional)</span><input id="driveFolderId" class="input" placeholder="1ZVwc58gka..."></label>
-            <label><span class="label">Google Client ID</span><input id="googleClientId" class="input" placeholder="OAuth Client ID"></label>
+            <label><span class="label">Default Drive Folder ID *</span><input id="driveFolderId" class="input" placeholder="1ZVwc58gkaNWW8rw2tbbCUJRIQWhkPEnz"></label>
+            <label><span class="label">Google Client ID *</span><input id="googleClientId" class="input" placeholder="Your-OAuth-Client-ID.apps.googleusercontent.com"></label>
             <div style="display:flex;gap:8px;align-items:end">
-              <!-- IMPROVEMENT: Added Lucide icon -->
-              <button id="googleSignIn" class="btn"><i data-lucide="log-in"></i> Sign in</button><span id="googleUser" class="meta"></span>
+              <button id="googleSignIn" class="btn"><i data-lucide="log-in"></i> Sign in</button><span id="googleUser" class="meta">Not signed in</span>
             </div>
-            <label><span class="label">Gemini API Key (optional)</span><input id="geminiKey" class="input" placeholder="GEMINI_API_KEY"></label>
+            <label><span class="label">Gemini API Key (optional)</span><input id="geminiKey" class="input" placeholder="AIzaSy... (enables AI parsing)"></label>
             <label style="display:flex;gap:8px;align-items:center"><input id="toggleTesseract" type="checkbox"> <span>Use Tesseract (client OCR)</span></label>
-            <label style="display:flex;gap:8px;align-items:center"><input id="toggleLLM" type="checkbox"> <span>Allow LLM network</span></label>
+            <label style="display:flex;gap:8px;align-items:center"><input id="toggleLLM" type="checkbox"> <span>Allow LLM network (Gemini)</span></label>
             <div style="display:flex;gap:8px">
-              <!-- IMPROVEMENT: Replaced 💾/🚪 emojis with Lucide icons -->
               <button id="saveSettings" class="btn"><i data-lucide="save"></i> Save Settings</button>
               <button id="adminLogout" class="btn-s"><i data-lucide="log-out"></i> Admin Sign out</button>
             </div>
             <div class="meta" style="grid-column:1/-1">
-              <!-- IMPROVEMENT: Replaced 🔒 emoji with Lucide icon -->
-              <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> <strong>Security notice:</strong> All data stays in your browser’s <code>localStorage</code>. No data leaves your device unless you export it.
+              <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> <strong>Security notice:</strong> All data stays in your browser’s <code>localStorage</code>. No data leaves your device unless you export it or upload to your own Google Drive.
             </div>
           </div>
         </div>
@@ -528,7 +491,6 @@
 
   <footer class="wrap">
     <div class="fine" aria-label="Security notice">
-      <!-- IMPROVEMENT: Replaced 🔐 emoji with Lucide icon -->
       <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> This internal tool is exclusively for Cascade Hideaway. Copying, redistribution, or tampering is prohibited.
     </div>
   </footer>
@@ -537,17 +499,14 @@
   <div id="rulesModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
     <div class="modal-card" tabindex="-1">
       <div class="card-h">
-        <!-- IMPROVEMENT: Replaced 🧩 emoji with Lucide icon -->
         <i data-lucide="list-filter"></i> <span id="rulesTitle">Auto-categorization Rules</span>
         <div class="card-h-actions">
-          <!-- IMPROVEMENT: Replaced ✖ emoji with Lucide icon -->
           <button id="rulesClose" class="btn-s"><i data-lucide="x"></i> Close</button>
         </div>
       </div>
       <div class="card-b">
         <div class="meta" style="margin-bottom:8px">First enabled match wins. Pattern is case-insensitive substring or a <code>/regex/i</code>.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-          <!-- IMPROVEMENT: Replaced ➕/📤/📥 emojis with Lucide icons -->
           <button id="addRuleBtn" class="btn-s"><i data-lucide="plus"></i> Add Rule</button>
           <button id="exportRulesBtn" class="btn-s"><i data-lucide="upload"></i> Export JSON</button>
           <label class="btn-s" for="importRulesFile" style="cursor:pointer"><i data-lucide="download"></i> Import JSON</label>
@@ -565,19 +524,17 @@
   <div id="guideModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
     <div class="modal-card" tabindex="-1">
       <div class="card-h">
-        <!-- IMPROVEMENT: Replaced ❔ emoji with Lucide icon -->
         <i data-lucide="help-circle"></i> <span id="guideTitle">Quick Guide</span>
-        <!-- IMPROVEMENT: Replaced ✖ emoji with Lucide icon -->
         <button id="guideClose" class="btn-s card-h-actions"><i data-lucide="x"></i> Close</button>
       </div>
       <div class="card-b">
         <ol class="meta" style="margin:0; padding-left:18px">
-          <li>Go to <strong>Form</strong>, fill <em>Date, Property, Category, Amount</em>. Description/Notes are optional.</li>
-          <li>Open <strong>More fields</strong> for vendor, subcategory, payment details. Typing <em>Vendor/Description</em> triggers auto-rules.</li>
-          <li>Click <strong>Add</strong> to stage the record. Find entries in <strong>Batch</strong> where you can <em>Validate, Deduplicate, Export</em>.</li>
-          <li>Use <strong>Manage Rules</strong> (Dashboard) to add/enable/disable rules; reorder to set priority.</li>
-          <li>Admin <strong>Settings</strong>: password <code>cascadeadmin888</code>. Toggle OCR, APIs, and privacy options.</li>
-          <li>Shortcuts: <code>Ctrl/⌘+Enter</code> Add · <code>Alt+V</code> Validate · <code>?</code> Quick Guide · <code>Alt+F</code>/<code>Alt+B</code> switch tabs · <code>Ctrl/⌘+K</code> focus Category.</li>
+          <li>Go to <strong>Settings</strong> and enter your Google Client ID and Drive Folder ID. Click Save.</li>
+          <li>Click <strong>Sign in</strong> and authorize the app to access your Google Drive.</li>
+          <li>(Optional) Add your Gemini API Key in Settings and check "Allow LLM network" for AI-powered parsing.</li>
+          <li>Go to <strong>Form</strong> or <strong>Capture</strong> to add expenses.</li>
+          <li>Go to <strong>Batch</strong> to review, validate, and export.</li>
+          <li>Click <strong>Upload to Drive</strong> to send your `expenses.json` and `expenses.csv` files to your designated folder.</li>
         </ol>
       </div>
     </div>
@@ -586,10 +543,6 @@
   <!-- Toast area -->
   <div id="toastArea" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- 
-    IMPROVEMENT: Added Mobile Navigation bar and FAB
-    - This HTML is hidden by default and shown via CSS media queries.
-  -->
   <nav class="mobile-nav" role="navigation" aria-label="Main navigation">
     <button class="mobile-tab" id="mobile-tab-dashboard" data-tab="dashboard" aria-selected="true" role="tab">
       <i data-lucide="layout-grid"></i><span>Dashboard</span>
@@ -628,7 +581,10 @@
     let isAdmin = storage.get("cx:isAdmin", false);
     let rules = storage.get("cx:rules", []);
     let rulesAllowOverwrite = storage.get("cx:rulesAllowOverwrite", false);
-
+    
+    // CHANGE: Added state for Google OAuth
+    let oauth = { accessToken: null, expiresAt: 0 };
+    
     // ===== Theme =====
     applyTheme(settings.theme||"auto");
     $("#themeToggle")?.addEventListener("click", () => {
@@ -639,7 +595,6 @@
     });
     function applyTheme(mode){
       document.documentElement.setAttribute("data-theme", mode||"auto");
-      // IMPROVEMENT: Dynamically update Lucide icon for theme toggle
       const btn = $("#themeToggle");
       if(btn) {
         const icon = btn.querySelector("i");
@@ -653,8 +608,6 @@
       }
     }
 
-    // FIX: Moved empty state definitions here, *before* they are potentially used by renderDashboard() via switchTab()
-    // IMPROVEMENT: Added better empty state for Batch table
     const batchEmptyState = `
       <tr>
         <td colspan="7">
@@ -668,8 +621,6 @@
           </div>
         </td>
       </tr>`;
-      
-    // IMPROVEMENT: Added better empty states for Dashboard panels
     const catEmptyState = `
       <div class="empty-state">
         <i data-lucide="pie-chart"></i>
@@ -690,7 +641,6 @@
         if(pwd!=="cascadeadmin888"){ toast("Access denied"); return; }
         isAdmin = true; storage.set("cx:isAdmin", true);
       }
-      // Sync both desktop and mobile tabs
       $$(".tab, .mobile-tab").forEach(b=>{
         const a=b.dataset.tab===id; 
         b.setAttribute("aria-selected", a?"true":"false");
@@ -698,30 +648,18 @@
       ["dashboard","form","capture","batch","settings"].forEach(t=>{ const p=$("#panel-"+t); if(p) p.classList.toggle("hidden", t!==id); });
       settings.lastTab=id; storage.set("cx:settings",settings);
       if(id==="dashboard") renderDashboard();
-      // FIX: Removed call to non-existent refreshFilters()
-      if(id==="batch") { /* refreshFilters(); */ renderTable(); }
+      if(id==="batch") { renderTable(); }
     }
-    // Desktop tabs
-    $$(".tab").forEach(b=>{
-      b.addEventListener("click",()=>switchTab(b.dataset.tab));
-      b.addEventListener("keydown",(e)=>{
-        if(e.key==="ArrowRight"||e.key==="ArrowLeft"){
-          const tabs=$$(".tab"); const i=tabs.indexOf(b);
-          const n=e.key==="ArrowRight"? (i+1)%tabs.length : (i-1+tabs.length)%tabs.length; tabs[n].focus();
-        }
-      });
-    });
-    // IMPROVEMENT: Mobile tab and FAB logic
+    $$(".tab").forEach(b=> b.addEventListener("click",()=>switchTab(b.dataset.tab)));
     $$(".mobile-tab").forEach(b=> b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
     $("#fab-add")?.addEventListener("click", ()=> switchTab("form"));
-    
     switchTab(settings.lastTab || "dashboard");
 
     // ===== Toasts (with Undo) =====
     let statusTimer=null;
     function toast(msg, opts={}){
       const status=$("#appStatus");
-      if(status){ status.textContent=msg; clearTimeout(statusTimer); statusTimer=setTimeout(()=>status.textContent="",2000); }
+      if(status){ status.textContent=msg; clearTimeout(statusTimer); statusTimer=setTimeout(()=>status.textContent="", (opts.timeout || 2000) - 200); }
 
       const area=$("#toastArea"); if(!area) return;
       const t=document.createElement("div"); t.className="toast"; t.role="status";
@@ -732,12 +670,11 @@
         t.appendChild(btn);
       }
       const close=document.createElement("span"); close.className="close"; close.title="Dismiss";
-      // IMPROVEMENT: Replaced ✖ emoji with Lucide icon
       close.innerHTML = '<i data-lucide="x" style="width: 16px; height: 16px;"></i>';
       close.addEventListener("click",()=> area.removeChild(t));
       t.appendChild(close);
       area.appendChild(t);
-      if (window.lucide) window.lucide.createIcons({ nodes: [close] }); // Render icon
+      if (window.lucide) window.lucide.createIcons({ nodes: [close] }); 
       const timeout = opts.timeout ?? 4000;
       if(timeout>0){ setTimeout(()=>{ if(t.isConnected) area.removeChild(t); }, timeout); }
     }
@@ -775,7 +712,6 @@
       tip_amount: z.preprocess(v=>Number(v??0), z.number().nonnegative()),
       location: z.string().trim().optional(),
       notes: z.string().trim().optional(),
-      // NO-CHANGE: Added the other fields to the schema for completeness, all optional
       source_type: z.string().trim().optional(),
       source_filename: z.string().trim().optional(),
       attachment_drive_file_id: z.string().trim().optional(),
@@ -786,7 +722,6 @@
     }) : null;
     function validateRecord(rec){
       if(schema){ const r = schema.safeParse(rec); return r.success ? {ok:true,data:r.data} : {ok:false,errors:r.error.errors.map(e=>e.message)}; }
-      // Fallback (original)
       const errs=[]; if(!rec.date) errs.push("Date required"); if(!rec.property?.trim()) errs.push("Property required"); if(!rec.category?.trim()) errs.push("Category required");
       const amt=Number(rec.amount); if(!(amt>0)) errs.push("Amount must be > 0"); if(!rec.currency?.trim()) errs.push("Currency required");
       if(Number(rec.tax_amount)<0) errs.push("Tax must be ≥ 0"); if(Number(rec.tip_amount)<0) errs.push("Tip must be ≥ 0");
@@ -873,7 +808,6 @@
         actionLabel:"Undo",
         action:()=>{ records.pop(); persistAndRender(); switchTab("form"); }
       });
-      // IMPROVEMENT: Clear key fields after adding
       const f=$("#expenseForm");
       ["date", "amount", "description", "notes", "vendor", "invoice_number", "reference_id"].forEach(name => {
         const el = f.elements.namedItem(name);
@@ -951,7 +885,6 @@
 
     function renderTable(){
       refreshPropertyDatalist();
-      // FIX: Also refresh category datalist for the filter dropdown
       refreshCategoryDatalist();
       const tbody=$("#previewTable"); if(!tbody) return; tbody.innerHTML="";
       const rows = sortRecs(filteredRecords());
@@ -983,7 +916,6 @@
         fragment.appendChild(tr);
       });
       tbody.appendChild(fragment);
-      // Render all icons in the table body at once
       if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', tbody) });
     }
     $("#previewTable")?.addEventListener("click", (e)=>{
@@ -1033,6 +965,9 @@
       rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite);
     });
     $("#rulesOverwriteToggle").checked = !!rulesAllowOverwrite;
+    
+    // CHANGE: Added wiring for the new Drive Upload button
+    $("#uploadDriveBtn")?.addEventListener("click", uploadAllToDrive);
 
     function csvBlob(data){
       const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","created_at","processed_at"];
@@ -1043,26 +978,29 @@
     function csvCell(v){ const s=(v??"").toString().replace(/"/g,'""'); return /[",\r\n]/.test(s)?`"${s}"`:s; }
     function download(name,blob){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},0); }
 
-    // ===== Capture + OCR =====
+    // ===== Capture + OCR + Gemini =====
     $("#fileInput")?.addEventListener("change", onFiles);
     document.addEventListener("dragover", e=>e.preventDefault());
     document.addEventListener("drop", e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
     $("#parsePasteBtn")?.addEventListener("click", parseFromPaste);
     function onFiles(e){ handleFiles(e.target.files); e.target.value=""; }
+    
     async function handleFiles(fileList){
       if(!fileList?.length) return; const files=Array.from(fileList);
       const container=$("#ingestPreview"); container.innerHTML="";
       for(const f of files){
+        // We'll just process images for now. PDF processing is more complex.
         if(settings.useTesseract && f.type.startsWith("image/")){ await processImageWithOCR(f, container); }
         else{
           const row=document.createElement("div"); row.className="meta"; row.style.padding="8px";
-          row.innerHTML=`<i data-lucide="file" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> ${escapeHtml(f.name)} <span class="meta">(${(f.size/1024).toFixed(1)} KB)</span>`;
+          row.innerHTML=`<i data-lucide="file" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> ${escapeHtml(f.name)} <span class="meta">(${(f.size/1024).toFixed(1)} KB) (non-image, not processed)</span>`;
           container.appendChild(row);
         }
       }
       if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', container) });
-      toast(`${files.length} file(s) processed`,{timeout:1400});
+      toast(`${files.length} file(s) ingested`,{timeout:1400});
     }
+    
     async function processImageWithOCR(file, container){
       const id=Math.random().toString(36).slice(2);
       const card=document.createElement("div"); card.className="card"; card.style.marginBottom="10px";
@@ -1072,11 +1010,9 @@
             <div style="font-weight:700; display: flex; align-items: center; gap: 8px;"><i data-lucide="image"></i> ${escapeHtml(file.name)}</div>
             <div class="meta">image OCR</div>
           </div>
-          <!-- IMPROVEMENT: Animated progress bar -->
           <div class="bar"><span id="bar-${id}" style="width:0%; transition: width 0.2s ease;"></span></div>
-          <div id="txt-${id}" class="meta" style="margin-top:8px">Recognizing…</div>
+          <div id="txt-${id}" class="meta" style="margin-top:8px; max-height: 100px; overflow-y: auto;">Recognizing…</div>
           <div style="display:flex;gap:8px;margin-top:8px">
-            <!-- IMPROVEMENT: Replaced ➡️/📋 emojis with Lucide icons -->
             <button id="use-${id}" class="btn-s" disabled><i data-lucide="file-pen-line"></i> Parse into form</button>
             <button id="copy-${id}" class="btn-s" disabled><i data-lucide="clipboard"></i> Copy text</button>
           </div>
@@ -1090,26 +1026,145 @@
         }});
         const text=(res?.data?.text||"").trim(); textEl.textContent = text ? (text.length>500?text.slice(0,500)+"…":text) : "(no text)";
         const useBtn=$("#use-"+id), copyBtn=$("#copy-"+id); useBtn.disabled=!text; copyBtn.disabled=!text;
-        useBtn.addEventListener("click",()=>{ const rec=roughParse(text); rec.source_type="ocr"; rec.source_filename=file.name; const {rec:rec2}=applyRules(rec, rulesAllowOverwrite); fillForm(rec2); switchTab("form"); toast("Parsed OCR into form",{timeout:1500}); });
-        copyBtn.addEventListener("click", async()=>{ try{ await navigator.clipboard.writeText(text); toast("Copied OCR text",{timeout:1200}); }catch{} });
+        
+        // CHANGE: Modified to use the new parseFromText function
+        useBtn.addEventListener("click",()=> parseFromText(text, 'ocr', file.name));
+        copyBtn.addEventListener("click", async()=>{ try{ 
+          // Use execCommand as a fallback for clipboard in iFrames
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+          toast("Copied OCR text",{timeout:1200}); 
+        }catch{} });
       }catch(err){ 
         console.error("OCR Error:", err);
         $("#txt-"+id).textContent="OCR failed. See console for details."; 
         $("#txt-"+id).style.color = "var(--bad)";
       }
     }
+    
+    // CHANGE: Modified to use the new parseFromText function
     function parseFromPaste(){
       const text=($("#pasteBox").value||"").trim(); if(!text){ toast("Nothing to parse",{timeout:1200}); return; }
-      const rec=roughParse(text); rec.source_type="paste"; rec.source_filename="";
-      const {rec:rec2}=applyRules(rec, rulesAllowOverwrite);
-      fillForm(rec2); switchTab("form"); toast("Parsed into form",{timeout:1400});
+      parseFromText(text, 'paste', '');
     }
+    
+    // CHANGE: This is the new combined parsing function
+    async function parseFromText(text, sourceType, sourceFilename) {
+      let rec = roughParse(text);
+      rec.source_type = sourceType;
+      rec.source_filename = sourceFilename;
+
+      if (settings.allowLLM && settings.geminiKey) {
+        toast("Parsing with AI... (may take a moment)", { timeout: 3000 });
+        try {
+          const llm = await geminiParse(text, settings.geminiKey);
+          // Merge, but keep key fields from rough parse if LLM misses them
+          rec = { 
+            ...rec, 
+            ...llm, 
+            amount: llm.amount || rec.amount,
+            date: llm.date || rec.date,
+            source_type: sourceType, 
+            source_filename: sourceFilename 
+          };
+        } catch (e) {
+          console.error("Gemini parse failed:", e);
+          toast("AI parse failed, using basic parser.", { timeout: 2000 });
+        }
+      }
+      
+      const { rec: rec2 } = applyRules(rec, rulesAllowOverwrite);
+      fillForm(rec2);
+      switchTab("form");
+      toast("Parsed into form", { timeout: 1400 });
+    }
+    
+    // CHANGE: Added Gemini API parsing function from your parser.js
+    /**
+     * @param {string} text - The raw text to parse.
+     * @param {string} apiKey - The Google Gemini API key.
+     * @returns {Promise<Object>} A promise that resolves to a partial expense object.
+     */
+    async function geminiParse(text, apiKey) {
+      const model = "gemini-2.5-flash-preview-09-2025";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      
+      const prompt = `
+You are an expert financial assistant. Extract expense details from the following text and return ONLY a valid JSON object.
+If a value isn't found, omit the key.
+Use this format:
+{
+  "date": "YYYY-MM-DD", 
+  "vendor": "Vendor Name", 
+  "description": "Short description", 
+  "category": "Expense Category", 
+  "amount": 1234.50, 
+  "currency": "PHP", 
+  "invoice_number": "INV123"
+}
+
+Context:
+- Today is ${new Date().toLocaleDateString('en-CA')}.
+- Default currency is PHP unless specified.
+- "date" MUST be in YYYY-MM-DD format.
+
+Text to parse:
+"""
+${text.slice(0, 4000)}
+"""
+`.trim();
+
+      const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { 
+          temperature: 0.1, 
+          topP: 0.1,
+          // CHANGE: Request JSON output
+          responseMimeType: "application/json",
+        },
+      };
+
+      try {
+        const resp = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!resp.ok) {
+          const errBody = await resp.text();
+          console.error("Gemini API Error:", resp.status, errBody);
+          throw new Error(`API failed: ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        const textOut = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        
+        try { 
+          const parsed = JSON.parse(textOut);
+          // Ensure amount is a number
+          if(parsed.amount) parsed.amount = Number(parsed.amount);
+          return parsed;
+        } catch (e) { 
+          console.error("Failed to parse Gemini JSON response:", textOut, e);
+          return {}; // Return empty object on JSON parse failure
+        }
+      } catch (e) {
+        console.error("Fetch to Gemini failed:", e);
+        return {}; // Return empty object on network failure
+      }
+    }
+
     function roughParse(text){
       const amtMatch = text.match(/(?:PHP|₱)\s?([\d,]+(?:\.\d{2})?)/i) || text.match(/\b([\d,]+(?:\.\d{2})?)\b/);
       const dateMatch = text.match(/\b(20\d{2}[-/]\d{1,2}[-/]\d{1,2})\b/) || text.match(/\b(\d{1,2}[-/]\d{1,2}[-/](?:20)?\d{2})\b/);
       const vendorMatch = text.match(/(?:from|at|merchant|vendor)[:\s]+([^\n,]+)/i) || text.match(/^\s*([A-Za-z][A-Za-z0-9 &'.-]{2,})/m);
       const amount = amtMatch ? Number(amtMatch[1].replace(/,/g,"")) : 0;
-      const dateISO = dateMatch ? toISO(dateMatch[1]) : "";
+      const dateISO = dateMatch ? toISO(dateMatch[1]) : (new Date().toISOString().slice(0,10));
       const vendor = vendorMatch ? vendorMatch[1].trim() : "";
       return {
         date: dateISO, property:"", vendor, description:"", category:"", subcategory:"",
@@ -1129,9 +1184,7 @@
           return [year, parts[0], parts[1]].join("-");
         }
         return "";
-      } catch {
-        return ""; // Invalid date
-      }
+      } catch { return ""; }
     }
     function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
@@ -1224,7 +1277,6 @@
           <input class="input" placeholder="property" value="${escapeHtml(r.fields?.property||"")}">
           <div style="display:flex;gap:6px;justify-content:flex-end">
             <label class="meta" title="enable/disable"><input type="checkbox" ${r.enabled?"checked":""}/> On</label>
-            <!-- IMPROVEMENT: Replaced ✏/⬆/⬇/🗑️ emojis with Lucide icons -->
             <button class="btn-s" data-act="edit" title="Edit more fields"><i data-lucide="edit-3"></i></button>
             <button class="btn-s" data-act="up" title="Move up" ${idx===0?'disabled':''}><i data-lucide="arrow-up"></i></button>
             <button class="btn-s" data-act="down" title="Move down" ${idx===rules.length-1?'disabled':''}><i data-lucide="arrow-down"></i></button>
@@ -1269,6 +1321,9 @@
       settings.allowLLM=$("#toggleLLM").checked;
       storage.set("cx:settings",settings); toast("Settings saved",{timeout:1200});
     });
+    
+    // CHANGE: Added Google Sign-In wiring
+    $("#googleSignIn")?.addEventListener("click", () => ensureDriveToken(true));
 
     // ===== Persist & dashboard =====
     const DEFAULT_CATEGORIES = ["Utilities","Subscriptions","Services","Maintenance","Repairs","Supplies","Cleaning","Internet","Electricity","Water","Gas","Waste","Landscaping","Security","Insurance","Taxes","Fees","Professional Services","Software","Travel","Meals","Office","Other"];
@@ -1290,7 +1345,6 @@
       dl.innerHTML = opts;
       buildCategoryMenu();
     }
-    
     function renderDashboard(){
       const count=records.length; const sum=records.reduce((a,r)=>a+Number(r.amount||0),0); const ccy=records[0]?.currency||"PHP";
       const latest=records.map(r=>r.date).filter(Boolean).sort().pop();
@@ -1388,21 +1442,173 @@
       if(e.key==="Enter"){ e.preventDefault(); const sel=items[idx]; if(sel){ catInput.value=sel.dataset.val||""; closeCatMenu(); } }
       if(e.key==="Escape"){ closeCatMenu(); }
     });
+    
+    // ===== GOOGLE DRIVE & UPLOAD LOGIC =====
+    
+    /**
+     * Converts the records array to a CSV string.
+     * @param {Array<Object>} records - The array of expense records.
+     * @returns {string} The CSV data as a string.
+     */
+    function recordsToCsvString(records) {
+      const cols = [
+        'date','vendor','description','category','subcategory','amount','currency','payment_method','invoice_number','reference_id','tax_amount','tip_amount','location','notes','source_type','source_filename','attachment_drive_file_id','created_at','processed_at','validated'
+      ];
+      const escape = (v) => {
+        const s = v == null ? '' : String(v);
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+      };
+      const rows = [cols.join(',')];
+      for (const r of records) { rows.push(cols.map((c) => escape(r[c])).join(',')); }
+      return rows.join('\n');
+    }
+    
+    /**
+     * Creates a multipart request body for Google Drive API.
+     */
+    function makeMultipart(metadata, fileBlob) {
+      const boundary = '-------314159265358979323846';
+      const delimiter = `\r\n--${boundary}\r\n`;
+      const close = `\r\n--${boundary}--`;
+      const multipartBody = new Blob(
+        [
+          delimiter,
+          'Content-Type: application/json; charset=UTF-8\r\n\r\n',
+          JSON.stringify(metadata),
+          delimiter,
+          (fileBlob.type ? `Content-Type: ${fileBlob.type}\r\n\r\n` : 'Content-Type: application/json\r\n\r\n'),
+          fileBlob,
+          close,
+        ],
+        { type: `multipart/related; boundary=${boundary}` }
+      );
+      return { body: multipartBody, boundary };
+    }
+
+    /**
+     * Uploads the full dataset as JSON and CSV to Google Drive.
+     * @param {Array<Object>} records - The array of expense records.
+     * @param {Object} opts - Options object.
+     * @param {string} opts.accessToken - The Google OAuth2 access token.
+     * @param {string|null} opts.folderId - The ID of the Drive folder to upload to.
+     */
+    async function uploadDatasetToDrive(records, opts) {
+      const { accessToken, folderId } = opts;
+      const jsonStr = JSON.stringify(records, null, 2);
+      const csvStr = recordsToCsvString(records);
+      const timestamp = new Date().toISOString().replace(/:/g,'-').slice(0,19);
+
+      const uploaded = [];
+      for (const file of [
+        { name: `expenses_${timestamp}.json`, mime: 'application/json', content: new Blob([jsonStr], { type: 'application/json' }) },
+        { name: `expenses_${timestamp}.csv`, mime: 'text/csv', content: new Blob([csvStr], { type: 'text/csv;charset=utf-8' }) },
+      ]) {
+        const meta = { name: file.name, mimeType: file.mime, ...(folderId ? { parents: [folderId] } : {}) };
+        const { body } = makeMultipart(meta, file.content);
+        const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body,
+        });
+        if (!resp.ok) {
+          const errBody = await resp.text();
+          console.error("Drive upload failed:", errBody);
+          throw new Error('Drive upload failed: ' + resp.status);
+        }
+        const data = await resp.json();
+        uploaded.push({ id: data.id, name: data.name });
+      }
+      return { mainFileId: uploaded[0].id, mainFileName: uploaded[0].name };
+    }
+
+    /**
+     * Ensures a valid Google OAuth2 token is available.
+     * @param {boolean} [forcePrompt=false] - If true, forces the consent prompt.
+     * @returns {Promise<string>} A promise that resolves with the access token.
+     */
+    async function ensureDriveToken(forcePrompt = false) {
+      const now = Date.now();
+      if (oauth.accessToken && now < oauth.expiresAt - 60_000 && !forcePrompt) {
+        return oauth.accessToken;
+      }
+
+      const clientId = settings.googleClientId?.trim();
+      if (!clientId) {
+        toast("Error: Google Client ID not set in Settings.");
+        throw new Error('Google Client ID missing (Settings).');
+      }
+      
+      if (typeof google === 'undefined' || !google.accounts?.oauth2) {
+        toast("Error: Google auth library not loaded.");
+        throw new Error('Google auth library not loaded.');
+      }
+
+      const tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.file', // Use .file scope to only access files created by this app
+        prompt: forcePrompt ? 'consent' : '',
+        callback: (resp) => {},
+      });
+
+      oauth.accessToken = await new Promise((resolve, reject) => {
+        tokenClient.callback = (resp) => {
+          if (resp.error) {
+            console.error("Google Auth Error:", resp);
+            reject(new Error(resp.error));
+          } else {
+            resolve(resp.access_token);
+          }
+        };
+        tokenClient.requestAccessToken({ prompt: forcePrompt ? 'consent' : '' });
+      });
+
+      oauth.expiresAt = Date.now() + 55 * 60 * 1000; // Token lasts ~1 hour, refresh after 55 min
+      $("#googleUser").textContent = 'Authorized';
+      toast("Google Drive authorized.", { timeout: 2000 });
+      return oauth.accessToken;
+    }
+
+    /**
+     * Main function to trigger the full upload process.
+     */
+    async function uploadAllToDrive() {
+      if (!records.length) {
+        toast("No records to upload.");
+        return;
+      }
+      
+      const folderId = settings.folderId?.trim() || null;
+      if (!folderId) {
+        toast("Error: Drive Folder ID not set in Settings.");
+        switchTab("settings");
+        return;
+      }
+      
+      toast("Starting Drive upload...", { timeout: 2000 });
+      
+      try {
+        const token = await ensureDriveToken();
+        const result = await uploadDatasetToDrive(records, { accessToken: token, folderId });
+        toast(`Success! Uploaded: ${result.mainFileName}`, { timeout: 4000 });
+      } catch (e) {
+        console.error("Drive upload failed:", e);
+        toast(`Drive upload failed: ${e.message}`);
+        oauth.accessToken = null; // Force re-auth next time
+        $("#googleUser").textContent = 'Auth failed';
+      }
+    }
 
     // ===== Init =====
     renderTable(); updateStats(); refreshCategoryDatalist(); renderDashboard();
     
-    // IMPROVEMENT: Run Lucide icons on initial load
     if (window.lucide) {
       window.lucide.createIcons();
     } else {
       console.warn("Lucide library not loaded.");
     }
-    // Re-run theme function to set correct initial icon
     applyTheme(settings.theme||"auto");
 
   })();
   </script>
 </body>
 </html>
-

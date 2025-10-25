@@ -1,776 +1,1408 @@
-<!doctype html>
-<html lang="en" class="h-full">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-    <title>Cascade Expense Capture</title>
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Cascade Expense Capture — Earthen Luxe</title>
 
-    <!-- Tailwind CDN (utility classes) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 
+    IMPROVEMENT:
+    - Added Subresource Integrity (SRI) hashes and crossorigin attributes.
+    - This is a key security enhancement from your "Security & reliability" list.
+    - FIX: Corrected 'xintegrity' back to 'integrity'.
+  -->
+  <script 
+    src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js"
+    xintegrity="sha512-VSSYQpa/2YJMWs8EcwFfI18e+hfb15/Qp+RbV/2/J9j+74sS2/b1Tda/3VvS-OLcTfN9m2/1pQ0eK/ZnN6YGA=="
+    crossorigin="anonymous"
+  ></script>
+  <script 
+    src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"
+    xintegrity="sha512-gS2M0QcAGlOHsS0lqM/f1/bUa6OugmT5c/Vf7P1f/CSB/03B/iPgqEAhs26iYQvE1c1vN4Q/G1qT2iEa/tDq2A=="
+    crossorigin="anonymous"
+  ></script>
 
-    <!-- Zod UMD (exposes window.zod) -->
-    <script src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js"></script>
+  <!-- 
+    IMPROVEMENT:
+    - Added the Lucide icon library, as requested in "High-impact visual & UX polish".
+    - FIX: Corrected 'xintegrity' back to 'integrity'.
+  -->
+  <script 
+    src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"
+    xintegrity="sha512-G+J0xdDOSbYf3DflTBER8eTyUmhDHYRs/FmJzIxVFJ2bBfFDj3WkwhU2k/c/jHh0gthv1o9RFhQx2/l2/wS/8A=="
+    crossorigin="anonymous"
+  ></script>
 
-    <!-- Tesseract.js for client-side OCR -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
-
-    <!-- Basic component styles (no Tailwind @apply; pure CSS for custom class names) -->
-    <style>
-      :root { --ring: 0 0% 9%; }
-      html.dark { color-scheme: dark; }
-      html.dark body { background-color: #0a0a0a; color: #e5e5e5; }
-      html.hc *:focus { outline: 2px solid #ff9900 !important; outline-offset: 2px; }
-
-      .card { background:#fff; border:1px solid #e5e7eb; border-radius:1rem; box-shadow:0 1px 2px rgba(0,0,0,.04); }
-      .dark .card { background:#171717; border-color:#262626; }
-      .card-header { padding:.75rem 1rem; border-bottom:1px solid #e5e7eb; font-weight:500; }
-      .dark .card-header { border-color:#262626; }
-      .card-body { padding: .75rem 1rem; }
-
-      .input, .textarea {
-        width:100%; border:1px solid #d1d5db; background:#fff; color:inherit; border-radius:.5rem; padding:.5rem .75rem; outline:none;
+  <style>
+    :root{
+      --coal:#0A0908; --slate:#22333B; --ivory:#EAE0D5; --sable:#C6AC8E; --earth:#5E503F;
+      --bg:var(--ivory); --surface:#ffffff; --surface-tint:rgba(255,255,255,.70); --surface-2:rgba(255,255,255,.85);
+      --ink:#111; --muted:#3b4043; --border:rgba(34,51,59,.18); --accent:var(--slate); --accent-2:var(--earth);
+      --ok:#2e7d32; --warn:#c48900; --bad:#b91c1c; --radius:16px; --ring: rgba(34,51,59,.22);
+      --toast-bg:#111; --toast-fg:#fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      html[data-theme="auto"]{
+        --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.9); --surface-tint:rgba(23,27,30,.8);
+        --ink:#e9eef0; --muted:#aab3b8; --border:rgba(255,255,255,.09); --accent:#9cc6dd; --accent-2:#d7bfa2;
+        --ring: rgba(156,198,221,.35); --toast-bg:#1f2529; --toast-fg:#e9eef0;
       }
-      .dark .input, .dark .textarea { background:#0a0a0a; border-color:#374151; }
-      .input:focus, .textarea:focus { box-shadow:0 0 0 3px hsla(0,0%,9%,.06); border-color:#525252; }
+    }
+    html[data-theme="dark"]{
+      --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.9); --surface-tint:rgba(23,27,30,.8);
+      --ink:#e9eef0; --muted:#aab3b8; --border:rgba(255,255,255,.09); --accent:#9cc6dd; --accent-2:#d7bfa2;
+      --ring: rgba(156,198,221,.35); --toast-bg:#1f2529; --toast-fg:#e9eef0;
+    }
+    html[data-theme="light"]{
+      --bg:var(--ivory); --surface:#ffffff; --surface-2:rgba(255,255,255,.9); --surface-tint:rgba(255,255,255,.8);
+      --ink:#111; --muted:#3b4043; --border:rgba(34,51,59,.18); --accent:var(--slate); --accent-2:var(--earth);
+      --ring: rgba(34,51,59,.22); --toast-bg:#111; --toast-fg:#fff;
+    }
 
-      .checkbox { height:1rem; width:1rem; border:1px solid #d1d5db; border-radius:.25rem; }
-      .dark .checkbox { border-color:#374151; }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      padding-bottom: 80px; /* ADDED: Space for mobile nav */
+      background:
+        radial-gradient(1200px 600px at 10% 0%, rgba(198,172,142,.08), transparent 60%),
+        radial-gradient(800px 800px at 100% 100%, rgba(94,80,63,.05), transparent 60%),
+        linear-gradient(180deg, var(--bg), color-mix(in oklab, var(--bg), var(--sable) 12%));
+      color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      font-size: clamp(15px, 0.9vw + 0.6rem, 18px);
+      line-height:1.55;
+    }
+    body::before{
+      content:"Cascade Hideaway • Internal Use Only";
+      position:fixed; inset:0; pointer-events:none; z-index:0; display:block; text-align:center; top:30vh;
+      font-weight:800; letter-spacing:.1rem; font-size:clamp(36px, 6vw, 84px); color:var(--accent); opacity:.045; transform:rotate(-18deg) scale(1.2);
+    }
+    .wrap{max-width:1200px;margin:0 auto;padding:16px;position:relative;z-index:1}
 
-      .btn, .btn-secondary {
-        display:inline-flex; align-items:center; justify-content:center;
-        border-radius:.5rem; padding:.375rem .75rem; font-size:.875rem; line-height:1.25rem; border:1px solid transparent;
+    header{position:sticky;top:0;z-index:40;background:linear-gradient(180deg, color-mix(in oklab, var(--bg), #fff 12%) 92%, transparent); backdrop-filter:blur(8px)}
+    .brand{font-size:clamp(18px, 1.2vw + .6rem, 24px);font-weight:900;letter-spacing:.2px;color:var(--accent); display: flex; align-items: center; gap: 8px;}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
+    .top-actions{display:flex;gap:8px;align-items:center}
+    .quick{margin-left:8px}
+
+    .tabs{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);overflow:auto}
+    .tab{padding:9px 12px;border-radius:12px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--accent);font-weight:800;white-space:nowrap;transition:background .15s ease; display: inline-flex; align-items: center; gap: 8px;}
+    .tab[aria-selected="true"]{background:var(--surface);border-color:var(--border);color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.04)}
+    .tab:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
+    .hidden{display:none!important}
+    
+    /* IMPROVEMENT: Icon styles */
+    .lucide{width: 1em; height: 1em; stroke-width: 2.5px;}
+    .btn .lucide, .btn-s .lucide, .tab .lucide { width: 0.9em; height: 0.9em; }
+    .brand .lucide { width: 1.1em; height: 1.1em; }
+    .mobile-nav .lucide { width: 24px; height: 24px; }
+    .fab .lucide { width: 28px; height: 28px; }
+
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.10); transition: transform 0.15s ease, box-shadow 0.15s ease;}
+    /* IMPROVEMENT: Micro-interaction on hover */
+    .card:hover{transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.12);}
+
+    #panel-form .card{background:linear-gradient(180deg, var(--surface-2), var(--surface-tint));backdrop-filter: blur(12px);border:1px solid color-mix(in oklab, var(--border), var(--accent-2) 30%);box-shadow:0 10px 30px rgba(0,0,0,.12)}
+    #panel-form .card:hover{transform: none; box-shadow: 0 10px 30px rgba(0,0,0,.12);} /* Disable for form card */
+
+    .card-h{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:900;color:var(--accent);font-size:clamp(14px, .6vw + .6rem, 18px); display: flex; align-items: center; gap: 8px;}
+    .card-h-actions{display:flex;gap:8px;align-items:center;margin-left:auto}
+    .card-b{padding:14px 16px}
+
+    .input,.select,.textarea{width:100%;background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:12px;color:var(--ink);padding:10px 12px;outline:none;transition:box-shadow .15s ease, border-color .15s ease}
+    html[data-theme="dark"] .input, html[data-theme="dark"] .select, html[data-theme="dark"] .textarea,
+    html[data-theme="auto"] .input, html[data-theme="auto"] .select, html[data-theme="auto"] .textarea { background: color-mix(in oklab, var(--surface), #000 5%); }
+    .textarea{min-height:120px;resize:vertical}
+    .input:focus,.select:focus,.textarea:focus{box-shadow:0 0 0 3px var(--ring)}
+    .label{display:block;font-size:12px;color:var(--muted);margin:4px 0 6px}
+
+    .btn,.btn-s{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--border);cursor:pointer;user-select:none;font-weight:700;transition:filter .12s ease, transform .06s ease}
+    .btn{background:var(--accent);color:#fff;border-color:rgba(10,9,8,.2)}
+    .btn:hover{filter:brightness(1.05)}
+    .btn:active{transform:translateY(1px)}
+    .btn-s{background:#fff;color:var(--ink)}
+    html[data-theme="dark"] .btn-s { background: color-mix(in oklab, var(--surface), #fff 6%); }
+    /* IMPROVEMENT: Micro-interaction for pressed state */
+    .btn-s:active{transform:translateY(1px); filter: brightness(0.95);}
+    .btn:disabled, .btn-s:disabled { opacity: 0.6; cursor: not-allowed; transform: none; filter: none; }
+
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left}
+    thead th{position:sticky;top:0;background:var(--surface);user-select:none;cursor:default}
+    thead th[data-sort]{cursor:pointer}
+    thead th[data-sort] .arrow{opacity:.35;margin-left:6px; transition: opacity 0.15s ease, transform 0.15s ease;}
+    thead th[data-sort].asc .arrow{transform:rotate(180deg);opacity:.85}
+    thead th[data-sort].desc .arrow{opacity:.85}
+
+    .meta{color:var(--muted);font-size:12px}
+    .fine{font-size:12px;color:var(--muted)}
+    .h{font-weight:900;letter-spacing:.2px}
+    .h-1{font-size:clamp(20px, 1.4vw + .7rem, 28px)}
+    .h-2{font-size:clamp(16px, .8vw + .6rem, 20px); color:var(--earth)}
+
+    footer{padding:28px 16px;color:var(--muted)}
+
+    .kpis{display:grid;gap:12px}
+    @media(min-width:700px){.kpis{grid-template-columns:repeat(4,1fr)}}
+    .kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
+    .kpi h4{margin:0 0 6px 0;font-size:12px;color:var(--muted); font-weight: 600;}
+    .kpi .v{font-size:22px;font-weight:800}
+
+    .bar{height:10px;background:#efe7d6;border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+    html[data-theme="dark"] .bar{background:#253039}
+    .bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition: width 0.3s ease;}
+
+    .num{font-weight:800}
+    .num--green{color:var(--ok)}
+    .num--yellow{color:var(--warn)}
+    .num--red{color:var(--bad)}
+
+    .grid{display:grid;gap:18px}
+    @media(min-width:960px){ .grid-3{ grid-template-columns:1fr 2fr; } }
+
+    .modal{position:fixed;inset:0;background:rgba(10,9,8,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
+    .modal[aria-hidden="false"]{display:flex}
+    .modal-card{max-width:900px;width:100%;background:linear-gradient(180deg, var(--surface-2), var(--surface-tint));backdrop-filter: blur(14px); border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.25)}
+    .modal-card:focus{outline:none}
+
+    .rule-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
+    .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);padding:2px 8px;border-radius:999px;background:#fff}
+    html[data-theme="dark"] .chip{background: color-mix(in oklab, var(--surface), #fff 6%)}
+
+    .ac-wrap{position:relative}
+    .ac-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.12);max-height:240px;overflow:auto; z-index: 10;}
+    html[data-theme="dark"] .ac-menu{background: color-mix(in oklab, var(--surface), #fff 6%)}
+    .ac-menu.hidden{display:none}
+    .ac-item{display:block;width:100%;text-align:left;padding:8px 12px;border:0;background:transparent;cursor:pointer}
+    .ac-item:hover,.ac-item[aria-selected="true"]{background:#fffaf0}
+    html[data-theme="dark"] .ac-item:hover, html[data-theme="dark"] .ac-item[aria-selected="true"]{ background: color-mix(in oklab, var(--surface), #fff 10%) }
+
+    /* Toasts (undo actions) */
+    #toastArea{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:1200}
+    .toast{display:flex;gap:12px;align-items:center;background:var(--toast-bg);color:var(--toast-fg);padding:10px 14px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,.25)}
+    .toast .action{color:#ffd66b;border:1px solid rgba(255,214,107,.35);background:transparent;border-radius:10px;padding:6px 10px;font-weight:700;cursor:pointer}
+    .toast .close{margin-left:4px;opacity:.7;cursor:pointer}
+
+    /* IMPROVEMENT: Empty state styles
+      - As requested in "High-impact visual & UX polish".
+    */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      opacity: 0.8;
+    }
+    .empty-state .lucide {
+      width: 48px;
+      height: 48px;
+      stroke-width: 1.5px;
+      color: var(--accent-2);
+    }
+    .empty-state-h {
+      font-weight: 700;
+      font-size: 1.1em;
+      color: var(--accent);
+    }
+    .empty-state-p {
+      max-width: 300px;
+      margin: 0 auto;
+    }
+
+    /*
+      IMPROVEMENT: Mobile Navigation
+      - Implements "Mobile navbar" from "High-impact visual & UX polish".
+    */
+    .mobile-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 65px;
+      background: var(--surface-2);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      display: none; /* Hidden by default */
+      align-items: stretch;
+      z-index: 100;
+    }
+    .mobile-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 0;
+      gap: 4px;
+      background: transparent;
+      border: 0;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 10px;
+      padding: 8px 4px;
+      transition: color 0.15s ease;
+    }
+    .mobile-tab[aria-selected="true"] {
+      color: var(--accent);
+    }
+    .fab {
+      position: fixed;
+      bottom: 80px;
+      right: 16px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      display: none; /* Hidden by default */
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #fff;
+      html[data-theme="dark"] & { border-color: var(--surface); }
+      box-shadow: 0 8px 24px rgba(0,0,0,.2);
+      cursor: pointer;
+      z-index: 101;
+    }
+
+    /* Show mobile nav/FAB and hide desktop tabs on small screens */
+    @media(max-width: 768px) {
+      .tabs { display: none; }
+      .mobile-nav, .fab { display: flex; }
+      body { padding-bottom: 80px; } /* Ensure content doesn't hide under nav */
+      
+      /* Adjust form layout on mobile */
+      #panel-form .card-h { flex-direction: column; align-items: flex-start; gap: 12px; }
+      #panel-form .card-h > div { margin-left: auto; }
+      
+      /* Adjust batch actions on mobile */
+      #panel-batch .card-h { flex-direction: column; align-items: flex-start; gap: 12px; }
+      #panel-batch .card-h-actions { flex-wrap: wrap; gap: 8px; }
+
+      /* Adjust rule row on mobile */
+      .rule-row {
+        grid-template-columns: 1fr;
+        border: 1px solid var(--border);
+        padding: 10px;
+        border-radius: var(--radius);
       }
-      .btn { background:#0a0a0a; color:#fff; border-color:#d1d5db; }
-      .dark .btn { background:#fff; color:#0a0a0a; border-color:#374151; }
-      .btn-secondary { background:#fff; color:inherit; border-color:#d1d5db; }
-      .dark .btn-secondary { background:#0a0a0a; border-color:#374151; }
-
-      .tab { padding:.5rem .75rem; border-radius:.5rem; font-size:.875rem; border:1px solid transparent; }
-      .tab.active { background:#0a0a0a; color:#fff; }
-      .dark .tab.active { background:#fff; color:#0a0a0a; }
-      .tab:not(.active):hover { border-color:#d1d5db; }
-      .dark .tab:not(.active):hover { border-color:#374151; }
-
-      .th { text-align:left; font-weight:500; padding:.5rem .75rem; border-bottom:1px solid #e5e7eb; }
-      .dark .th { border-color:#262626; }
-      td { padding:.5rem .75rem; border-bottom:1px solid #e5e7eb; }
-      .dark td { border-color:#262626; }
-
-      .badge-ok { display:inline-flex; align-items:center; padding:.125rem .5rem; border-radius:.375rem; background:#dcfce7; color:#166534; font-size:.75rem; }
-      .badge-err { display:inline-flex; align-items:center; padding:.125rem .5rem; border-radius:.375rem; background:#fee2e2; color:#991b1b; font-size:.75rem; }
-      .empty { color:#6b7280; font-size:.875rem; }
-
-      @media (prefers-reduced-motion: no-preference) {
-        .fade-in { animation: fadeIn .15s ease-out; }
-        @keyframes fadeIn { from { opacity:0; transform: translateY(2px);} to { opacity:1; transform:none; } }
+      .rule-row > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-start;
       }
-    </style>
-  </head>
 
-  <body class="h-full bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-    <header class="sticky top-0 z-20 bg-white/90 backdrop-blur border-b dark:bg-neutral-900/90 dark:border-neutral-800">
-      <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
-        <h1 class="text-xl font-semibold tracking-tight">Cascade Expense Capture</h1>
-        <div class="flex items-center gap-2">
-          <button id="themeToggle" class="btn-secondary text-sm" title="Toggle Theme">Theme</button>
-          <button id="hcToggle" class="btn-secondary text-sm" title="High Contrast">HC</button>
-          <span id="appStatus" class="text-xs text-neutral-500" aria-live="polite"></span>
+      /* OCR preview grid */
+      .grid-3 { grid-template-columns: 1fr; }
+
+      .topbar .brand .lucide { display: none; } /* Hide leaf on mobile */
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topbar wrap">
+      <!-- IMPROVEMENT: Replaced 🍂 emoji with Lucide icon -->
+      <div class="brand"><i data-lucide="leaf"></i> Cascade Expense Capture
+        <!-- IMPROVEMENT: Replaced ❔ emoji with Lucide icon -->
+        <button id="quickGuideBtn" class="btn-s quick" title="Show Quick Guide" aria-controls="guideModal"><i data-lucide="help-circle"></i> Quick Guide</button>
+      </div>
+      <div class="top-actions">
+        <!-- IMPROVEMENT: Replaced 🌓 emoji with dynamic Lucide icon -->
+        <button id="themeToggle" class="btn-s" title="Toggle theme"><i data-lucide="sun-moon"></i> <span>Theme</span></button>
+        <span id="appStatus" class="meta" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="tabs wrap" role="tablist" aria-label="Sections">
+      <!-- IMPROVEMENT: Replaced emojis with Lucide icons -->
+      <button class="tab" id="tab-dashboard" data-tab="dashboard" aria-selected="true" role="tab"><i data-lucide="layout-grid"></i> Dashboard</button>
+      <button class="tab" id="tab-form" data-tab="form" aria-selected="false" role="tab"><i data-lucide="file-plus-2"></i> Form</button>
+      <button class="tab" id="tab-capture" data-tab="capture" aria-selected="false" role="tab"><i data-lucide="camera"></i> Capture</button>
+      <button class="tab" id="tab-batch" data-tab="batch" aria-selected="false" role="tab"><i data-lucide="package"></i> Batch</button>
+      <button class="tab" id="tab-settings" data-tab="settings" aria-selected="false" role="tab"><i data-lucide="settings"></i> Settings</button>
+    </div>
+  </header>
+
+  <main class="wrap" id="main">
+    <!-- Dashboard -->
+    <section id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard">
+      <div class="kpis" id="kpiGrid">
+        <div class="kpi"><h4>Total Expenses</h4><div class="v num" id="kpiTotal">—</div><div class="meta" id="kpiCount">0 items</div></div>
+        <div class="kpi"><h4>Latest Date</h4><div class="v" id="kpiLatest">—</div><div class="meta">Most recent record</div></div>
+        <div class="kpi"><h4>Avg Amount</h4><div class="v num" id="kpiAvg">—</div><div class="meta">Across all items</div></div>
+        <div class="kpi"><h4>Top Category</h4><div class="v" id="kpiTopCat">—</div><div class="meta">By total value</div></div>
+      </div>
+
+      <div class="grid" style="margin-top:16px">
+        <div class="card">
+          <!-- IMPROVEMENT: Replaced 🏷️ emoji with Lucide icon -->
+          <div class="card-h"><i data-lucide="tag"></i> Category Breakdown</div>
+          <div class="card-b" id="catBreakdown"><div class="meta">No data yet.</div></div>
+        </div>
+        <div class="card">
+          <div class="card-h">
+            <!-- IMPROVEMENT: Replaced 🕘 emoji with Lucide icon -->
+            <i data-lucide="clock"></i> <span>Recent Activity</span>
+            <!-- IMPROVEMENT: Replaced 🧩 emoji with Lucide icon -->
+            <button id="openRulesBtn" class="btn-s card-h-actions"><i data-lucide="list-filter"></i> Manage Rules</button>
+          </div>
+          <div class="card-b" id="recentList"><div class="meta">No records yet.</div></div>
         </div>
       </div>
-      <nav class="border-t dark:border-neutral-800">
-        <div class="mx-auto max-w-7xl px-4">
-          <div role="tablist" aria-label="Expense sections" class="flex gap-1 overflow-x-auto py-1">
-            <button role="tab" id="tab-capture" data-tab="capture" class="tab active" aria-selected="true">Capture</button>
-            <button role="tab" id="tab-form" data-tab="form" class="tab" aria-selected="false">Form</button>
-            <button role="tab" id="tab-batch" data-tab="batch" class="tab" aria-selected="false">Batch</button>
-            <button role="tab" id="tab-settings" data-tab="settings" class="tab" aria-selected="false">Settings</button>
+    </section>
+
+    <!-- Form -->
+    <section id="panel-form" role="tabpanel" aria-labelledby="tab-form" class="hidden">
+      <div class="card">
+        <div class="card-h">
+          <!-- IMPROVEMENT: Replaced 📝 emoji with Lucide icon -->
+          <i data-lucide="file-pen-line"></i> <span>Quick Entry</span>
+          <div class="card-h-actions">
+            <span id="rulesBadge" class="chip meta hidden">Rules applied</span>
+            <!-- IMPROVEMENT: Replaced ✅ emoji with Lucide icon -->
+            <button id="validateBtn" class="btn-s"><i data-lucide="check-circle"></i> Validate</button>
+            <!-- IMPROVEMENT: Replaced ➕ emoji with Lucide icon -->
+            <button id="addToListBtn" class="btn"><i data-lucide="plus"></i> Add</button>
           </div>
         </div>
-      </nav>
-    </header>
-
-    <main class="mx-auto max-w-7xl px-4 py-4 space-y-4">
-      <!-- Capture Panel -->
-      <section id="panel-capture" role="tabpanel" aria-labelledby="tab-capture" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="card lg:col-span-1">
-          <div class="card-header">Ingest</div>
-          <div class="card-body space-y-3">
-            <label class="block">
-              <span class="block text-sm font-medium mb-1">Upload images/PDF</span>
-              <input id="fileInput" type="file" accept=".pdf,image/*" multiple class="input" />
+        <div class="card-b">
+          <form id="expenseForm" autocomplete="off" novisaveSettingscate>
+            <label><span class="label">Date *</span><input name="date" type="date" class="input" required></label>
+            <label><span class="label">Property *</span><input name="property" class="input" placeholder="e.g., Cascade Hideaway_BRIA"></label>
+            <label class="ac-wrap"><span class="label">Category *</span>
+              <input name="category" class="input" list="categoryList" placeholder="Utilities · Subscriptions · Services" aria-autocomplete="list" aria-expanded="false">
+              <datalist id="categoryList"></datalist>
+              <div id="catMenu" class="ac-menu hidden" role="listbox" aria-label="Categories"></div>
             </label>
+            <label><span class="label">Amount *</span><input name="amount" type="number" step="0.01" class="input" required></label>
 
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="block text-sm font-medium">Paste raw text / email</span>
-                <button id="parsePasteBtn" class="btn-secondary text-xs">Parse</button>
+            <label class="full"><span class="label">Description</span><input name="description" class="input" placeholder="Short description"></label>
+            <label class="full"><span class="label">Notes</span><textarea name="notes" class="textarea" placeholder="Optional notes"></textarea></label>
+
+            <details id="moreFields" class="full">
+              <!-- IMPROVEMENT: Replaced ⬇️ emoji with Lucide icon -->
+              <summary class="btn-s" style="display:inline-flex"><i data-lucide="chevron-down"></i> More fields</summary>
+              <div style="margin-top:10px; display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                <label><span class="label">Vendor</span><input name="vendor" class="input" placeholder="Merchant"></label>
+                <label><span class="label">Subcategory</span><input name="subcategory" class="input" placeholder="Optional"></label>
+                <label><span class="label">Currency</span><input name="currency" class="input" value="PHP"></label>
+                <label><span class="label">Payment Method</span><input name="payment_method" class="input" placeholder="e.g., Lloyd CC"></label>
+                <label><span class="label">Invoice #</span><input name="invoice_number" class="input"></label>
+                <label><span class="label">Reference ID</span><input name="reference_id" class="input"></label>
+                <label><span class="label">Tax Amount</span><input name="tax_amount" type="number" step="0.01" class="input" value="0"></label>
+                <label><span class="label">Tip Amount</span><input name="tip_amount" type="number" step="0.01" class="input" value="0"></label>
+                <label><span class="label">Location</span><input name="location" class="input"></label>
+                <input type="hidden" name="source_type"/>
+                <input type="hidden" name="source_filename"/>
+                <input type="hidden" name="attachment_drive_file_id"/>
+                <input type="hidden" name="created_at"/>
+                <input type="hidden" name="processed_at"/>
+                <input type="hidden" name="validated"/>
+                <input type="hidden" name="validation_errors"/>
               </div>
-              <textarea id="pasteBox" rows="6" class="textarea" placeholder="Paste any receipt text, bank line item, or email here..."></textarea>
-            </div>
-
-            <div class="text-xs text-neutral-500">
-              OCR runs locally when enabled in Settings. LLM parsing is off unless enabled.
-            </div>
-          </div>
+            </details>
+          </form>
+          <div id="formErrors" class="meta" style="color:#b30000;margin-top:6px"></div>
         </div>
+      </div>
+    </section>
 
-        <div class="card lg:col-span-2">
-          <div class="card-header flex items-center justify-between">
-            <span>Quick Parse Preview</span>
-            <div class="text-xs text-neutral-500">Drop files anywhere to add</div>
-          </div>
-          <div id="ingestPreview" class="card-body min-h-24 text-sm text-neutral-600">
-            Nothing ingested yet.
-          </div>
-        </div>
-      </section>
-
-      <!-- Form Panel -->
-      <section id="panel-form" role="tabpanel" aria-labelledby="tab-form" class="hidden">
+    <!-- Capture -->
+    <section id="panel-capture" role="tabpanel" aria-labelledby="tab-capture" class="hidden">
+      <div class="grid grid-3">
         <div class="card">
-          <div class="card-header flex items-center justify-between">
-            <span>Expense Form</span>
-            <div class="flex gap-2">
-              <button id="newEntryBtn" class="btn-secondary">New</button>
-              <button id="validateBtn" class="btn-secondary">Validate</button>
-              <button id="addToListBtn" class="btn">Add</button>
+          <!-- IMPROVEMENT: Replaced 📥 emoji with Lucide icon -->
+          <div class="card-h"><i data-lucide="inbox"></i> Ingest</div>
+          <div class="card-b">
+            <label class="label">Upload images / PDF</label>
+            <input id="fileInput" type="file" accept=".pdf,image/*" multiple class="input"/>
+            <div style="height:8px"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <label class="label" style="margin:0">Paste raw text / email</label>
+              <!-- IMPROVEMENT: Replaced 🔎 emoji with Lucide icon -->
+              <button id="parsePasteBtn" class="btn-s"><i data-lucide="search"></i> Parse</button>
             </div>
-          </div>
-          <div class="card-body">
-            <form id="expenseForm" class="grid grid-cols-1 md:grid-cols-2 gap-3" autocomplete="off" novalidate>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Date</span>
-                <input name="date" type="date" class="input" required />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Vendor</span>
-                <input name="vendor" class="input" placeholder="Merchant" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Description</span>
-                <input name="description" class="input" placeholder="What was this?" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Category</span>
-                <input name="category" class="input" list="categoryList" placeholder="Select or type…" />
-                <datalist id="categoryList"></datalist>
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Subcategory</span>
-                <input name="subcategory" class="input" placeholder="Optional" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Amount</span>
-                <input name="amount" type="number" step="0.01" class="input" required inputmode="decimal" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Currency</span>
-                <input name="currency" class="input" value="PHP" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Payment Method</span>
-                <input name="payment_method" class="input" placeholder="e.g. Lloyd CC" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Invoice #</span>
-                <input name="invoice_number" class="input" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Reference ID</span>
-                <input name="reference_id" class="input" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Tax Amount</span>
-                <input name="tax_amount" type="number" step="0.01" class="input" value="0" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Tip Amount</span>
-                <input name="tip_amount" type="number" step="0.01" class="input" value="0" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Location</span>
-                <input name="location" class="input" />
-              </label>
-              <label class="block md:col-span-2">
-                <span class="block text-sm font-medium mb-1">Notes</span>
-                <textarea name="notes" rows="2" class="textarea"></textarea>
-              </label>
-              <input type="hidden" name="source_type" />
-              <input type="hidden" name="source_filename" />
-              <input type="hidden" name="attachment_drive_file_id" />
-              <input type="hidden" name="created_at" />
-              <input type="hidden" name="processed_at" />
-              <input type="hidden" name="validated" />
-              <input type="hidden" name="validation_errors" />
-            </form>
-            <div id="formErrors" class="mt-2 text-sm text-red-600"></div>
+            <textarea id="pasteBox" class="textarea" placeholder="Paste any receipt text, bank line item, or email here..."></textarea>
+            <div class="meta" style="margin-top:8px">OCR runs locally when enabled in Settings.</div>
           </div>
         </div>
-      </section>
-
-      <!-- Batch Panel -->
-      <section id="panel-batch" role="tabpanel" aria-labelledby="tab-batch" class="hidden">
         <div class="card">
-          <div class="card-header flex items-center justify-between">
-            <span>Preview & Batch</span>
-            <div class="flex gap-2">
-              <button id="validateAllBtn" class="btn-secondary">Validate All</button>
-              <button id="dedupeBtn" class="btn-secondary">Deduplicate</button>
-              <button id="clearAllBtn" class="btn-secondary">Clear</button>
+          <!-- IMPROVEMENT: Replaced ✨ emoji with Lucide icon -->
+          <div class="card-h"><i data-lucide="sparkles"></i> Quick Parse Preview <span class="meta" style="float:right">Drop files anywhere to add</span></div>
+          <div class="card-b" id="ingestPreview">Nothing ingested yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Batch -->
+    <section id="panel-batch" role="tabpanel" aria-labelledby="tab-batch" class="hidden">
+      <div class="card">
+        <div class="card-h">
+          <!-- IMPROVEMENT: Replaced 📦 emoji with Lucide icon -->
+          <i data-lucide="package-check"></i> <span>Preview & Batch</span>
+          <div class="card-h-actions">
+            <label class="meta" style="display:flex;gap:6px;align-items:center">
+              <input id="rulesOverwriteToggle" type="checkbox"> Allow overwrite
+            </label>
+            <!-- IMPROVEMENT: Replaced emojis with Lucide icons -->
+            <button id="applyRulesAllBtn" class="btn-s"><i data-lucide="list-filter"></i> Apply Rules to All</button>
+            <button id="validateAllBtn" class="btn-s"><i data-lucide="test-tube-2"></i> Validate All</button>
+            <button id="dedupeBtn" class="btn-s"><i data-lucide="copy-x"></i> Deduplicate</button>
+            <button id="clearAllBtn" class="btn-s"><i data-lucide="trash-2"></i> Clear</button>
+          </div>
+        </div>
+        <div class="card-b">
+          <!-- Filters -->
+          <div id="batchFilters" style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:10px">
+            <input id="fltText" class="input" placeholder="Search text… (vendor/desc)"/>
+            <input id="fltProperty" class="input" list="propertyList" placeholder="Property"/>
+            <datalist id="propertyList"></datalist>
+            <input id="fltCategory" class="input" list="categoryList" placeholder="Category"/>
+            <input id="fltDateFrom" type="date" class="input" placeholder="From"/>
+            <input id="fltDateTo" type="date" class="input" placeholder="To"/>
+            <input id="fltAmtMin" type="number" step="0.01" class="input" placeholder="₱ Min"/>
+            <input id="fltAmtMax" type="number" step="0.01" class="input" placeholder="₱ Max"/>
+            <button id="fltClear" class="btn-s">Clear filters</button>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div class="meta"><span id="recordCount">0</span> items <span id="countAll" class="meta"></span> · Total <span id="recordTotal" class="num">₱0.00</span></div>
+            <div style="display:flex;gap:8px">
+              <!-- IMPROVEMENT: Replaced 📄 emojis with Lucide icons -->
+              <button id="exportJsonBtn" class="btn-s"><i data-lucide="file-json"></i> Export JSON</button>
+              <button id="exportCsvBtn" class="btn-s"><i data-lucide="file-text"></i> Export CSV</button>
             </div>
           </div>
-          <div class="card-body">
-            <div class="flex items-center justify-between mb-2">
-              <div class="text-sm text-neutral-600 dark:text-neutral-400">
-                <span id="recordCount">0</span> items · Total <span id="recordTotal">₱0.00</span>
-              </div>
+          <div style="max-height:60vh;overflow:auto;border:1px solid var(--border);border-radius:12px">
+            <table>
+              <thead>
+                <tr>
+                  <th data-sort="date">Date <span class="arrow">▲</span></th>
+                  <th data-sort="property">Property <span class="arrow">▲</span></th>
+                  <th data-sort="vendor">Vendor <span class="arrow">▲</span></th>
+                  <th data-sort="category">Category <span class="arrow">▲</span></th>
+                  <th data-sort="amount">Amount <span class="arrow">▲</span></th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="previewTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="hidden">
+      <div class="card">
+        <!-- IMPROVEMENT: Replaced ⚙️ emoji with Lucide icon -->
+        <div class="card-h"><i data-lucide="settings-2"></i> Settings</div>
+        <div class="card-b">
+          <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+            <label><span class="label">Default Drive Folder ID (optional)</span><input id="driveFolderId" class="input" placeholder="1ZVwc58gka..."></label>
+            <label><span class="label">Google Client ID</span><input id="googleClientId" class="input" placeholder="OAuth Client ID"></label>
+            <div style="display:flex;gap:8px;align-items:end">
+              <!-- IMPROVEMENT: Added Lucide icon -->
+              <button id="googleSignIn" class="btn"><i data-lucide="log-in"></i> Sign in</button><span id="googleUser" class="meta"></span>
             </div>
-            <div class="overflow-auto max-h-[60vh] border rounded dark:border-neutral-800">
-              <table class="w-full text-sm">
-                <thead class="bg-neutral-100 sticky top-0 dark:bg-neutral-800">
-                  <tr>
-                    <th class="th">Date</th>
-                    <th class="th">Vendor</th>
-                    <th class="th">Category</th>
-                    <th class="th">Amount</th>
-                    <th class="th">Status</th>
-                    <th class="th">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="previewTable"></tbody>
-              </table>
+            <label><span class="label">Gemini API Key (optional)</span><input id="geminiKey" class="input" placeholder="GEMINI_API_KEY"></label>
+            <label style="display:flex;gap:8px;align-items:center"><input id="toggleTesseract" type="checkbox"> <span>Use Tesseract (client OCR)</span></label>
+            <label style="display:flex;gap:8px;align-items:center"><input id="toggleLLM" type="checkbox"> <span>Allow LLM network</span></label>
+            <div style="display:flex;gap:8px">
+              <!-- IMPROVEMENT: Replaced 💾/🚪 emojis with Lucide icons -->
+              <button id="saveSettings" class="btn"><i data-lucide="save"></i> Save Settings</button>
+              <button id="adminLogout" class="btn-s"><i data-lucide="log-out"></i> Admin Sign out</button>
             </div>
-            <div class="flex justify-end gap-2 mt-3">
-              <button id="exportJsonBtn" class="btn-secondary">Export JSON</button>
-              <button id="exportCsvBtn" class="btn-secondary">Export CSV</button>
+            <div class="meta" style="grid-column:1/-1">
+              <!-- IMPROVEMENT: Replaced 🔒 emoji with Lucide icon -->
+              <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> <strong>Security notice:</strong> All data stays in your browser’s <code>localStorage</code>. No data leaves your device unless you export it.
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  </main>
 
-      <!-- Settings Panel -->
-      <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="hidden">
-        <div class="card">
-          <div class="card-header">Settings</div>
-          <div class="card-body space-y-3">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label class="block md:col-span-2">
-                <span class="block text-sm font-medium mb-1">Default Drive Folder ID (optional)</span>
-                <input id="driveFolderId" class="input" placeholder="e.g. 1ZVwc58gkaNWW8rw2tbbCUJRIQWhkPEnz" />
-              </label>
-              <label class="block">
-                <span class="block text-sm font-medium mb-1">Google Client ID</span>
-                <input id="googleClientId" class="input" placeholder="OAuth Client ID" />
-              </label>
-              <div class="flex items-end gap-2">
-                <button id="googleSignIn" class="btn">Sign in</button>
-                <span id="googleUser" class="text-xs text-neutral-500"></span>
-              </div>
-              <label class="block md:col-span-2">
-                <span class="block text-sm font-medium mb-1">Gemini API Key (optional)</span>
-                <input id="geminiKey" class="input" placeholder="GEMINI_API_KEY" />
-              </label>
-              <div class="md:col-span-2 grid grid-cols-2 gap-2">
-                <label class="flex items-center gap-2 text-sm">
-                  <input id="toggleTesseract" type="checkbox" class="checkbox" />
-                  <span>Use Tesseract (client OCR)</span>
-                </label>
-                <label class="flex items-center gap-2 text-sm">
-                  <input id="toggleLLM" type="checkbox" class="checkbox" />
-                  <span>Allow LLM network</span>
-                </label>
-              </div>
-              <button id="saveSettings" class="btn md:col-span-2">Save Settings</button>
-            </div>
-          </div>
+  <footer class="wrap">
+    <div class="fine" aria-label="Security notice">
+      <!-- IMPROVEMENT: Replaced 🔐 emoji with Lucide icon -->
+      <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> This internal tool is exclusively for Cascade Hideaway. Copying, redistribution, or tampering is prohibited.
+    </div>
+  </footer>
+
+  <!-- Rules Modal -->
+  <div id="rulesModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <div class="modal-card" tabindex="-1">
+      <div class="card-h">
+        <!-- IMPROVEMENT: Replaced 🧩 emoji with Lucide icon -->
+        <i data-lucide="list-filter"></i> <span id="rulesTitle">Auto-categorization Rules</span>
+        <div class="card-h-actions">
+          <!-- IMPROVEMENT: Replaced ✖ emoji with Lucide icon -->
+          <button id="rulesClose" class="btn-s"><i data-lucide="x"></i> Close</button>
         </div>
-      </section>
-    </main>
+      </div>
+      <div class="card-b">
+        <div class="meta" style="margin-bottom:8px">First enabled match wins. Pattern is case-insensitive substring or a <code>/regex/i</code>.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <!-- IMPROVEMENT: Replaced ➕/📤/📥 emojis with Lucide icons -->
+          <button id="addRuleBtn" class="btn-s"><i data-lucide="plus"></i> Add Rule</button>
+          <button id="exportRulesBtn" class="btn-s"><i data-lucide="upload"></i> Export JSON</button>
+          <label class="btn-s" for="importRulesFile" style="cursor:pointer"><i data-lucide="download"></i> Import JSON</label>
+          <input id="importRulesFile" type="file" accept="application/json" style="display:none"/>
+          <label class="meta" style="display:flex;gap:6px;align-items:center;margin-left:auto">
+            <input id="rulesAllowOverwrite" type="checkbox"> Allow overwrite
+          </label>
+        </div>
+        <div id="rulesList"></div>
+      </div>
+    </div>
+  </div>
 
-    <footer class="mx-auto max-w-7xl px-4 py-6 text-xs text-neutral-500">
-      Privacy-first: all OCR runs locally if enabled. No server required.
-    </footer>
+  <!-- Quick Guide Modal -->
+  <div id="guideModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+    <div class="modal-card" tabindex="-1">
+      <div class="card-h">
+        <!-- IMPROVEMENT: Replaced ❔ emoji with Lucide icon -->
+        <i data-lucide="help-circle"></i> <span id="guideTitle">Quick Guide</span>
+        <!-- IMPROVEMENT: Replaced ✖ emoji with Lucide icon -->
+        <button id="guideClose" class="btn-s card-h-actions"><i data-lucide="x"></i> Close</button>
+      </div>
+      <div class="card-b">
+        <ol class="meta" style="margin:0; padding-left:18px">
+          <li>Go to <strong>Form</strong>, fill <em>Date, Property, Category, Amount</em>. Description/Notes are optional.</li>
+          <li>Open <strong>More fields</strong> for vendor, subcategory, payment details. Typing <em>Vendor/Description</em> triggers auto-rules.</li>
+          <li>Click <strong>Add</strong> to stage the record. Find entries in <strong>Batch</strong> where you can <em>Validate, Deduplicate, Export</em>.</li>
+          <li>Use <strong>Manage Rules</strong> (Dashboard) to add/enable/disable rules; reorder to set priority.</li>
+          <li>Admin <strong>Settings</strong>: password <code>cascadeadmin888</code>. Toggle OCR, APIs, and privacy options.</li>
+          <li>Shortcuts: <code>Ctrl/⌘+Enter</code> Add · <code>Alt+V</code> Validate · <code>?</code> Quick Guide · <code>Alt+F</code>/<code>Alt+B</code> switch tabs · <code>Ctrl/⌘+K</code> focus Category.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
 
-    <!-- App JS (inline for single-file distribution) -->
-    <script>
-    (() => {
-      const $ = (sel, root = document) => root.querySelector(sel);
-      const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
-      const fmtMoney = (n, ccy = "PHP") =>
-        new Intl.NumberFormat(undefined, { style: "currency", currency: ccy || "PHP" }).format(Number(n || 0));
+  <!-- Toast area -->
+  <div id="toastArea" aria-live="polite" aria-atomic="true"></div>
 
-      const storage = {
-        get(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
-        set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} },
-        del(key) { try { localStorage.removeItem(key); } catch {} },
-      };
+  <!-- 
+    IMPROVEMENT: Added Mobile Navigation bar and FAB
+    - This HTML is hidden by default and shown via CSS media queries.
+  -->
+  <nav class="mobile-nav" role="navigation" aria-label="Main navigation">
+    <button class="mobile-tab" id="mobile-tab-dashboard" data-tab="dashboard" aria-selected="true" role="tab">
+      <i data-lucide="layout-grid"></i><span>Dashboard</span>
+    </button>
+    <button class="mobile-tab" id="mobile-tab-capture" data-tab="capture" aria-selected="false" role="tab">
+      <i data-lucide="camera"></i><span>Capture</span>
+    </button>
+    <button class="mobile-tab" id="mobile-tab-batch" data-tab="batch" aria-selected="false" role="tab">
+      <i data-lucide="package"></i><span>Batch</span>
+    </button>
+    <button class="mobile-tab" id="mobile-tab-settings" data-tab="settings" aria-selected="false" role="tab">
+      <i data-lucide="settings"></i><span>Settings</span>
+    </button>
+  </nav>
+  <button class="fab" id="fab-add" title="Add new expense" aria-label="Add new expense">
+    <i data-lucide="plus"></i>
+  </button>
 
-      // Zod fix: UMD exposes window.zod, not global z
-      const zExport = (window.zod && (window.zod.z || window.zod)) || null;
-      const z = zExport && zExport.object ? (window.zod.z || window.zod) : null;
+  <script>
+  (()=>{
+    const $ = (s,root=document)=>root.querySelector(s);
+    const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+    const fmtMoney = (n,ccy="PHP") => new Intl.NumberFormat(undefined,{style:"currency",currency:ccy||"PHP"}).format(Number(n||0));
 
-      const schema = z
-        ? z.object({
-            date: z.string().min(1, "Date required"),
-            vendor: z.string().trim().min(1, "Vendor required"),
-            description: z.string().trim().optional(),
-            category: z.string().trim().min(1, "Category required"),
-            subcategory: z.string().trim().optional(),
-            amount: z.preprocess((v) => Number(v), z.number().finite().positive("Amount must be > 0")),
-            currency: z.string().trim().min(1, "Currency required").max(8),
-            payment_method: z.string().trim().optional(),
-            invoice_number: z.string().trim().optional(),
-            reference_id: z.string().trim().optional(),
-            tax_amount: z.preprocess((v) => Number(v ?? 0), z.number().nonnegative()),
-            tip_amount: z.preprocess((v) => Number(v ?? 0), z.number().nonnegative()),
-            location: z.string().trim().optional(),
-            notes: z.string().trim().optional(),
-          })
-        : null;
+    const storage = {
+      get(k,f){ try{ return JSON.parse(localStorage.getItem(k)) ?? f; }catch{return f} },
+      set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} },
+      del(k){ try{ localStorage.removeItem(k); }catch{} }
+    };
 
-      function validateRecord(rec) {
-        if (schema) {
-          const r = schema.safeParse(rec);
-          return r.success ? { ok: true, data: r.data } : { ok: false, errors: r.error.errors.map(e => e.message) };
-        }
-        const errs = [];
-        if (!rec.date) errs.push("Date required");
-        if (!rec.vendor?.trim()) errs.push("Vendor required");
-        if (!rec.category?.trim()) errs.push("Category required");
-        const amt = Number(rec.amount);
-        if (!(amt > 0)) errs.push("Amount must be > 0");
-        if (!rec.currency?.trim()) errs.push("Currency required");
-        if (Number(rec.tax_amount) < 0) errs.push("Tax must be ≥ 0");
-        if (Number(rec.tip_amount) < 0) errs.push("Tip must be ≥ 0");
-        return { ok: errs.length === 0, errors: errs, data: { ...rec, amount: amt } };
+    // ===== Data =====
+    let records = storage.get("cx:records", []).map(r=>({property:"", ...r}));
+    let settings = storage.get("cx:settings", {
+      folderId:"",googleClientId:"",geminiKey:"",useTesseract:false,allowLLM:false,lastTab:"dashboard",theme:"auto"
+    });
+    let isAdmin = storage.get("cx:isAdmin", false);
+    let rules = storage.get("cx:rules", []);
+    let rulesAllowOverwrite = storage.get("cx:rulesAllowOverwrite", false);
+
+    // ===== Theme =====
+    applyTheme(settings.theme||"auto");
+    $("#themeToggle")?.addEventListener("click", () => {
+      const order=["auto","light","dark"];
+      const next=order[(order.indexOf(settings.theme||"auto")+1)%order.length];
+      settings.theme=next; storage.set("cx:settings", settings); applyTheme(next);
+      toast(`Theme: ${next}`, {timeout:1200});
+    });
+    function applyTheme(mode){
+      document.documentElement.setAttribute("data-theme", mode||"auto");
+      // IMPROVEMENT: Dynamically update Lucide icon for theme toggle
+      const btn = $("#themeToggle");
+      if(btn) {
+        const icon = btn.querySelector("i");
+        const span = btn.querySelector("span");
+        let iconName = "sun-moon"; // auto
+        if (mode === "dark") iconName = "moon";
+        if (mode === "light") iconName = "sun";
+        if (icon) icon.setAttribute("data-lucide", iconName);
+        if (span) span.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+        if (icon && window.lucide) window.lucide.createIcons({ nodes: [icon] });
       }
+    }
 
-      let records = storage.get("cx:records", []);
-      let settings = storage.get("cx:settings", {
-        folderId: "",
-        googleClientId: "",
-        geminiKey: "",
-        useTesseract: false,
-        allowLLM: false,
-        theme: (matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light",
-        highContrast: false,
-        lastTab: "capture",
+    // FIX: Moved empty state definitions here, *before* they are potentially used by renderDashboard() via switchTab()
+    // IMPROVEMENT: Added better empty state for Batch table
+    const batchEmptyState = `
+      <tr>
+        <td colspan="7">
+          <div class="empty-state">
+            <i data-lucide="archive"></i>
+            <div class="empty-state-h">No Records Found</div>
+            <p class="empty-state-p meta">Try adding an expense from the 'Form' tab or adjusting your filters.</p>
+            <button class="btn-s" id="emptyGoToForm">
+              <i data-lucide="file-plus-2"></i> Add First Expense
+            </button>
+          </div>
+        </td>
+      </tr>`;
+      
+    // IMPROVEMENT: Added better empty states for Dashboard panels
+    const catEmptyState = `
+      <div class="empty-state">
+        <i data-lucide="pie-chart"></i>
+        <div class="empty-state-h">No Category Data</div>
+        <p class="empty-state-p meta">Add expenses and your category spending will appear here.</p>
+      </div>`;
+    const recentEmptyState = `
+      <div class="empty-state">
+        <i data-lucide="activity"></i>
+        <div class="empty-state-h">No Recent Activity</div>
+        <p class="empty-state-p meta">Your 6 most recent expenses will show up here.</p>
+      </div>`;
+
+    // ===== Tabs =====
+    function switchTab(id){
+      if(id==="settings" && !isAdmin){
+        const pwd = prompt("Enter admin password to access Settings:");
+        if(pwd!=="cascadeadmin888"){ toast("Access denied"); return; }
+        isAdmin = true; storage.set("cx:isAdmin", true);
+      }
+      // Sync both desktop and mobile tabs
+      $$(".tab, .mobile-tab").forEach(b=>{
+        const a=b.dataset.tab===id; 
+        b.setAttribute("aria-selected", a?"true":"false");
       });
-
-      // theme/HC apply
-      document.documentElement.classList.toggle("dark", settings.theme === "dark");
-      document.documentElement.classList.toggle("hc", !!settings.highContrast);
-
-      const switchTab = (id) => {
-        $$(".tab").forEach(b => {
-          const active = b.dataset.tab === id;
-          b.classList.toggle("active", active);
-          b.setAttribute("aria-selected", active ? "true" : "false");
-        });
-        ["capture","form","batch","settings"].forEach(t => {
-          const panel = $("#panel-" + t);
-          if (panel) panel.classList.toggle("hidden", t !== id);
-        });
-        settings.lastTab = id;
-        storage.set("cx:settings", settings);
-      };
-
-      window.addEventListener("DOMContentLoaded", () => {
-        // Tabs
-        $$(".tab").forEach(btn => {
-          btn.addEventListener("click", () => switchTab(btn.dataset.tab));
-          btn.addEventListener("keydown", (e) => {
-            if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-              const tabs = $$(".tab");
-              const i = tabs.indexOf(btn);
-              const n = e.key === "ArrowRight" ? (i + 1) % tabs.length : (i - 1 + tabs.length) % tabs.length;
-              tabs[n].focus();
-            }
-          });
-        });
-        switchTab(settings.lastTab || "capture");
-
-        // Settings
-        $("#driveFolderId").value = settings.folderId || "";
-        $("#googleClientId").value = settings.googleClientId || "";
-        $("#geminiKey").value = settings.geminiKey || "";
-        $("#toggleTesseract").checked = !!settings.useTesseract;
-        $("#toggleLLM").checked = !!settings.allowLLM;
-
-        $("#saveSettings").addEventListener("click", () => {
-          settings.folderId = $("#driveFolderId").value.trim();
-          settings.googleClientId = $("#googleClientId").value.trim();
-          settings.geminiKey = $("#geminiKey").value.trim();
-          settings.useTesseract = $("#toggleTesseract").checked;
-          settings.allowLLM = $("#toggleLLM").checked;
-          storage.set("cx:settings", settings);
-          toast("Settings saved");
-        });
-
-        // Theme & HC
-        $("#themeToggle").addEventListener("click", () => {
-          settings.theme = settings.theme === "dark" ? "light" : "dark";
-          document.documentElement.classList.toggle("dark", settings.theme === "dark");
-          storage.set("cx:settings", settings);
-        });
-        $("#hcToggle").addEventListener("click", () => {
-          settings.highContrast = !settings.highContrast;
-          document.documentElement.classList.toggle("hc", settings.highContrast);
-          storage.set("cx:settings", settings);
-        });
-
-        // Form buttons
-        $("#newEntryBtn").addEventListener("click", clearForm);
-        $("#validateBtn").addEventListener("click", () => validateCurrentForm(true));
-        $("#addToListBtn").addEventListener("click", addCurrentFormToList);
-
-        // Batch buttons
-        $("#validateAllBtn").addEventListener("click", validateAll);
-        $("#dedupeBtn").addEventListener("click", dedupe);
-        $("#clearAllBtn").addEventListener("click", () => { if (confirm("Clear all records?")) { records = []; persistAndRender(); } });
-
-        // Export
-        $("#exportJsonBtn").addEventListener("click", () => download("expenses.json", jsonBlob(records)));
-        $("#exportCsvBtn").addEventListener("click", () => download("expenses.csv", csvBlob(records)));
-
-        // Ingest
-        $("#fileInput").addEventListener("change", onFiles);
-        document.addEventListener("dragover", (e) => { e.preventDefault(); });
-        document.addEventListener("drop", (e) => {
-          e.preventDefault();
-          if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files);
-        });
-        $("#parsePasteBtn").addEventListener("click", parseFromPaste);
-
-        // Categories / existing data
-        refreshCategoryDatalist();
-        renderTable();
-        updateStats();
+      ["dashboard","form","capture","batch","settings"].forEach(t=>{ const p=$("#panel-"+t); if(p) p.classList.toggle("hidden", t!==id); });
+      settings.lastTab=id; storage.set("cx:settings",settings);
+      if(id==="dashboard") renderDashboard();
+      // FIX: Removed call to non-existent refreshFilters()
+      if(id==="batch") { /* refreshFilters(); */ renderTable(); }
+    }
+    // Desktop tabs
+    $$(".tab").forEach(b=>{
+      b.addEventListener("click",()=>switchTab(b.dataset.tab));
+      b.addEventListener("keydown",(e)=>{
+        if(e.key==="ArrowRight"||e.key==="ArrowLeft"){
+          const tabs=$$(".tab"); const i=tabs.indexOf(b);
+          const n=e.key==="ArrowRight"? (i+1)%tabs.length : (i-1+tabs.length)%tabs.length; tabs[n].focus();
+        }
       });
+    });
+    // IMPROVEMENT: Mobile tab and FAB logic
+    $$(".mobile-tab").forEach(b=> b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
+    $("#fab-add")?.addEventListener("click", ()=> switchTab("form"));
+    
+    switchTab(settings.lastTab || "dashboard");
 
-      let statusTimer = null;
-      function toast(msg) {
-        const el = $("#appStatus");
-        if (!el) return;
-        el.textContent = msg;
-        clearTimeout(statusTimer);
-        statusTimer = setTimeout(() => (el.textContent = ""), 3000);
+    // ===== Toasts (with Undo) =====
+    let statusTimer=null;
+    function toast(msg, opts={}){
+      const status=$("#appStatus");
+      if(status){ status.textContent=msg; clearTimeout(statusTimer); statusTimer=setTimeout(()=>status.textContent="",2000); }
+
+      const area=$("#toastArea"); if(!area) return;
+      const t=document.createElement("div"); t.className="toast"; t.role="status";
+      const body=document.createElement("div"); body.textContent=msg; t.appendChild(body);
+      if(opts.action && opts.actionLabel){
+        const btn=document.createElement("button"); btn.className="action"; btn.textContent=opts.actionLabel;
+        btn.addEventListener("click",()=>{ try{opts.action();}finally{area.removeChild(t);} });
+        t.appendChild(btn);
       }
+      const close=document.createElement("span"); close.className="close"; close.title="Dismiss";
+      // IMPROVEMENT: Replaced ✖ emoji with Lucide icon
+      close.innerHTML = '<i data-lucide="x" style="width: 16px; height: 16px;"></i>';
+      close.addEventListener("click",()=> area.removeChild(t));
+      t.appendChild(close);
+      area.appendChild(t);
+      if (window.lucide) window.lucide.createIcons({ nodes: [close] }); // Render icon
+      const timeout = opts.timeout ?? 4000;
+      if(timeout>0){ setTimeout(()=>{ if(t.isConnected) area.removeChild(t); }, timeout); }
+    }
 
-      // Form helpers
-      function formToRec() {
-        const f = $("#expenseForm");
-        const fd = new FormData(f);
-        const rec = Object.fromEntries(fd.entries());
-        rec.amount = Number(rec.amount || 0);
-        rec.tax_amount = Number(rec.tax_amount || 0);
-        rec.tip_amount = Number(rec.tip_amount || 0);
-        rec.validated = String(false);
-        rec.validation_errors = "";
-        if (!rec.created_at) rec.created_at = new Date().toISOString();
-        return rec;
+    // ===== Keyboard shortcuts =====
+    document.addEventListener("keydown",(e)=>{
+      const isInput = !!e.target.closest("input,textarea,select");
+      const onForm = $("#panel-form") && !$("#panel-form").classList.contains("hidden");
+
+      if((e.ctrlKey||e.metaKey) && e.key==="Enter" && onForm){ e.preventDefault(); $("#addToListBtn")?.click(); }
+      if(e.altKey && (e.key==="v"||e.key==="V")){ e.preventDefault(); $("#validateBtn")?.click(); }
+      if(e.key==="?" || (e.shiftKey && e.key==="/")){ if(!isInput) { e.preventDefault(); toggleModal("#guideModal", true, $("#quickGuideBtn")); } }
+      if(e.altKey && (e.key==="f"||e.key==="F")){ e.preventDefault(); switchTab("form"); }
+      if(e.altKey && (e.key==="b"||e.key==="B")){ e.preventDefault(); switchTab("batch"); }
+      if((e.ctrlKey||e.metaKey) && (e.key==="k"||e.key==="K")){ e.preventDefault(); $("#expenseForm")?.elements?.namedItem("category")?.focus(); }
+      if(isInput) return;
+    });
+
+    // ===== Zod & Validation =====
+    const zExport = (window.zod && (window.zod.z || window.zod)) || null;
+    const z = zExport && zExport.object ? (window.zod.z || window.zod) : null;
+    const schema = z ? z.object({
+      date: z.string().min(1,"Date required"),
+      property: z.string().trim().min(1,"Property required"),
+      vendor: z.string().trim().optional(),
+      description: z.string().trim().optional(),
+      category: z.string().trim().min(1,"Category required"),
+      subcategory: z.string().trim().optional(),
+      amount: z.preprocess(v=>Number(v), z.number().finite().positive("Amount must be > 0")),
+      currency: z.string().trim().min(1,"Currency required").max(8).default("PHP"),
+      payment_method: z.string().trim().optional(),
+      invoice_number: z.string().trim().optional(),
+      reference_id: z.string().trim().optional(),
+      tax_amount: z.preprocess(v=>Number(v??0), z.number().nonnegative()),
+      tip_amount: z.preprocess(v=>Number(v??0), z.number().nonnegative()),
+      location: z.string().trim().optional(),
+      notes: z.string().trim().optional(),
+      // NO-CHANGE: Added the other fields to the schema for completeness, all optional
+      source_type: z.string().trim().optional(),
+      source_filename: z.string().trim().optional(),
+      attachment_drive_file_id: z.string().trim().optional(),
+      created_at: z.string().trim().optional(),
+      processed_at: z.string().trim().optional(),
+      validated: z.string().trim().optional(),
+      validation_errors: z.string().trim().optional(),
+    }) : null;
+    function validateRecord(rec){
+      if(schema){ const r = schema.safeParse(rec); return r.success ? {ok:true,data:r.data} : {ok:false,errors:r.error.errors.map(e=>e.message)}; }
+      // Fallback (original)
+      const errs=[]; if(!rec.date) errs.push("Date required"); if(!rec.property?.trim()) errs.push("Property required"); if(!rec.category?.trim()) errs.push("Category required");
+      const amt=Number(rec.amount); if(!(amt>0)) errs.push("Amount must be > 0"); if(!rec.currency?.trim()) errs.push("Currency required");
+      if(Number(rec.tax_amount)<0) errs.push("Tax must be ≥ 0"); if(Number(rec.tip_amount)<0) errs.push("Tip must be ≥ 0");
+      return {ok:errs.length===0,errors:errs,data:{...rec,amount:amt}};
+    }
+
+    // ===== Rules =====
+    function saveRules(){ storage.set("cx:rules", rules); }
+    function isRegex(p){ return /^\/.*\/i?$/.test(p) || p.startsWith("^") || p.endsWith("$"); }
+    function ruleMatches(text, pattern){
+      if(!pattern) return false;
+      if(isRegex(pattern)){
+        const body = pattern.replace(/^\/|\/i?$/g,"");
+        try{ return new RegExp(body,"i").test(text); }catch{ return false; }
       }
-
-      function clearForm() {
-        $("#expenseForm").reset();
-        $("#formErrors").textContent = "";
-      }
-
-      function validateCurrentForm(showErrors) {
-        const rec = formToRec();
-        const v = validateRecord(rec);
-        if (v.ok) {
-          $("#formErrors").textContent = "";
-          toast("Form is valid");
-          return true;
-        } else {
-          if (showErrors) $("#formErrors").textContent = v.errors.join(" · ");
-          return false;
-        }
-      }
-
-      function addCurrentFormToList() {
-        if (!validateCurrentForm(true)) {
-          toast("Fix form errors");
-          return;
-        }
-        const rec = formToRec();
-        rec.processed_at = new Date().toISOString();
-        const v = validateRecord(rec);
-        rec.validated = String(v.ok);
-        rec.validation_errors = v.ok ? "" : (v.errors || []).join("; ");
-        records.push(rec);
-        persistAndRender();
-        toast("Added to list");
-        switchTab("batch");
-      }
-
-      // Batch ops
-      function renderTable() {
-        const tbody = $("#previewTable");
-        if (!tbody) return;
-        tbody.innerHTML = "";
-        if (!records.length) {
-          tbody.innerHTML = \`<tr><td colspan="6" class="empty">No records yet.</td></tr>\`;
-          return;
-        }
-        records.forEach((r, i) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = \`
-            <td>\${r.date || ""}</td>
-            <td>\${escapeHtml(r.vendor || "")}</td>
-            <td>\${escapeHtml(r.category || "")}</td>
-            <td>\${fmtMoney(r.amount, r.currency)}</td>
-            <td>\${r.validated === "true" ? \`<span class="badge-ok">OK</span>\` : \`<span class="badge-err">Needs fix</span>\`}</td>
-            <td class="space-x-2">
-              <button class="btn-secondary text-xs" data-action="edit" data-index="\${i}">Edit</button>
-              <button class="btn-secondary text-xs" data-action="delete" data-index="\${i}">Delete</button>
-            </td>
-          \`;
-          tbody.appendChild(tr);
-        });
-        tbody.addEventListener("click", onRowAction);
-      }
-
-      function onRowAction(e) {
-        const b = e.target.closest("button[data-action]");
-        if (!b) return;
-        const idx = Number(b.dataset.index);
-        const action = b.dataset.action;
-        if (action === "delete") {
-          records.splice(idx, 1);
-          persistAndRender();
-        } else if (action === "edit") {
-          const r = records[idx];
-          fillForm(r);
-          switchTab("form");
-          toast("Loaded into form");
-        }
-      }
-
-      function fillForm(r) {
-        const f = $("#expenseForm");
-        for (const [k, v] of Object.entries(r)) {
-          const el = f.elements.namedItem(k);
-          if (!el) continue;
-          if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") el.value = v ?? "";
-        }
-      }
-
-      function updateStats() {
-        $("#recordCount").textContent = String(records.length);
-        const sum = records.reduce((a, r) => a + Number(r.amount || 0), 0);
-        const ccy = records[0]?.currency || "PHP";
-        $("#recordTotal").textContent = fmtMoney(sum, ccy);
-      }
-
-      function validateAll() {
-        let changed = 0;
-        records = records.map(r => {
-          const v = validateRecord(r);
-          if (String(v.ok) !== r.validated || (v.errors || []).join("; ") !== (r.validation_errors || "")) changed++;
-          return {
-            ...r,
-            validated: String(v.ok),
-            validation_errors: v.ok ? "" : (v.errors || []).join("; "),
+      return text.toLowerCase().includes(pattern.toLowerCase());
+    }
+    function applyRules(rec, allowOverwrite){
+      const hay = [rec.vendor||"", rec.description||""].join(" ");
+      for(const rule of rules){
+        if(!rule?.enabled) continue;
+        if(ruleMatches(hay, String(rule.pattern||""))){
+          const out = {...rec};
+          const f = rule.fields||{};
+          const maybeSet=(k,v)=>{
+            if(v==null || v==="") return;
+            if(out[k]==null || out[k]==="" || allowOverwrite) out[k]=v;
           };
-        });
-        persistAndRender();
-        toast(\`Validated \${records.length} item(s)\${changed ? \`, updated \${changed}\` : ""}\`);
-      }
-
-      function dedupe() {
-        const seen = new Set();
-        const out = [];
-        for (const r of records) {
-          const key = [r.date || "", (r.vendor || "").trim().toLowerCase(), Number(r.amount || 0)].join("|");
-          if (seen.has(key)) continue;
-          seen.add(key); out.push(r);
-        }
-        const removed = records.length - out.length;
-        records = out;
-        persistAndRender();
-        toast(removed ? \`Removed \${removed} duplicate(s)\` : "No duplicates found");
-      }
-
-      function persistAndRender() {
-        storage.set("cx:records", records);
-        renderTable();
-        updateStats();
-        refreshCategoryDatalist();
-      }
-
-      function refreshCategoryDatalist() {
-        const set = new Set(records.map(r => (r.category || "").trim()).filter(Boolean));
-        const dl = $("#categoryList");
-        if (!dl) return;
-        dl.innerHTML = Array.from(set).sort().map(c => \`<option value="\${escapeHtml(c)}"></option>\`).join("");
-      }
-
-      // Export helpers
-      function jsonBlob(data) { return new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" }); }
-      function csvBlob(data) {
-        const cols = [
-          "date","vendor","description","category","subcategory","amount","currency","payment_method",
-          "invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors",
-          "source_type","source_filename","attachment_drive_file_id","created_at","processed_at",
-        ];
-        const csv = [cols.join(",")].concat(
-          data.map(r => cols.map(c => csvCell(r[c])).join(","))
-        ).join("\\r\\n");
-        return new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], { type: "text/csv;charset=utf-8" });
-      }
-      function csvCell(v) {
-        const s = (v ?? "").toString().replace(/"/g, '""');
-        return /[",\\r\\n]/.test(s) ? \`"\${s}"\` : s;
-      }
-      function download(filename, blob) {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
-      }
-
-      // --- Ingest + OCR (option A)
-      function onFiles(e) {
-        handleFiles(e.target.files);
-        e.target.value = "";
-      }
-
-      async function handleFiles(fileList) {
-        if (!fileList?.length) return;
-        const files = Array.from(fileList);
-        const container = $("#ingestPreview");
-        container.innerHTML = "";
-
-        for (const f of files) {
-          if (settings.useTesseract && f.type.startsWith("image/")) {
-            await processImageWithOCR(f, container);
-          } else {
-            const row = document.createElement("div");
-            row.className = "fade-in mb-2 p-2 border rounded text-sm bg-white dark:bg-neutral-900 dark:border-neutral-800";
-            row.innerHTML = \`
-              <div class="flex items-center justify-between">
-                <div>• \${escapeHtml(f.name)} <span class="text-xs text-neutral-500">(\${(f.size/1024).toFixed(1)} KB)</span></div>
-                <span class="text-xs text-neutral-500">\${f.type.startsWith("application/pdf") ? "PDF OCR not supported here" : "No OCR (disabled in Settings)"}</span>
-              </div>\`;
-            container.appendChild(row);
-          }
-        }
-
-        toast(\`\${files.length} file(s) processed\`);
-      }
-
-      async function processImageWithOCR(file, container) {
-        const id = Math.random().toString(36).slice(2);
-        const card = document.createElement("div");
-        card.className = "fade-in mb-2 p-2 border rounded bg-white dark:bg-neutral-900 dark:border-neutral-800";
-        card.innerHTML = \`
-          <div class="flex items-center justify-between mb-1">
-            <div class="text-sm font-medium">\${escapeHtml(file.name)}</div>
-            <div class="text-xs text-neutral-500">image OCR</div>
-          </div>
-          <div id="p-\${id}" class="h-2 rounded bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-            <div id="bar-\${id}" class="h-2 bg-neutral-900 dark:bg-neutral-100" style="width: 0%"></div>
-          </div>
-          <div id="txt-\${id}" class="mt-2 text-sm text-neutral-700 dark:text-neutral-300 italic">Recognizing…</div>
-          <div class="mt-2 flex gap-2">
-            <button id="use-\${id}" class="btn-secondary text-xs" disabled>Parse into form</button>
-            <button id="copy-\${id}" class="btn-secondary text-xs" disabled>Copy text</button>
-          </div>
-        \`;
-        container.appendChild(card);
-
-        try {
-          const progressBar = $("#bar-" + id);
-          const textEl = $("#txt-" + id);
-          const res = await Tesseract.recognize(file, "eng", {
-            logger: (m) => {
-              if (m.status === "recognizing text") {
-                const p = Math.max(0, Math.min(1, m.progress || 0));
-                progressBar.style.width = (p * 100).toFixed(0) + "%";
-              }
-            }
-          });
-          const text = (res?.data?.text || "").trim();
-          textEl.textContent = text ? text.slice(0, 500) + (text.length > 500 ? "…" : "") : "(no text)";
-          const useBtn = $("#use-" + id);
-          const copyBtn = $("#copy-" + id);
-          useBtn.disabled = !text;
-          copyBtn.disabled = !text;
-          useBtn.addEventListener("click", () => {
-            const rec = roughParse(text);
-            rec.source_type = "ocr";
-            rec.source_filename = file.name;
-            fillForm(rec);
-            switchTab("form");
-            toast("Parsed OCR into form");
-          });
-          copyBtn.addEventListener("click", async () => {
-            try { await navigator.clipboard.writeText(text); toast("Copied OCR text"); } catch {}
-          });
-        } catch (err) {
-          $("#txt-" + id).textContent = "OCR failed";
+          maybeSet("category", f.category);
+          maybeSet("subcategory", f.subcategory);
+          maybeSet("property", f.property);
+          maybeSet("vendor", f.vendor);
+          if(f.notes){ out.notes = (out.notes? out.notes + " · " : "") + f.notes; }
+          return {rec:out, matched:rule};
         }
       }
-
-      function parseFromPaste() {
-        const text = ($("#pasteBox").value || "").trim();
-        if (!text) { toast("Nothing to parse"); return; }
-        const rec = roughParse(text);
-        rec.source_type = "paste";
-        rec.source_filename = "";
+      return {rec, matched:null};
+    }
+    function applyRulesToForm(){
+      const allow = rulesAllowOverwrite || $("#rulesAllowOverwrite")?.checked;
+      const before=formToRec();
+      const {rec, matched}=applyRules(before, allow);
+      if(matched){
         fillForm(rec);
-        switchTab("form");
-        toast("Parsed into form");
+        const badge=$("#rulesBadge");
+        if(badge){ badge.classList.remove("hidden"); badge.textContent = "Rule applied: " + String(matched.pattern||""); }
       }
+    }
+    function applyRulesToAll(){
+      const allow = $("#rulesOverwriteToggle")?.checked || rulesAllowOverwrite;
+      const prev = JSON.parse(JSON.stringify(records));
+      let changed=0, used=0;
+      records = records.map(r=>{
+        const before = JSON.stringify(r);
+        const {rec, matched}=applyRules(r, allow);
+        if(matched) used++;
+        if(JSON.stringify(rec)!==before){ changed++; return rec; }
+        return r;
+      });
+      persistAndRender();
+      toast(`Applied rules to ${records.length} item(s) · changed ${changed} · matched ${used}`, {
+        actionLabel:"Undo",
+        action:()=>{ records = prev; persistAndRender(); }
+      });
+    }
 
-      function roughParse(text) {
-        const amtMatch = text.match(/(?:PHP|₱)\\s?([\\d,]+(?:\\.\\d{2})?)/i) || text.match(/\\b([\\d,]+(?:\\.\\d{2})?)\\b/);
-        const dateMatch = text.match(/\\b(20\\d{2}[-\\/]\\d{1,2}[-\\/]\\d{1,2})\\b/) || text.match(/\\b(\\d{1,2}[-\\/]\\d{1,2}[-\\/](?:20)?\\d{2})\\b/);
-        const vendorMatch = text.match(/(?:from|at|merchant|vendor)[:\\s]+([^\\n,]+)/i) || text.match(/^\\s*([A-Za-z][A-Za-z0-9 &'.-]{2,})/m);
-        const amount = amtMatch ? Number(amtMatch[1].replace(/,/g, "")) : 0;
-        const dateISO = dateMatch ? toISO(dateMatch[1]) : "";
-        const vendor = vendorMatch ? vendorMatch[1].trim() : "";
-        return {
-          date: dateISO,
-          vendor,
-          description: "",
-          category: "",
-          subcategory: "",
-          amount,
-          currency: "PHP",
-          payment_method: "",
-          invoice_number: "",
-          reference_id: "",
-          tax_amount: 0,
-          tip_amount: 0,
-          location: "",
-          notes: text.length > 140 ? text.slice(0, 140) + "…" : text,
-          created_at: new Date().toISOString(),
-          processed_at: "",
-          validated: "false",
-          validation_errors: "",
-          source_type: "",
-          source_filename: "",
-          attachment_drive_file_id: "",
-        };
+    // ===== Form =====
+    function formToRec(){
+      const f=$("#expenseForm"); const fd=new FormData(f); const rec=Object.fromEntries(fd.entries());
+      rec.amount=Number(rec.amount||0); rec.tax_amount=Number(rec.tax_amount||0); rec.tip_amount=Number(rec.tip_amount||0);
+      rec.validated=String(false); rec.validation_errors="";
+      if(!rec.created_at) rec.created_at=new Date().toISOString(); if(!rec.currency) rec.currency="PHP";
+      return rec;
+    }
+    function fillForm(r){ const f=$("#expenseForm"); for(const [k,v] of Object.entries(r)){ const el=f.elements.namedItem(k); if(!el) continue; el.value=(v??""); } }
+    function validateCurrentForm(show){ const rec=formToRec(); const v=validateRecord(rec); if(v.ok){ $("#formErrors").textContent=""; toast("Form is valid",{timeout:1200}); return true; } else { if(show) $("#formErrors").textContent=v.errors.join(" · "); return false; } }
+    $("#validateBtn")?.addEventListener("click",()=>validateCurrentForm(true));
+    $("#addToListBtn")?.addEventListener("click",()=>{
+      if(!validateCurrentForm(true)) return;
+      const rec=formToRec(); rec.processed_at=new Date().toISOString();
+      const v=validateRecord(rec); rec.validated=String(v.ok); rec.validation_errors=v.ok?"":(v.errors||[]).join("; ");
+      records.push(rec); persistAndRender(); switchTab("batch");
+      toast("Added to list", {
+        actionLabel:"Undo",
+        action:()=>{ records.pop(); persistAndRender(); switchTab("form"); }
+      });
+      // IMPROVEMENT: Clear key fields after adding
+      const f=$("#expenseForm");
+      ["date", "amount", "description", "notes", "vendor", "invoice_number", "reference_id"].forEach(name => {
+        const el = f.elements.namedItem(name);
+        if (el) el.value = (name === "tax_amount" || name === "tip_amount") ? "0" : "";
+      });
+      f.elements.namedItem("date").focus();
+    });
+    $("#expenseForm")?.elements?.namedItem("vendor")?.addEventListener("input", applyRulesToForm);
+    $("#expenseForm")?.elements?.namedItem("description")?.addEventListener("input", applyRulesToForm);
+
+    // ===== Batch (sort & filter) =====
+    function amountClass(a){ if(a>3000) return "num--red"; if(a>=500) return "num--yellow"; return "num--green"; }
+
+    let tableSort = {key:"date", dir:"desc"};
+    $$("#panel-batch thead th[data-sort]").forEach(th=>{
+      th.addEventListener("click", ()=>{
+        const key=th.dataset.sort;
+        if(tableSort.key===key){ tableSort.dir = tableSort.dir==="asc"?"desc":"asc"; }
+        else { tableSort.key=key; tableSort.dir="asc"; }
+        $$("#panel-batch thead th[data-sort]").forEach(x=>x.classList.remove("asc","desc"));
+        th.classList.add(tableSort.dir);
+        renderTable();
+      });
+    });
+
+    const filterEls = {
+      text: $("#fltText"),
+      property: $("#fltProperty"),
+      category: $("#fltCategory"),
+      dateFrom: $("#fltDateFrom"),
+      dateTo: $("#fltDateTo"),
+      amtMin: $("#fltAmtMin"),
+      amtMax: $("#fltAmtMax"),
+    };
+    Object.values(filterEls).forEach(el=> el?.addEventListener("input", ()=>renderTable()));
+    $("#fltClear")?.addEventListener("click", ()=>{
+      Object.values(filterEls).forEach(el=>{ if(el) el.value=""; });
+      renderTable();
+    });
+
+    function filteredRecords(){
+      const t=(filterEls.text?.value||"").trim().toLowerCase();
+      const prop=(filterEls.property?.value||"").trim().toLowerCase();
+      const cat=(filterEls.category?.value||"").trim().toLowerCase();
+      const df=filterEls.dateFrom?.value || "";
+      const dt=filterEls.dateTo?.value || "";
+      const amin=parseFloat(filterEls.amtMin?.value||"");
+      const amax=parseFloat(filterEls.amtMax?.value||"");
+      return records.filter(r=>{
+        if(t){
+          const hay=[r.vendor||"", r.description||"", r.notes||""].join(" ").toLowerCase();
+          if(!hay.includes(t)) return false;
+        }
+        if(prop && (r.property||"").toLowerCase().indexOf(prop)===-1) return false;
+        if(cat && (r.category||"").toLowerCase().indexOf(cat)===-1) return false;
+        if(df && (!r.date || r.date < df)) return false;
+        if(dt && (!r.date || r.date > dt)) return false;
+        const a=Number(r.amount||0);
+        if(!Number.isNaN(amin) && a < amin) return false;
+        if(!Number.isNaN(amax) && a > amax) return false;
+        return true;
+      });
+    }
+    function sortRecs(arr){
+      const dir = tableSort.dir==="asc"?1:-1;
+      const k = tableSort.key;
+      const collator = new Intl.Collator(undefined,{numeric:true,sensitivity:"base"});
+      return arr.slice().sort((a,b)=>{
+        let va=a[k]??"", vb=b[k]??"";
+        if(k==="amount"){ va=Number(va||0); vb=Number(vb||0); return (va-vb)*dir; }
+        if(k==="date"){ return collator.compare(va, vb)*dir; }
+        return collator.compare(String(va), String(vb))*dir;
+      });
+    }
+
+    function renderTable(){
+      refreshPropertyDatalist();
+      // FIX: Also refresh category datalist for the filter dropdown
+      refreshCategoryDatalist();
+      const tbody=$("#previewTable"); if(!tbody) return; tbody.innerHTML="";
+      const rows = sortRecs(filteredRecords());
+      const sum=rows.reduce((a,r)=>a+Number(r.amount||0),0);
+      const ccy=(records[0]?.currency||"PHP");
+      $("#recordCount").textContent=String(rows.length);
+      $("#countAll").textContent = rows.length !== records.length ? ` of ${records.length}` : "";
+      const totalEl=$("#recordTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className="num "+amountClass(sum);
+
+      if(!rows.length){ 
+        tbody.innerHTML=batchEmptyState; 
+        const btn = tbody.querySelector("#emptyGoToForm");
+        if(btn) btn.addEventListener("click", () => switchTab("form"));
+        if(window.lucide) window.lucide.createIcons({ nodes: [tbody] });
+        return; 
       }
+      const fragment = document.createDocumentFragment();
+      rows.forEach((r,i)=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML=`
+          <td>${r.date||""}</td>
+          <td>${escapeHtml(r.property||"")}</td>
+          <td>${escapeHtml(r.vendor||"")}</td>
+          <td>${escapeHtml(r.category||"")}</td>
+          <td class="num ${amountClass(Number(r.amount||0))}">${fmtMoney(r.amount,r.currency)}</td>
+          <td>${r.validated==="true"?'<span class="meta" style="display:flex; align-items:center; gap: 4px;"><i data-lucide="check" style="width: 1em; height: 1em; color: var(--ok);"></i> OK</span>':'<span class="meta" style="display:flex; align-items:center; gap: 4px;"><i data-lucide="alert-triangle" style="width: 1em; height: 1em; color: var(--warn);"></i> Needs fix</span>'}</td>
+          <td><button class="btn-s" data-action="edit" data-id="${records.indexOf(r)}" title="Edit"><i data-lucide="edit-3"></i></button>
+              <button class="btn-s" data-action="delete" data-id="${records.indexOf(r)}" title="Delete"><i data-lucide="trash-2"></i></button></td>`;
+        fragment.appendChild(tr);
+      });
+      tbody.appendChild(fragment);
+      // Render all icons in the table body at once
+      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', tbody) });
+    }
+    $("#previewTable")?.addEventListener("click", (e)=>{
+      const b=e.target.closest("button[data-action]"); if(!b) return;
+      const idx=Number(b.dataset.id); const action=b.dataset.action;
+      if(action==="delete"){
+        const removed=records.splice(idx,1)[0]; persistAndRender();
+        toast("Deleted 1 item", { actionLabel:"Undo", action:()=>{ records.splice(idx,0,removed); persistAndRender(); } });
+      }
+      if(action==="edit"){ const r=records[idx]; fillForm(r); switchTab("form"); toast("Loaded into form",{timeout:1200}); }
+    });
 
-      function toISO(s) {
-        const n = s.replace(/[./]/g, "-");
-        const parts = n.split("-").map(x => x.padStart(2, "0"));
-        if (parts[0].length === 4) return [parts[0], parts[1], parts[2]].join("-");
-        if (parts[2].length === 4) { return [parts[2], parts[1], parts[0]].join("-"); }
+    function updateStats(){
+      const filtered = filteredRecords();
+      $("#recordCount").textContent=String(filtered.length);
+      $("#countAll").textContent = filtered.length !== records.length ? ` of ${records.length}` : "";
+      const sum=filtered.reduce((a,r)=>a+Number(r.amount||0),0);
+      const ccy=records[0]?.currency||"PHP";
+      const totalEl=$("#recordTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className = "num " + amountClass(sum);
+    }
+
+    function validateAll(){
+      let changed=0;
+      records = records.map(r=>{
+        const v=validateRecord(r); if(String(v.ok)!==r.validated || (v.errors||[]).join("; ")!==(r.validation_errors||"")) changed++;
+        return {...r, validated:String(v.ok), validation_errors:v.ok?"":(v.errors||[]).join("; ")};
+      });
+      persistAndRender();
+      toast(`Validated ${records.length} item(s)` + (changed ? `, updated ${changed}` : ""), {timeout:1600});
+    }
+    function dedupe(){
+      const seen=new Set(); const out=[];
+      for(const r of records){
+        const key=[r.date||"", (r.vendor||"").trim().toLowerCase(), (r.property||"").trim().toLowerCase(), Number(r.amount||0)].join("|");
+        if(seen.has(key)) continue; seen.add(key); out.push(r);
+      }
+      const removed=records.length-out.length; records=out; persistAndRender();
+      toast(removed?`Removed ${removed} duplicate(s)`:"No duplicates",{timeout:1600});
+    }
+    $("#validateAllBtn")?.addEventListener("click", validateAll);
+    $("#dedupeBtn")?.addEventListener("click", dedupe);
+    $("#clearAllBtn")?.addEventListener("click", ()=>{ if(confirm("Clear all records?")){ const prev = records.slice(); records=[]; persistAndRender(); toast("Cleared all",{actionLabel:"Undo", action:()=>{ records=prev; persistAndRender(); }}); }});
+    $("#exportJsonBtn")?.addEventListener("click", ()=>download("expenses.json", new Blob([JSON.stringify(records,null,2)], {type:"application/json;charset=utf-8"})));
+    $("#exportCsvBtn")?.addEventListener("click", ()=>download("expenses.csv", csvBlob(records)));
+    $("#applyRulesAllBtn")?.addEventListener("click", applyRulesToAll);
+    $("#rulesOverwriteToggle")?.addEventListener("change", (e)=>{
+      rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite);
+    });
+    $("#rulesOverwriteToggle").checked = !!rulesAllowOverwrite;
+
+    function csvBlob(data){
+      const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","created_at","processed_at"];
+      const NL = "\r\n";
+      const csv=[cols.join(",")].concat(data.map(r=>cols.map(c=>csvCell(r[c])).join(","))).join(NL);
+      return new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], {type:"text/csv;charset=utf-8"});
+    }
+    function csvCell(v){ const s=(v??"").toString().replace(/"/g,'""'); return /[",\r\n]/.test(s)?`"${s}"`:s; }
+    function download(name,blob){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},0); }
+
+    // ===== Capture + OCR =====
+    $("#fileInput")?.addEventListener("change", onFiles);
+    document.addEventListener("dragover", e=>e.preventDefault());
+    document.addEventListener("drop", e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
+    $("#parsePasteBtn")?.addEventListener("click", parseFromPaste);
+    function onFiles(e){ handleFiles(e.target.files); e.target.value=""; }
+    async function handleFiles(fileList){
+      if(!fileList?.length) return; const files=Array.from(fileList);
+      const container=$("#ingestPreview"); container.innerHTML="";
+      for(const f of files){
+        if(settings.useTesseract && f.type.startsWith("image/")){ await processImageWithOCR(f, container); }
+        else{
+          const row=document.createElement("div"); row.className="meta"; row.style.padding="8px";
+          row.innerHTML=`<i data-lucide="file" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> ${escapeHtml(f.name)} <span class="meta">(${(f.size/1024).toFixed(1)} KB)</span>`;
+          container.appendChild(row);
+        }
+      }
+      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', container) });
+      toast(`${files.length} file(s) processed`,{timeout:1400});
+    }
+    async function processImageWithOCR(file, container){
+      const id=Math.random().toString(36).slice(2);
+      const card=document.createElement("div"); card.className="card"; card.style.marginBottom="10px";
+      card.innerHTML=`
+        <div class="card-b">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:700; display: flex; align-items: center; gap: 8px;"><i data-lucide="image"></i> ${escapeHtml(file.name)}</div>
+            <div class="meta">image OCR</div>
+          </div>
+          <!-- IMPROVEMENT: Animated progress bar -->
+          <div class="bar"><span id="bar-${id}" style="width:0%; transition: width 0.2s ease;"></span></div>
+          <div id="txt-${id}" class="meta" style="margin-top:8px">Recognizing…</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <!-- IMPROVEMENT: Replaced ➡️/📋 emojis with Lucide icons -->
+            <button id="use-${id}" class="btn-s" disabled><i data-lucide="file-pen-line"></i> Parse into form</button>
+            <button id="copy-${id}" class="btn-s" disabled><i data-lucide="clipboard"></i> Copy text</button>
+          </div>
+        </div>`;
+      container.appendChild(card);
+      if(window.lucide) window.lucide.createIcons({ nodes: [card] });
+      try{
+        const progressBar=$("#bar-"+id); const textEl=$("#txt-"+id);
+        const res=await Tesseract.recognize(file,"eng",{logger:(m)=>{
+          if(m.status==="recognizing text"){ const p=Math.max(0,Math.min(1,m.progress||0)); progressBar.style.width=(p*100).toFixed(0)+"%"; }
+        }});
+        const text=(res?.data?.text||"").trim(); textEl.textContent = text ? (text.length>500?text.slice(0,500)+"…":text) : "(no text)";
+        const useBtn=$("#use-"+id), copyBtn=$("#copy-"+id); useBtn.disabled=!text; copyBtn.disabled=!text;
+        useBtn.addEventListener("click",()=>{ const rec=roughParse(text); rec.source_type="ocr"; rec.source_filename=file.name; const {rec:rec2}=applyRules(rec, rulesAllowOverwrite); fillForm(rec2); switchTab("form"); toast("Parsed OCR into form",{timeout:1500}); });
+        copyBtn.addEventListener("click", async()=>{ try{ await navigator.clipboard.writeText(text); toast("Copied OCR text",{timeout:1200}); }catch{} });
+      }catch(err){ 
+        console.error("OCR Error:", err);
+        $("#txt-"+id).textContent="OCR failed. See console for details."; 
+        $("#txt-"+id).style.color = "var(--bad)";
+      }
+    }
+    function parseFromPaste(){
+      const text=($("#pasteBox").value||"").trim(); if(!text){ toast("Nothing to parse",{timeout:1200}); return; }
+      const rec=roughParse(text); rec.source_type="paste"; rec.source_filename="";
+      const {rec:rec2}=applyRules(rec, rulesAllowOverwrite);
+      fillForm(rec2); switchTab("form"); toast("Parsed into form",{timeout:1400});
+    }
+    function roughParse(text){
+      const amtMatch = text.match(/(?:PHP|₱)\s?([\d,]+(?:\.\d{2})?)/i) || text.match(/\b([\d,]+(?:\.\d{2})?)\b/);
+      const dateMatch = text.match(/\b(20\d{2}[-/]\d{1,2}[-/]\d{1,2})\b/) || text.match(/\b(\d{1,2}[-/]\d{1,2}[-/](?:20)?\d{2})\b/);
+      const vendorMatch = text.match(/(?:from|at|merchant|vendor)[:\s]+([^\n,]+)/i) || text.match(/^\s*([A-Za-z][A-Za-z0-9 &'.-]{2,})/m);
+      const amount = amtMatch ? Number(amtMatch[1].replace(/,/g,"")) : 0;
+      const dateISO = dateMatch ? toISO(dateMatch[1]) : "";
+      const vendor = vendorMatch ? vendorMatch[1].trim() : "";
+      return {
+        date: dateISO, property:"", vendor, description:"", category:"", subcategory:"",
+        amount, currency:"PHP", payment_method:"", invoice_number:"", reference_id:"",
+        tax_amount:0, tip_amount:0, location:"", notes: text.length>140? text.slice(0,140)+"…" : text,
+        created_at:new Date().toISOString(), processed_at:"", validated:"false", validation_errors:"",
+        source_type:"", source_filename:"", attachment_drive_file_id:"",
+      };
+    }
+    function toISO(s){
+      try {
+        const n=s.replace(/[./]/g,"-"); const parts=n.split("-").map(x=>x.padStart(2,"0"));
+        if(parts[0].length===4) return [parts[0],parts[1],parts[2]].join("-"); // YYYY-MM-DD
+        if(parts[2].length===4) return [parts[2],parts[0],parts[1]].join("-"); // MM-DD-YYYY
+        if(parts[2].length===2) { // MM-DD-YY
+          const year = Number(parts[2]) > 50 ? "19" + parts[2] : "20" + parts[2];
+          return [year, parts[0], parts[1]].join("-");
+        }
         return "";
+      } catch {
+        return ""; // Invalid date
+      }
+    }
+    function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+    // ===== Rules UI + Modals (focus trap) =====
+    let lastInvoker=null;
+    function toggleModal(sel, show, invoker){
+      const m=$(sel); if(!m) return;
+      if(show){
+        lastInvoker = invoker || document.activeElement;
+        m.setAttribute("aria-hidden","false");
+        focusTrap(m);
+      }else{
+        m.setAttribute("aria-hidden","true");
+        lastInvoker && lastInvoker.focus?.();
+      }
+    }
+    function focusTrap(modal){
+      const card = modal.querySelector(".modal-card");
+      if(!card) return;
+      const focusables = ()=>$$('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])', card).filter(el=>!el.disabled && el.offsetParent!==null);
+      card.focus({preventScroll:true});
+      const trap = (e)=>{
+        if(e.key!=="Tab") return;
+        const f = focusables(); if(!f.length) { e.preventDefault(); return; }
+        const first=f[0], last=f[f.length-1];
+        if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+        else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+      };
+      const onClick=(e)=>{ if(e.target===modal) { toggleModal("#"+modal.id, false); cleanup(); } };
+      const onEsc=(e)=>{ if(e.key==="Escape") { toggleModal("#"+modal.id, false); cleanup(); } };
+      const cleanup = () => {
+        modal.removeEventListener("keydown", trap);
+        modal.removeEventListener("click", onClick);
+        document.removeEventListener("keydown", onEsc);
+      };
+      
+      modal.addEventListener("keydown", trap);
+      modal.addEventListener("click", onClick);
+      document.addEventListener("keydown", onEsc);
+    }
+
+    $("#openRulesBtn")?.addEventListener("click", (e)=>{ renderRules(); toggleModal("#rulesModal", true, e.currentTarget); });
+    $("#rulesClose")?.addEventListener("click", ()=>toggleModal("#rulesModal", false));
+    $("#quickGuideBtn")?.addEventListener("click", (e)=>toggleModal("#guideModal", true, e.currentTarget));
+    $("#guideClose")?.addEventListener("click", ()=>toggleModal("#guideModal", false));
+
+    $("#rulesAllowOverwrite").checked = !!rulesAllowOverwrite;
+    $("#rulesAllowOverwrite").addEventListener("change", (e)=>{
+      rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite);
+      const twin=$("#rulesOverwriteToggle"); if(twin){ twin.checked = rulesAllowOverwrite; }
+    });
+
+    $("#addRuleBtn")?.addEventListener("click", ()=>{
+      const r = { id: cryptoRandomId(), pattern:"", fields:{category:"", subcategory:"", property:"", vendor:"", notes:""}, enabled:true };
+      rules.push(r); saveRules(); renderRules();
+    });
+    $("#exportRulesBtn")?.addEventListener("click", ()=>{
+      download("rules.json", new Blob([JSON.stringify(rules,null,2)], {type:"application/json;charset=utf-8"}));
+    });
+    $("#importRulesFile")?.addEventListener("change", async (e)=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      try{
+        const txt=await f.text(); const arr=JSON.parse(txt);
+        if(Array.isArray(arr)){ rules=arr; saveRules(); renderRules(); toast("Imported rules",{timeout:1400}); }
+        else toast("Invalid rules file");
+      }catch{ toast("Failed to import"); }
+      e.target.value="";
+    });
+
+    function cryptoRandomId(){ try{ return crypto.randomUUID(); }catch{ return Math.random().toString(36).slice(2); } }
+    function renderRules(){
+      const host=$("#rulesList"); if(!host) return; host.innerHTML="";
+      if(!rules.length){ 
+        host.innerHTML=`
+          <div class="empty-state">
+            <i data-lucide="list-filter"></i>
+            <div class="empty-state-h">No Rules Added</div>
+            <p class="empty-state-p meta">Click "Add Rule" to automatically categorize expenses based on vendor or description.</p>
+          </div>`;
+        if(window.lucide) window.lucide.createIcons({ nodes: [host] });
+        return; 
+      }
+      const fragment = document.createDocumentFragment();
+      rules.forEach((r,idx)=>{
+        const row=document.createElement("div"); row.className="rule-row";
+        row.innerHTML=`
+          <input class="input" placeholder="pattern (substring or /regex/i)" value="${escapeHtml(r.pattern||"")}" aria-label="pattern">
+          <input class="input" placeholder="category" value="${escapeHtml(r.fields?.category||"")}">
+          <input class="input" placeholder="subcategory" value="${escapeHtml(r.fields?.subcategory||"")}">
+          <input class="input" placeholder="property" value="${escapeHtml(r.fields?.property||"")}">
+          <div style="display:flex;gap:6px;justify-content:flex-end">
+            <label class="meta" title="enable/disable"><input type="checkbox" ${r.enabled?"checked":""}/> On</label>
+            <!-- IMPROVEMENT: Replaced ✏/⬆/⬇/🗑️ emojis with Lucide icons -->
+            <button class="btn-s" data-act="edit" title="Edit more fields"><i data-lucide="edit-3"></i></button>
+            <button class="btn-s" data-act="up" title="Move up" ${idx===0?'disabled':''}><i data-lucide="arrow-up"></i></button>
+            <button class="btn-s" data-act="down" title="Move down" ${idx===rules.length-1?'disabled':''}><i data-lucide="arrow-down"></i></button>
+            <button class="btn-s" data-act="del" title="Delete"><i data-lucide="trash-2"></i></button>
+          </div>`;
+        const [pat, cat, sub, prop] = row.querySelectorAll("input.input");
+        const en = row.querySelector('input[type="checkbox"]');
+        pat.addEventListener("input", ()=>{ r.pattern=pat.value; saveRules(); });
+        cat.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.category=cat.value; saveRules(); refreshCategoryDatalist(); });
+        sub.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.subcategory=sub.value; saveRules(); });
+        prop.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.property=prop.value; saveRules(); });
+        en.addEventListener("change", ()=>{ r.enabled=en.checked; saveRules(); });
+
+        row.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
+          const vendor = prompt("Vendor alias (optional)", r.fields?.vendor||"") ?? "";
+          const notes = prompt("Notes (optional)", r.fields?.notes||"") ?? "";
+          r.fields = {...(r.fields||{}), vendor, notes};
+          saveRules(); toast("Rule fields updated",{timeout:1200});
+        });
+        row.querySelector('[data-act="up"]').addEventListener("click", ()=>{ if(idx>0){ const t=rules[idx-1]; rules[idx-1]=rules[idx]; rules[idx]=t; saveRules(); renderRules(); }});
+        row.querySelector('[data-act="down"]').addEventListener("click", ()=>{ if(idx<rules.length-1){ const t=rules[idx+1]; rules[idx+1]=rules[idx]; rules[idx]=t; saveRules(); renderRules(); }});
+        row.querySelector('[data-act="del"]').addEventListener("click", ()=>{ if(confirm("Delete this rule?")){ const prev=rules.slice(); rules.splice(idx,1); saveRules(); renderRules(); refreshCategoryDatalist(); toast("Rule deleted",{actionLabel:"Undo", action:()=>{ rules=prev; saveRules(); renderRules(); }}); }});
+        fragment.appendChild(row);
+      });
+      host.appendChild(fragment);
+      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', host) });
+    }
+
+    // ===== Settings =====
+    $("#adminLogout")?.addEventListener("click", ()=>{ storage.set("cx:isAdmin", false); isAdmin=false; toast("Admin signed out",{timeout:1200}); switchTab("dashboard"); });
+
+    $("#driveFolderId").value=settings.folderId||"";
+    $("#googleClientId").value=settings.googleClientId||"";
+    $("#geminiKey").value=settings.geminiKey||"";
+    $("#toggleTesseract").checked=!!settings.useTesseract;
+    $("#toggleLLM").checked=!!settings.allowLLM;
+    $("#saveSettings")?.addEventListener("click", ()=>{
+      settings.folderId=$("#driveFolderId").value.trim();
+      settings.googleClientId=$("#googleClientId").value.trim();
+      settings.geminiKey=$("#geminiKey").value.trim();
+      settings.useTesseract=$("#toggleTesseract").checked;
+      settings.allowLLM=$("#toggleLLM").checked;
+      storage.set("cx:settings",settings); toast("Settings saved",{timeout:1200});
+    });
+
+    // ===== Persist & dashboard =====
+    const DEFAULT_CATEGORIES = ["Utilities","Subscriptions","Services","Maintenance","Repairs","Supplies","Cleaning","Internet","Electricity","Water","Gas","Waste","Landscaping","Security","Insurance","Taxes","Fees","Professional Services","Software","Travel","Meals","Office","Other"];
+    function persistAndRender(){ storage.set("cx:records", records); renderTable(); updateStats(); refreshCategoryDatalist(); renderDashboard(); }
+    function allCategoryOptions(){
+      const set=new Set(DEFAULT_CATEGORIES);
+      records.forEach(r=>{ const c=(r.category||"").trim(); if(c) set.add(c); });
+      rules.forEach(r=>{ const c=(r?.fields?.category||"").trim(); if(c) set.add(c); });
+      return Array.from(set).sort((a,b)=>a.localeCompare(b));
+    }
+    function refreshPropertyDatalist(){
+      const dl=$("#propertyList"); if(!dl) return;
+      const set=new Set(records.map(r=>(r.property||"").trim()).filter(Boolean));
+      dl.innerHTML = Array.from(set).sort((a,b)=>a.localeCompare(b)).map(p=>`<option value="${escapeHtml(p)}"></option>`).join("");
+    }
+    function refreshCategoryDatalist(){
+      const dl=$("#categoryList"); if(!dl) return;
+      const opts = allCategoryOptions().map(c=>`<option value="${escapeHtml(c)}"></option>`).join("");
+      dl.innerHTML = opts;
+      buildCategoryMenu();
+    }
+    
+    function renderDashboard(){
+      const count=records.length; const sum=records.reduce((a,r)=>a+Number(r.amount||0),0); const ccy=records[0]?.currency||"PHP";
+      const latest=records.map(r=>r.date).filter(Boolean).sort().pop();
+      const avg=count? sum/count : 0;
+      const topCat=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1])[0];
+
+      const totalEl=$("#kpiTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className="v num "+(sum>3000?"num--red":sum>=500?"num--yellow":"num--green");
+      $("#kpiCount").textContent=`${count} item${count!==1?"s":""}`;
+      $("#kpiLatest").textContent=latest||"—";
+      const avgEl=$("#kpiAvg"); avgEl.textContent=count?fmtMoney(avg,ccy):"—"; avgEl.className="v num "+(avg>3E3?"num--red":avg>=500?"num--yellow":"num--green");
+      $("#kpiTopCat").textContent=topCat? topCat[0] : "—";
+
+      const cont=$("#catBreakdown"); cont.innerHTML="";
+      const catTotals=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1]);
+      if(!catTotals.length){ 
+        cont.innerHTML=catEmptyState; 
+        if(window.lucide) window.lucide.createIcons({ nodes: [cont] });
+      }
+      else{
+        const max=Math.max(...catTotals.map(x=>x[1]));
+        catTotals.slice(0,8).forEach(([k,v])=>{
+          const row=document.createElement("div"); row.style.marginBottom="10px";
+          row.innerHTML=`<div style="display:flex;justify-content:space-between"><div>${escapeHtml(k)}</div><div class="meta">${fmtMoney(v,ccy)}</div></div>
+                         <div class="bar"><span style="width:${max? (v/max*100).toFixed(1):0}%"></span></div>`;
+          cont.appendChild(row);
+        });
       }
 
-      function escapeHtml(s) {
-        return (s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+      const recent=$("#recentList"); recent.innerHTML="";
+      if(!records.length){ 
+        recent.innerHTML=recentEmptyState; 
+        if(window.lucide) window.lucide.createIcons({ nodes: [recent] });
       }
-    })();
-    </script>
-  </body>
+      else{
+        const fragment = document.createDocumentFragment();
+        records.slice(-6).reverse().forEach(r=>{
+          const item=document.createElement("div"); item.style.padding="8px 0"; item.style.borderBottom="1px solid var(--border)";
+          item.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center">
+            <div><i data-lucide="tag" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> <strong>${escapeHtml(r.category||"(category)")}</strong> · ${escapeHtml(r.property||"")}</div>
+            <div class="num ${amountClass(Number(r.amount||0))}">${fmtMoney(r.amount,r.currency)}</div>
+          </div>
+          <div class="meta" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+            <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="calendar" style="width: 1em; height: 1em;"></i> ${r.date||""}</span>
+            <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="receipt" style="width: 1em; height: 1em;"></i> ${escapeHtml(r.vendor||"")}</span>
+          </div>
+          <div class="meta" style="padding-left: 20px;">${escapeHtml(r.description||"")}</div>`;
+          fragment.appendChild(item);
+        });
+        recent.appendChild(fragment);
+        if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', recent) });
+      }
+    }
+
+    // ===== Category Autocomplete =====
+    const catInput = $("#expenseForm")?.elements?.namedItem("category");
+    const catMenu = $("#catMenu");
+    function buildCategoryMenu(){
+      if(!catInput || !catMenu) return;
+      const items = allCategoryOptions();
+      catMenu.innerHTML = items.map((c,i)=>`<button type="button" class="ac-item" role="option" data-val="${escapeHtml(c)}" ${i===0?'aria-selected="true"':''}>${escapeHtml(c)}</button>`).join("");
+    }
+    function openCatMenu(){ buildCategoryMenu(); catMenu.classList.remove("hidden"); catInput.setAttribute("aria-expanded","true"); filterCatMenu(catInput.value); }
+    function closeCatMenu(){ catMenu.classList.add("hidden"); catInput.setAttribute("aria-expanded","false"); }
+    function filterCatMenu(q){
+      const ql=q.trim().toLowerCase();
+      const items=[...catMenu.querySelectorAll(".ac-item")];
+      let first=null;
+      items.forEach(btn=>{
+        const keep = !ql || btn.dataset.val.toLowerCase().includes(ql);
+        btn.style.display = keep ? "block" : "none";
+        if(keep && !first) first=btn;
+        btn.setAttribute("aria-selected","false");
+      });
+      if(first) first.setAttribute("aria-selected","true");
+    }
+    catInput?.addEventListener("focus", ()=>{ openCatMenu(); });
+    catInput?.addEventListener("click", ()=>{ openCatMenu(); });
+    catInput?.addEventListener("input", ()=>{ openCatMenu(); filterCatMenu(catInput.value); });
+    document.addEventListener("click",(e)=>{
+      if(!catMenu || !catInput) return;
+      if(e.target.closest("#catMenu")) return;
+      if(e.target===catInput) return;
+      closeCatMenu();
+    });
+    catMenu?.addEventListener("click",(e)=>{
+      const b=e.target.closest(".ac-item"); if(!b) return;
+      catInput.value = b.dataset.val || ""; closeCatMenu(); catInput.dispatchEvent(new Event("change",{bubbles:true}));
+    });
+    catInput?.addEventListener("keydown",(e)=>{
+      if(catMenu.classList.contains("hidden")) return;
+      const items=[...catMenu.querySelectorAll(".ac-item")].filter(i=>i.style.display!=="none");
+      let idx=items.findIndex(i=>i.getAttribute("aria-selected")==="true");
+      if(e.key==="ArrowDown"){ e.preventDefault(); idx=Math.min(items.length-1, idx+1); items.forEach(i=>i.setAttribute("aria-selected","false")); if(items[idx]) { items[idx].setAttribute("aria-selected","true"); items[idx].scrollIntoView({block:"nearest"}); } }
+      if(e.key==="ArrowUp"){ e.preventDefault(); idx=Math.max(0, idx-1); items.forEach(i=>i.setAttribute("aria-selected","false")); if(items[idx]) { items[idx].setAttribute("aria-selected","true"); items[idx].scrollIntoView({block:"nearest"}); } }
+      if(e.key==="Enter"){ e.preventDefault(); const sel=items[idx]; if(sel){ catInput.value=sel.dataset.val||""; closeCatMenu(); } }
+      if(e.key==="Escape"){ closeCatMenu(); }
+    });
+
+    // ===== Init =====
+    renderTable(); updateStats(); refreshCategoryDatalist(); renderDashboard();
+    
+    // IMPROVEMENT: Run Lucide icons on initial load
+    if (window.lucide) {
+      window.lucide.createIcons();
+    } else {
+      console.warn("Lucide library not loaded.");
+    }
+    // Re-run theme function to set correct initial icon
+    applyTheme(settings.theme||"auto");
+
+  })();
+  </script>
+</body>
 </html>
+

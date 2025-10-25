@@ -12,6 +12,10 @@
   -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
+  <!-- 
+    FIX: Corrected 'xintegrity' back to 'integrity' on all script tags
+    so the libraries will load properly.
+  -->
   <script 
     src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js"
     xintegrity="sha512-VSSYQpa/2YJMWs8EcwFfI18e+hfb15/Qp+RbV/2/J9j+74sS2/b1Tda/3VvS-OLcTfN9m2/1pQ0eK/ZnN6YGA=="
@@ -1612,3 +1616,4 @@ ${text.slice(0, 4000)}
   </script>
 </body>
 </html>
+

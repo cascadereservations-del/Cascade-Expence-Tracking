@@ -1,62 +1,47 @@
-/** Apps Script Web App (Proxy) for Cascade Expense Capture - CORS Fixed */
-
-// Handle OPTIONS preflight for CORS
-function doOptions(e) {
-  return ContentService.createTextOutput()
-    .setMimeType(ContentService.MimeType.TEXT)
-    .setContent('')
-    .setHeaders({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400'
-    });
-}
+/** Apps Script Web App (Proxy) for Cascade Expense Capture - WORKING VERSION */
 
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  output.setContent(JSON.stringify({
     status: 'ok',
     message: 'Cascade Expense Proxy is running. Use POST requests.',
-    version: '6.5.1',
+    version: '6.5.2',
     timestamp: new Date().toISOString()
-  }))
-  .setMimeType(ContentService.MimeType.JSON)
-  .setHeaders({
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json'
-  });
+  }));
+  return output;
 }
 
 function doPost(e) {
-  const cors = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
-  };
-  
   try {
-    const data = JSON.parse(e.postData.contents || '{}');
-    const action = (data.action || '').toLowerCase();
-    const sheetId = data.sheetId;
-    const sheetName = data.sheetName || 'Sheet1';
-    const folderId = data.folderId || '';
-    const taxonomy = data.taxonomy || [];
-    const payload = data.payload || {};
+    var data = JSON.parse(e.postData.contents || '{}');
+    var action = (data.action || '').toLowerCase();
+    var sheetId = data.sheetId;
+    var sheetName = data.sheetName || 'Sheet1';
+    var folderId = data.folderId || '';
+    var taxonomy = data.taxonomy || [];
+    var payload = data.payload || {};
 
     if (action === 'ping') {
-      return ok_({ ok: true, time: new Date().toISOString(), version: '6.5.1' }, cors);
+      return createJsonResponse({
+        ok: true,
+        time: new Date().toISOString(),
+        version: '6.5.2'
+      });
     }
 
     if (!sheetId) {
-      return fail_("Missing sheetId parameter", cors);
+      return createJsonResponse({
+        ok: false,
+        error: 'Missing sheetId parameter'
+      });
     }
 
     if (action === 'setupsheet') {
-      const sh = openOrCreate_(sheetId, sheetName);
-      const meta = openOrCreate_(sheetId, 'Meta');
+      var sh = openOrCreate_(sheetId, sheetName);
+      var meta = openOrCreate_(sheetId, 'Meta');
       
-      const HEADERS = [
+      var HEADERS = [
         "date", "property", "vendor", "description", "category", "subcategory",
         "amount", "currency", "payment_method", "invoice_number", "reference_id",
         "tax_amount", "tip_amount", "location", "notes", "validated",
@@ -65,38 +50,35 @@ function doPost(e) {
         "sheet_appended_at", "created_at", "processed_at"
       ];
       
-      // Set headers
       sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
       sh.setFrozenRows(1);
       sh.autoResizeColumns(1, HEADERS.length);
       
-      // Format date column
       sh.getRange(2, 1, sh.getMaxRows() - 1, 1).setNumberFormat('yyyy-mm-dd');
-      
-      // Format currency columns (amount, tax_amount, tip_amount)
       sh.getRange(2, 7, sh.getMaxRows() - 1, 1).setNumberFormat('#,##0.00');
       sh.getRange(2, 12, sh.getMaxRows() - 1, 2).setNumberFormat('#,##0.00');
       
-      // Store taxonomy in Meta sheet
       if (taxonomy && taxonomy.length) {
         meta.clear();
-        meta.getRange(1, 1, taxonomy.length, 1).setValues(taxonomy.map(c => [c]));
+        meta.getRange(1, 1, taxonomy.length, 1).setValues(taxonomy.map(function(c) { return [c]; }));
       }
       
-      // Set data validation for category column (E)
-      const rule = SpreadsheetApp.newDataValidation()
+      var rule = SpreadsheetApp.newDataValidation()
         .requireValueInList(taxonomy, true)
         .setAllowInvalid(false)
         .build();
-      const lastRow = Math.max(sh.getMaxRows(), 2000);
+      var lastRow = Math.max(sh.getMaxRows(), 2000);
       sh.getRange(2, 5, lastRow - 1, 1).setDataValidation(rule);
       
-      return ok_({ ok: true, message: 'Sheet setup completed successfully' }, cors);
+      return createJsonResponse({
+        ok: true,
+        message: 'Sheet setup completed successfully'
+      });
     }
 
     if (action === 'appendrecord') {
-      const sh = openOrCreate_(sheetId, sheetName);
-      const HEADERS = [
+      var sh = openOrCreate_(sheetId, sheetName);
+      var HEADERS = [
         "date", "property", "vendor", "description", "category", "subcategory",
         "amount", "currency", "payment_method", "invoice_number", "reference_id",
         "tax_amount", "tip_amount", "location", "notes", "validated",
@@ -105,71 +87,80 @@ function doPost(e) {
         "sheet_appended_at", "created_at", "processed_at"
       ];
       
-      const r = payload.rec || {};
-      const row = HEADERS.map(k => r[k] || '');
+      var r = payload.rec || {};
+      var row = HEADERS.map(function(k) { return r[k] || ''; });
       sh.appendRow(row);
       
-      return ok_({ ok: true, message: 'Record appended successfully' }, cors);
+      return createJsonResponse({
+        ok: true,
+        message: 'Record appended successfully'
+      });
     }
 
     if (action === 'uploaddataset') {
       if (!folderId) {
-        return fail_("Missing folderId parameter", cors);
+        return createJsonResponse({
+          ok: false,
+          error: 'Missing folderId parameter'
+        });
       }
       
-      const folder = DriveApp.getFolderById(folderId);
-      const ts = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+      var folder = DriveApp.getFolderById(folderId);
+      var ts = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
       
-      const jsonBlob = Utilities.newBlob(
+      var jsonBlob = Utilities.newBlob(
         JSON.stringify(payload.records || [], null, 2),
         'application/json',
-        `expenses_${ts}.json`
+        'expenses_' + ts + '.json'
       );
       
-      const csvBlob = Utilities.newBlob(
+      var csvBlob = Utilities.newBlob(
         toCsv_(payload.records || []),
         'text/csv',
-        `expenses_${ts}.csv`
+        'expenses_' + ts + '.csv'
       );
       
-      const jf = folder.createFile(jsonBlob);
+      var jf = folder.createFile(jsonBlob);
       folder.createFile(csvBlob);
       
-      return ok_({
+      return createJsonResponse({
         ok: true,
         fileId: jf.getId(),
         fileName: jf.getName(),
         message: 'Dataset uploaded successfully'
-      }, cors);
+      });
     }
 
     if (action === 'uploadattachment') {
       if (!folderId) {
-        return fail_("Missing folderId parameter", cors);
+        return createJsonResponse({
+          ok: false,
+          error: 'Missing folderId parameter'
+        });
       }
       
-      const bytes = Utilities.base64Decode(payload.base64 || '');
-      const blob = Utilities.newBlob(
+      var bytes = Utilities.base64Decode(payload.base64 || '');
+      var blob = Utilities.newBlob(
         bytes,
         payload.mime || 'application/octet-stream',
         payload.name || 'upload.bin'
       );
       
-      const file = DriveApp.getFolderById(folderId).createFile(blob);
+      var file = DriveApp.getFolderById(folderId).createFile(blob);
       
-      return ok_({
+      return createJsonResponse({
         ok: true,
         fileId: file.getId(),
         fileName: file.getName(),
         message: 'Attachment uploaded successfully'
-      }, cors);
+      });
     }
 
     if (action === 'aicategorize') {
-      const r = payload.record || {};
-      const text = ((r.vendor || '') + ' ' + (r.description || '')).toLowerCase();
+      var r = payload.record || {};
+      var text = ((r.vendor || '') + ' ' + (r.description || '')).toLowerCase();
       
-      const rules = [
+      var rules = [
         [/electric|kwh|power|energy|electricity|meralco/i, "Electricity"],
         [/water|maynilad|manila water/i, "Water"],
         [/internet|wifi|fiber|converge|pldt/i, "Internet"],
@@ -183,8 +174,8 @@ function doPost(e) {
         [/supply|supplies/i, "Supplies"]
       ];
       
-      let category = r.category || "";
-      for (let i = 0; i < rules.length; i++) {
+      var category = r.category || "";
+      for (var i = 0; i < rules.length; i++) {
         if (rules[i][0].test(text)) {
           category = rules[i][1];
           break;
@@ -193,49 +184,44 @@ function doPost(e) {
       
       if (!category) category = 'Other';
       
-      return ok_({
+      return createJsonResponse({
         ok: true,
         category: category,
         message: 'Category suggested successfully'
-      }, cors);
+      });
     }
 
-    return fail_("Unknown action: " + action, cors);
+    return createJsonResponse({
+      ok: false,
+      error: 'Unknown action: ' + action
+    });
     
-  } catch (e) {
-    return fail_("Server error: " + e.toString(), cors);
+  } catch (err) {
+    return createJsonResponse({
+      ok: false,
+      error: 'Server error: ' + err.toString()
+    });
   }
 }
 
+function createJsonResponse(obj) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  output.setContent(JSON.stringify(obj));
+  return output;
+}
+
 function openOrCreate_(sheetId, title) {
-  const ss = SpreadsheetApp.openById(sheetId);
-  let sheet = ss.getSheetByName(title);
+  var ss = SpreadsheetApp.openById(sheetId);
+  var sheet = ss.getSheetByName(title);
   if (!sheet) {
     sheet = ss.insertSheet(title);
   }
   return sheet;
 }
 
-function ok_(obj, corsHeaders) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeaders(corsHeaders)
-    .setResponseCode(200);
-}
-
-function fail_(msg, corsHeaders) {
-  return ContentService.createTextOutput(JSON.stringify({
-    ok: false,
-    error: msg,
-    message: msg
-  }))
-  .setMimeType(ContentService.MimeType.JSON)
-  .setHeaders(corsHeaders)
-  .setResponseCode(400);
-}
-
 function toCsv_(records) {
-  const cols = [
+  var cols = [
     'date', 'property', 'vendor', 'description', 'category', 'subcategory',
     'amount', 'currency', 'payment_method', 'invoice_number', 'reference_id',
     'tax_amount', 'tip_amount', 'location', 'notes', 'validated',
@@ -244,11 +230,14 @@ function toCsv_(records) {
     'sheet_appended_at', 'created_at', 'processed_at'
   ];
   
-  const esc = s => /["\n,]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  const rows = [cols.join(',')];
+  var esc = function(s) {
+    return /["\n,]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
   
-  (records || []).forEach(r => {
-    rows.push(cols.map(k => esc(String(r[k] ?? ''))).join(','));
+  var rows = [cols.join(',')];
+  
+  (records || []).forEach(function(r) {
+    rows.push(cols.map(function(k) { return esc(String(r[k] != null ? r[k] : '')); }).join(','));
   });
   
   return rows.join('\n');

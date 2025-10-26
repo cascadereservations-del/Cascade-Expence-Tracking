@@ -1,0 +1,167 @@
+╔════════════════════════════════════════════════════════════════╗
+║          CASCADE EXPENSE CAPTURE - QUICK REFERENCE             ║
+║                    CORS Fix v6.5.1                             ║
+╚════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────┐
+│ THE ERROR YOU'RE GETTING                                       │
+└────────────────────────────────────────────────────────────────┘
+  
+  ❌ Error: Cannot call SpreadsheetApp.getUi() from this context
+  ❌ CORS request did not succeed  
+  ❌ CORS header 'Access-Control-Allow-Origin' missing
+
+┌────────────────────────────────────────────────────────────────┐
+│ THE CAUSE                                                      │
+└────────────────────────────────────────────────────────────────┘
+
+  You deployed Code.gs instead of WebApp.gs
+  OR you included both files (you should only have WebApp.gs)
+
+┌────────────────────────────────────────────────────────────────┐
+│ THE FIX (3 MINUTES)                                           │
+└────────────────────────────────────────────────────────────────┘
+
+  1️⃣  Go to: https://script.google.com
+  
+  2️⃣  Click: + New project
+  
+  3️⃣  Rename "Code.gs" to "WebApp.gs"
+  
+  4️⃣  DELETE all code in editor
+  
+  5️⃣  COPY entire contents of:
+       apps_script/WebApp.gs (from fix package)
+  
+  6️⃣  PASTE into Apps Script editor
+  
+  7️⃣  Click: Deploy → New deployment → Web app
+       • Execute as: Me
+       • Who has access: Anyone ← CRITICAL!
+  
+  8️⃣  Click: Deploy → Authorize → Allow
+  
+  9️⃣  COPY the Web App URL (ends with /exec)
+  
+  🔟  Open index.html → Settings tab
+       • Paste URL in "Proxy URL"
+       • Add Spreadsheet ID
+       • Click "Save Settings"
+       • Click "Ping Proxy" → Should say "Proxy OK"
+
+┌────────────────────────────────────────────────────────────────┐
+│ VERIFICATION                                                   │
+└────────────────────────────────────────────────────────────────┘
+
+  In Apps Script, you should have:
+  ✅ 1 file: WebApp.gs
+  ❌ 0 files named Code.gs
+  
+  In index.html Settings:
+  ✅ Ping Proxy → "Proxy OK"
+  ✅ Setup Sheet → "Sheet setup ✓"
+  ✅ No CORS errors in browser console (F12)
+
+┌────────────────────────────────────────────────────────────────┐
+│ FILES EXPLAINED                                                │
+└────────────────────────────────────────────────────────────────┘
+
+  WebApp.gs (REQUIRED)
+  • Purpose: Web App proxy for CORS
+  • Deploy: Standalone Apps Script project
+  • Access: Anyone
+  • Used by: index.html to access Google Sheets
+  
+  Code.gs (OPTIONAL - NOT NEEDED FOR CORS FIX)
+  • Purpose: Add menu items inside spreadsheet
+  • Deploy: From inside spreadsheet (Extensions → Apps Script)
+  • Access: Just you
+  • Used by: Spreadsheet menus (optional helpers)
+  
+  FOR THE CORS FIX: USE ONLY WebApp.gs
+
+┌────────────────────────────────────────────────────────────────┐
+│ COMMON MISTAKES                                                │
+└────────────────────────────────────────────────────────────────┘
+
+  ❌ Including Code.gs → DELETE IT
+  ❌ Access set to "Only myself" → Change to "Anyone"
+  ❌ URL doesn't end with /exec → Copy correct URL
+  ❌ Forgot to Save Settings → Click Save button
+  ❌ Old deployment still active → Archive old, create new
+
+┌────────────────────────────────────────────────────────────────┐
+│ TROUBLESHOOTING                                                │
+└────────────────────────────────────────────────────────────────┘
+
+  Error: "Cannot call SpreadsheetApp.getUi()"
+  → You have Code.gs file (delete it)
+  
+  Error: "CORS request did not succeed"
+  → Access not set to "Anyone" (change it)
+  
+  Error: "Proxy ping failed"
+  → Wrong URL or not saved (check URL, save settings)
+  
+  Error: "Missing sheetId"
+  → No Spreadsheet ID entered (add it in Settings)
+
+┌────────────────────────────────────────────────────────────────┐
+│ TESTING                                                        │
+└────────────────────────────────────────────────────────────────┘
+
+  Terminal Test:
+  $ curl https://script.google.com/macros/s/YOUR_ID/exec
+  → Should return: {"status":"ok","message":"..."}
+  
+  Browser Test:
+  Settings → Ping Proxy → Should say "Proxy OK"
+  
+  Functionality Test:
+  Form → Add test record → Check Google Sheet
+
+┌────────────────────────────────────────────────────────────────┐
+│ DEPLOYMENT CHECKLIST                                           │
+└────────────────────────────────────────────────────────────────┘
+
+  □ Created new Apps Script project
+  □ Only WebApp.gs file exists (no Code.gs)
+  □ Pasted fixed code from package
+  □ Saved project
+  □ Deployed as Web app
+  □ Set "Anyone" access
+  □ Completed authorization
+  □ Copied Web App URL
+  □ Pasted URL in Settings
+  □ Added Spreadsheet ID
+  □ Saved Settings
+  □ Ping Proxy successful
+  □ Setup Sheet successful
+  □ Test record added successfully
+
+┌────────────────────────────────────────────────────────────────┐
+│ NEED MORE HELP?                                                │
+└────────────────────────────────────────────────────────────────┘
+
+  📖 ONOPEN_ERROR_FIX.md - Detailed explanation
+  📖 SIMPLE_DEPLOYMENT.md - Step-by-step guide
+  📖 FIX_SUMMARY.md - Complete overview
+  📖 BEFORE_AFTER_COMPARISON.md - See what changed
+
+┌────────────────────────────────────────────────────────────────┐
+│ SUCCESS LOOKS LIKE                                             │
+└────────────────────────────────────────────────────────────────┘
+
+  ✅ Apps Script: Only WebApp.gs
+  ✅ Deployment: Web app with "Anyone" access
+  ✅ Settings: Proxy URL and Sheet ID saved
+  ✅ Ping Proxy: Returns "Proxy OK"
+  ✅ Setup Sheet: Creates headers
+  ✅ Add Record: Appears in Google Sheet
+  ✅ Console: No CORS errors
+
+  YOU'RE DONE! 🎉
+
+╔════════════════════════════════════════════════════════════════╗
+║  Remember: Only WebApp.gs needed. Code.gs is optional/separate║
+╚════════════════════════════════════════════════════════════════╝

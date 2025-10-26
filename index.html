@@ -484,15 +484,17 @@
 
             <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleAutoUpload" type="checkbox" checked> <span>Append to Sheets on Add (recommended)</span></label>
             <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleWeeklyBackup" type="checkbox" checked> <span>Weekly Drive backup (JSON+CSV)</span></label>
+<label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleProxy" type="checkbox"> <span>Use Proxy Web App (Apps Script)</span></label>
+<label><span class="label">Proxy URL</span><input id="proxyUrl" class="input" placeholder="https://script.google.com/macros/s/AKfycb.../exec"></label>
             <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleGuides" type="checkbox" checked> <span>Show Quick Guides</span></label>
 
-            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button id="runDiagnostics" class="btn-s"><i data-lucide="stethoscope"></i> Run Diagnostics</button><button id="pingProxy" class="btn-s"><i data-lucide="link-2"></i> Ping Proxy</button>
               <button id="saveSettings" class="btn"><i data-lucide="save"></i> Save Settings</button>
               <button id="setupSheet" class="btn-s"><i data-lucide="table-properties"></i> Setup Sheet</button>
               <button id="runBackupNow" class="btn-s"><i data-lucide="clock-8"></i> Run Backup Now</button>
               <button id="adminLogout" class="btn-s"><i data-lucide="log-out"></i> Admin Sign out</button>
             </div>
-            <div class="meta center-mobile" style="grid-column:1/-1">
+            <div id="diagOutput" class="meta" style="grid-column:1/-1; border:1px dashed var(--border); padding:10px; border-radius:12px;"></div><div class="meta center-mobile" style="grid-column:1/-1">
               <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> <strong>Security:</strong> All data stays in your browser's <code>localStorage</code>. No data leaves your device unless you export or upload.
             </div>
           </div>
@@ -572,7 +574,7 @@
 
     let records = storage.get("cx:records", []).map(r=>({property:"Cascade Hideaway_BRIA", ...r}));
     let settings = storage.get("cx:settings", {
-      folderId:"",googleClientId:"",geminiKey:"",useTesseract:false,allowLLM:false,lastTab:"dashboard",theme:"auto",
+      folderId:"",googleClientId:"",geminiKey:"",useTesseract:false,allowLLM:false,lastTab:"dashboard",theme:"auto",useProxy:false,proxyUrl:"",
       autoUpload:true, spreadsheetId:"", sheetName:"Sheet1", weeklyBackup:true, lastBackupAt: null, showGuides:true, autoAISuggest:true
     });
     if (settings.showGuides === false) document.body.classList.add('guides-hidden');
@@ -968,6 +970,70 @@
     $("#exportJsonBtn")?.addEventListener("click", ()=>download("expenses.json", new Blob([JSON.stringify(records,null,2)], {type:"application/json;charset=utf-8"})));
     $("#exportCsvBtn")?.addEventListener("click", ()=>download("expenses.csv", csvBlob(records)));
 
+    
+    // ----- Proxy (Apps Script Web App) -----
+    async function callProxy(action, payload={}){
+      const url = (settings.proxyUrl||"").trim();
+      if(!url) throw new Error("Proxy URL not set");
+      const body = JSON.stringify({
+        action,
+        sheetId: (settings.spreadsheetId||"").trim(),
+        sheetName: (settings.sheetName||"Sheet1").trim() || "Sheet1",
+        folderId: (settings.folderId||"").trim(),
+        taxonomy: CATEGORY_TAXONOMY,
+        payload
+      });
+      const resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+      const text = await resp.text();
+      let data = {};
+      try { data = JSON.parse(text); } catch { data = { ok:false, status: resp.status, text }; }
+      if(!resp.ok || data.ok === false){ const msg = data?.message || data?.error || text || `Proxy HTTP ${resp.status}`; throw new Error(msg); }
+      return data;
+    }
+
+    // UI — Diagnostics
+    async function runDiagnostics(){
+      const out = [];
+      const push = (status, msg) => out.push(`<div style="display:flex; gap:8px; align-items:center"><i data-lucide="${status?'check-circle':'x-circle'}"></i><span>${msg}</span></div>`);
+      try {
+        if(settings.useProxy){
+          if(!settings.proxyUrl?.trim()){ push(false, "Proxy URL missing"); }
+          else {
+            try{ await callProxy("ping", {}); push(true, "Proxy reachable"); }
+            catch(e){ push(false, "Proxy unreachable: " + e.message); }
+          }
+        } else {
+          if(!settings.googleClientId?.trim()){ push(false,"Google Client ID missing"); } else { push(true,"Google Client ID set"); }
+          try { await ensureGoogleToken(); push(true,"OAuth token acquired"); }
+          catch(e){ push(false, "OAuth failed: " + (e?.message||e)); }
+          if(settings.spreadsheetId?.trim()){
+            try{
+              const token = await ensureGoogleToken();
+              const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(settings.spreadsheetId)}?fields=sheets(properties(sheetId,title))`;
+              const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+              const text = await r.text();
+              if(!r.ok){
+                if(text.includes("has not been used in project") || r.status === 403){
+                  push(false, "403: Sheets API disabled for your Cloud project. Enable Sheets + Drive APIs.");
+                } else {
+                  push(false, `Sheets meta failed (${r.status})`);
+                }
+              } else {
+                push(true, "Spreadsheet reachable");
+              }
+            }catch(e){ push(false, "Sheets meta fetch error: "+(e?.message||e)); }
+          }else{
+            push(false, "Spreadsheet ID missing");
+          }
+        }
+      } finally {
+        const el = document.getElementById("diagOutput");
+        el.innerHTML = out.join("");
+        if (window.lucide) window.lucide.createIcons({ nodes: [el] });
+      }
+    }
+
+
     // Google auth (Drive + Sheets)
     function initGoogleAuth() {
       if(!settings.googleClientId?.trim()) { toast("Google Client ID not set in Settings"); return false; }
@@ -1041,7 +1107,12 @@
       );
       return { body: multipartBody, boundary };
     }
+    
     async function uploadDatasetToDrive(records, opts) {
+      if (settings.useProxy && settings.proxyUrl?.trim()){
+        const res = await callProxy("uploadDataset", { records });
+        return { mainFileId: res.fileId, mainFileName: res.fileName };
+      }
       const { accessToken, folderId } = opts;
       const jsonStr = JSON.stringify(records, null, 2);
       const csvStr = recordsToCsvString(records);
@@ -1065,7 +1136,16 @@
       }
       return { mainFileId: uploaded[0].id, mainFileName: uploaded[0].name };
     }
+
     async function uploadAttachmentToDrive(file, opts){
+      if (settings.useProxy && settings.proxyUrl?.trim()){
+        const base64 = await new Promise((resolve,reject)=>{
+          const fr=new FileReader(); fr.onerror=()=>reject(new Error("read failed"));
+          fr.onload=()=>resolve(btoa(String.fromCharCode(...new Uint8Array(fr.result)))); fr.readAsArrayBuffer(file);
+        });
+        const res = await callProxy("uploadAttachment", { name: file.name, mime: file.type||'application/octet-stream', base64 });
+        return { id: res.fileId, name: res.fileName };
+      }
       const { accessToken, folderId } = opts;
       const meta = { name: file.name, mimeType: file.type || 'application/octet-stream', ...(folderId ? { parents: [folderId] } : {}) };
       const { body } = makeMultipart(meta, file);
@@ -1076,7 +1156,12 @@
       const data = await resp.json();
       return { id: data.id, name: data.name };
     }
+
     async function appendRecordToSheet(rec, opts){
+      if (settings.useProxy && settings.proxyUrl?.trim()){
+        await callProxy("appendRecord", { rec });
+        return { ok: true };
+      }
       const { accessToken, spreadsheetId, sheetName } = opts;
       if(!spreadsheetId) throw new Error("Spreadsheet ID missing");
       const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","sheet_appended_at","created_at","processed_at"];
@@ -1088,7 +1173,7 @@
       if(!resp.ok){ const err=await resp.text(); console.error(err); throw new Error('Sheet append failed'); }
       return await resp.json();
     }
-    async function uploadAllToDrive() {
+async function uploadAllToDrive() {
       if (!records.length) { toast("No records to upload"); return; }
       const folderId = settings.folderId?.trim() || null;
       toast("Starting Drive upload...", { timeout: 2000 });
@@ -1394,12 +1479,88 @@ Return ONLY: {"category":"..."}`;
     });
 
     
+    
     async function ensureSheetStructure({token, force=false}){
+      if (settings.useProxy && settings.proxyUrl?.trim()){
+        await callProxy("setupSheet", {});
+        return;
+      }
       const spreadsheetId = (settings.spreadsheetId||"").trim();
       const sheetName = (settings.sheetName||"Sheet1").trim() || "Sheet1";
       if(!spreadsheetId) throw new Error("Spreadsheet ID not set");
 
       async function getMeta(){
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=sheets(properties(sheetId,title))`;
+        const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if(!r.ok){
+          const body = await r.text();
+          throw new Error(`Unable to read spreadsheet (${r.status}). Check ID & access. ${body.slice(0,180)}`);
+        }
+        const j = await r.json();
+        if(!j?.sheets) throw new Error("No sheets found in spreadsheet (missing permissions?)");
+        return (j.sheets||[]).map(s=>s.properties);
+      }
+
+      let sheets = await getMeta();
+      let main = sheets.find(s=>String(s.title||"").toLowerCase() === sheetName.toLowerCase());
+      let metaSheet = sheets.find(s=>s.title==="Meta");
+
+      const requests = [];
+      if(!main){ requests.push({ addSheet: { properties: { title: sheetName } } }); }
+      if(!metaSheet){ requests.push({ addSheet: { properties: { title: "Meta", hidden: false } } }); }
+
+      if(requests.length){
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`;
+        const resp = await fetch(url, { method:"POST", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ requests }) });
+        if(!resp.ok){
+          const body = await resp.text();
+          throw new Error(`Failed to create sheets (${resp.status}). ${body.slice(0,180)}`);
+        }
+        sheets = await getMeta();
+        main = sheets.find(s=>String(s.title||"").toLowerCase() === sheetName.toLowerCase()) || sheets[0];
+        metaSheet = sheets.find(s=>s.title==="Meta");
+      }
+
+      if(!main){ throw new Error(`Sheet "${sheetName}" not found (and could not be created). Check the name and permissions.`); }
+
+      const HEADERS = ["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","sheet_appended_at","created_at","processed_at"];
+      const hdrUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent((sheetName)+'!A1')}:update?valueInputOption=RAW`;
+      const hdrResp = await fetch(hdrUrl, { method:"PUT", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ range: sheetName+"!A1", majorDimension:"ROWS", values: [HEADERS] }) });
+      if(!hdrResp.ok){
+        const body = await hdrResp.text();
+        throw new Error(`Header write failed (${hdrResp.status}). ${body.slice(0,180)}`);
+      }
+
+      if(!metaSheet){ sheets = await getMeta(); metaSheet = sheets.find(s=>s.title==="Meta"); }
+      const catValues = CATEGORY_TAXONOMY.map(c=>[c]);
+      const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent('Meta!A1')}:update?valueInputOption=RAW`;
+      const metaResp = await fetch(metaUrl, { method:"PUT", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ range: 'Meta!A1', majorDimension:"ROWS", values: catValues }) });
+      if(!metaResp.ok){
+        const body = await metaResp.text();
+        throw new Error(`Meta write failed (${metaResp.status}). ${body.slice(0,180)}`);
+      }
+
+      const catRule = {
+        condition: { type: "ONE_OF_LIST", values: CATEGORY_TAXONOMY.map(v=>({ userEnteredValue: v })) },
+        strict: true, showCustomUi: true
+      };
+      const reqs2 = [
+        { updateSheetProperties: { properties: { sheetId: main.sheetId, gridProperties: { frozenRowCount: 1 } }, fields: "gridProperties.frozenRowCount" } },
+        { autoResizeDimensions: { dimensions: { sheetId: main.sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 26 } } },
+        { repeatCell: { range: { sheetId: main.sheetId, startRowIndex: 0, endRowIndex: 1 }, cell: { userEnteredFormat: { textFormat: { bold: true } } }, fields: "userEnteredFormat.textFormat.bold" } },
+        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "yyyy-mm-dd" } } }, fields: "userEnteredFormat.numberFormat" } },
+        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 6, endColumnIndex: 7 }, cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } }, fields: "userEnteredFormat.numberFormat" } },
+        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 11, endColumnIndex: 13 }, cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } }, fields: "userEnteredFormat.numberFormat" } },
+        { setDataValidation: { range: { sheetId: main.sheetId, startRowIndex: 1, startColumnIndex: 4, endColumnIndex: 5 }, rule: catRule } },
+      ];
+      const fmtUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`;
+      const fmtResp = await fetch(fmtUrl, { method:"POST", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ requests: reqs2 }) });
+      if(!fmtResp.ok){
+        const body = await fmtResp.text();
+        throw new Error(`Formatting failed (${fmtResp.status}). ${body.slice(0,180)}`);
+      }
+    }
+async function getMeta(){
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=sheets(properties(sheetId,title))`;
         const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if(!r.ok){
@@ -1649,13 +1810,18 @@ Return ONLY: {"category":"..."}`;
       settings.spreadsheetId=$("#sheetId").value.trim();
       settings.sheetName=$("#sheetName").value.trim() || "Sheet1";
       settings.weeklyBackup=$("#toggleWeeklyBackup").checked;
+settings.useProxy=$("#toggleProxy").checked;
+settings.proxyUrl=$("#proxyUrl").value.trim();
       settings.showGuides=$("#toggleGuides").checked;
       document.body.classList.toggle('guides-hidden', !settings.showGuides);
+document.body.classList.toggle('proxy-enabled', !!settings.useProxy);
       storage.set("cx:settings",settings);
       oauth.tokenClient = null; oauth.accessToken = null; $("#googleUser").textContent = 'Not signed in';
       toast("Settings saved",{timeout:1200});
     });
     $("#runBackupNow")?.addEventListener("click", uploadAllToDrive);
+$("#runDiagnostics")?.addEventListener("click", runDiagnostics);
+$("#pingProxy")?.addEventListener("click", async()=>{ try{ const r=await callProxy("ping",{}); toast("Proxy OK"); }catch(e){ toast("Proxy ping failed: "+e.message); } });
     $("#adminLogout")?.addEventListener("click", ()=>{ isAdmin=false; storage.set("cx:isAdmin", false); switchTab("dashboard"); toast("Admin signed out",{timeout:1200}); });
 
     document.addEventListener("keydown",(e)=>{
@@ -1679,10 +1845,13 @@ Return ONLY: {"category":"..."}`;
       $("#toggleAISuggest").checked = settings.autoAISuggest !== false;
       $("#toggleAutoUpload").checked = settings.autoUpload !== false;
       $("#toggleWeeklyBackup").checked = settings.weeklyBackup !== false;
+$("#toggleProxy").checked = !!settings.useProxy;
+$("#proxyUrl").value = settings.proxyUrl || "";
       $("#toggleGuides").checked = settings.showGuides !== false;
       $("#sheetId").value = settings.spreadsheetId || "";
       $("#sheetName").value = settings.sheetName || "Sheet1";
       document.body.classList.toggle('guides-hidden', !settings.showGuides);
+document.body.classList.toggle('proxy-enabled', !!settings.useProxy);
     }
     const dateInput = $("#expenseForm")?.elements?.namedItem("date");
     if(dateInput && !dateInput.value) {dateInput.value = new Date().toISOString().slice(0, 10);}

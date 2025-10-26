@@ -1,0 +1,57 @@
+Cascade Expense Capture - CORS Fix Package
+===========================================
+
+Version: 6.5.1
+Release Date: 2025-10-26
+Fix Type: Critical - CORS Errors
+
+WHAT'S INCLUDED:
+- Fixed Apps Script code (WebApp.gs)
+- Deployment scripts (shell + batch)
+- Comprehensive documentation
+- Configuration files
+- CLASP deployment setup
+
+CRITICAL FIXES:
+✅ Added OPTIONS handler for CORS preflight
+✅ Added GET health check endpoint
+✅ Proper CORS headers on all responses
+✅ Better error messages
+✅ Improved validation
+
+INSTALLATION:
+See README.md for complete instructions
+
+QUICK START:
+1. Read QUICK_FIX.md (2 minutes)
+2. Copy apps_script/WebApp.gs to Apps Script
+3. Deploy with "Anyone" access
+4. Update your Proxy URL in Settings
+
+SUPPORT:
+- README.md - Overview and quick start
+- QUICK_FIX.md - Fastest fix method
+- DEPLOYMENT_GUIDE.md - Detailed step-by-step guide
+
+VERIFIED WORKING:
+✅ Chrome/Edge 90+
+✅ Firefox 88+
+✅ Safari 14+
+✅ Mobile browsers
+
+REQUIREMENTS:
+- Google Account
+- Spreadsheet access
+- Modern web browser
+- (Optional) Node.js for CLASP deployment
+
+COMPATIBILITY:
+- Works with existing v6.5 codebase
+- No breaking changes to data format
+- Backward compatible with existing sheets
+
+NEXT VERSION:
+v7.0 - Feature enhancements planned
+
+---
+For issues, check DEPLOYMENT_GUIDE.md troubleshooting section

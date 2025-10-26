@@ -1,19 +1,25 @@
-# Cascade Expense Capture — v6.2
+# Cascade Expense Capture — v6.3
 
-This build implements your requests:
-- **Permanent Quick Guides per tab** (no button, no dismiss). Greyscale + glass effects.
-- **Start OCR** button for PDFs and images → Quick Edit → **Send to Form**.
-- **Automatic mode**: **Append to Google Sheets on Add** (live ops) + **Weekly Drive backup** (JSON+CSV). manual “Run Backup Now” also available.
-- Mobile polish: centered headers and swipe between tabs.
-- Property locked to **Cascade Hideaway_BRIA**.
+**New**
+- **Smart Parse (AI)**: heuristic + rules + Gemini to extract Date/Vendor/Amount and choose the best **Category** (from a controlled taxonomy).
+- **Sheet Setup**: one-click **Setup Sheet** button (Settings) to create headers, freeze row 1, auto-size, add **Category data validation**, and numeric/date formats.
+- **Auto AI on Add** (toggle) and **AI Suggest** button on the Form.
+- **Quick Guides toggle** in Settings (show/hide everywhere).
 
-## Setup
-1. Open `index.html` over HTTPS or a local server.
-2. Settings → add Google Client ID → **Sign in to Google**.
-3. Provide **Spreadsheet ID** + **Sheet Name** and a **Drive Folder ID**.
-4. Enable **Tesseract** (client OCR). Optionally **Gemini** for smarter parsing.
+**Workflow**
+1) Capture → Start OCR → (optional) **Smart Parse** → **Send to Form**.  
+2) Form → **AI Suggest** (if needed) → **Add** → auto-append to Google Sheets.  
+3) Batch → validate/dedupe/export → optional Drive dataset upload.  
+4) Weekly Drive backup runs automatically when due.
 
-## Notes
-- Weekly backup triggers when it’s due (7+ days since last). If not signed in, a toast offers **Run now**.
-- Attachments upload to Drive and set `attachment_drive_file_id` in the form.
+**Setup Sheet (what it does)**
+- Creates `SheetName` (if missing) and `Meta` sheet with category list.
+- Writes header row (26 columns exactly, aligned with the app’s schema).
+- Freezes row 1, auto-resizes, sets formats, and adds Category validation (dropdown from taxonomy).
+
+**Apps Script (optional)**
+- `apps_script/Code.gs` adds a custom **Cascade Tools** menu with “Normalize New Rows” and “Recompute Categories” helpers if you want extra spreadsheet-side controls.
+
+**Security**
+- All data lives in your browser until you export or upload (Drive/Sheets).
 

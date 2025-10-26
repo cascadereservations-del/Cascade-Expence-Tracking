@@ -81,6 +81,7 @@
     .tab[aria-selected="true"]{background:var(--surface);border-color:var(--border);color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.04)}
     .tab:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
     .hidden{display:none!important}
+    body.guides-hidden .guide{ display:none !important; }
 
     .lucide{width:1em;height:1em;stroke-width:2.5px;}
     .btn .lucide,.btn-s .lucide,.tab .lucide{width:.9em;height:.9em}
@@ -281,6 +282,7 @@
           <i data-lucide="file-pen-line"></i> <span>Quick Entry</span>
           <div class="card-h-actions">
             <span id="rulesBadge" class="chip meta hidden">Rules applied</span>
+            <button id="aiSuggestBtn" class="btn-s"><i data-lucide="wand-2"></i> AI Suggest</button>
             <button id="validateBtn" class="btn-s"><i data-lucide="check-circle"></i> Validate</button>
             <button id="addToListBtn" class="btn"><i data-lucide="plus"></i> Add</button>
           </div>
@@ -334,10 +336,10 @@
             <div>
               <strong>Buttons & fields</strong>
               <ul class="steps meta">
+                <li><b>AI Suggest</b> uses rules + LLM to fill Vendor/Category/Amount/Date from the text in Description/Vendor (if available).</li>
                 <li><b>Validate</b> checks required fields and amounts.</li>
                 <li><b>Add</b> saves locally and <b>appends to Sheets</b> (live ops).</li>
                 <li><b>More fields</b> maps exactly to table columns so nothing is lost.</li>
-                <li>Rules auto-fill category/vendor from description/vendor text.</li>
               </ul>
             </div>
           </div>
@@ -354,10 +356,10 @@
           <ol class="steps meta">
             <li><b>Upload</b> images or PDFs.</li>
             <li>Click <b>Start OCR</b> on each file to extract text (progress shows).</li>
-            <li>Review the <b>Quick Edit</b> card; tweak fields, then <b>Send to Form</b>.</li>
+            <li>Use <b>Smart Parse</b> for AI extraction & category suggestions, then <b>Send to Form</b>.</li>
             <li><b>Upload Attachment</b> pushes the source file to Drive and links it.</li>
           </ol>
-          <div class="tip meta">PDF OCR uses PDF.js → Tesseract. For speed, we scan the first 3 pages at 2× scale.</div>
+          <div class="tip meta">PDF OCR uses PDF.js → Tesseract. Smart Parse uses Gemini if enabled.</div>
         </div>
       </div>
 
@@ -367,7 +369,7 @@
           <div class="card-b">
             <label class="label">Upload images / PDF</label>
             <input id="fileInput" type="file" accept=".pdf,image/*" multiple class="input"/>
-            <div class="meta" style="margin-top:8px">Tip: Add files first, then run OCR per-file using the “Start OCR” button.</div>
+            <div class="meta" style="margin-top:8px">Tip: Add files first, then run OCR per-file using “Start OCR”.</div>
           </div>
         </div>
         <div class="card glass">
@@ -478,12 +480,15 @@
             <label><span class="label">Gemini API Key (optional)</span><input id="geminiKey" class="input" placeholder="AIzaSy... (enables AI parsing)"></label>
             <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleTesseract" type="checkbox"> <span>Use Tesseract (client OCR)</span></label>
             <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleLLM" type="checkbox"> <span>Allow LLM network (Gemini)</span></label>
+            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleAISuggest" type="checkbox" checked> <span>Auto AI categorize on Add</span></label>
 
             <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleAutoUpload" type="checkbox" checked> <span>Append to Sheets on Add (recommended)</span></label>
             <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleWeeklyBackup" type="checkbox" checked> <span>Weekly Drive backup (JSON+CSV)</span></label>
+            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleGuides" type="checkbox" checked> <span>Show Quick Guides</span></label>
 
-            <div style="display:flex;gap:8px;justify-content:center">
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
               <button id="saveSettings" class="btn"><i data-lucide="save"></i> Save Settings</button>
+              <button id="setupSheet" class="btn-s"><i data-lucide="table-properties"></i> Setup Sheet</button>
               <button id="runBackupNow" class="btn-s"><i data-lucide="clock-8"></i> Run Backup Now</button>
               <button id="adminLogout" class="btn-s"><i data-lucide="log-out"></i> Admin Sign out</button>
             </div>
@@ -562,11 +567,16 @@
       del(k){ try{ localStorage.removeItem(k); }catch{} }
     };
 
+    // Category taxonomy (used for Sheet validation + AI prompt)
+    const CATEGORY_TAXONOMY = ["Utilities","Subscriptions","Services","Maintenance","Repairs","Supplies","Cleaning","Internet","Electricity","Water","Gas","Waste","Landscaping","Security","Insurance","Taxes","Fees","Professional Services","Software","Travel","Meals","Office","Shipping","Medical","Equipment","Other"];
+
     let records = storage.get("cx:records", []).map(r=>({property:"Cascade Hideaway_BRIA", ...r}));
     let settings = storage.get("cx:settings", {
       folderId:"",googleClientId:"",geminiKey:"",useTesseract:false,allowLLM:false,lastTab:"dashboard",theme:"auto",
-      autoUpload:true, spreadsheetId:"", sheetName:"Sheet1", weeklyBackup:true, lastBackupAt: null
+      autoUpload:true, spreadsheetId:"", sheetName:"Sheet1", weeklyBackup:true, lastBackupAt: null, showGuides:true, autoAISuggest:true
     });
+    if (settings.showGuides === false) document.body.classList.add('guides-hidden');
+
     let isAdmin = storage.get("cx:isAdmin", false);
     let rules = storage.get("cx:rules", []);
     let rulesAllowOverwrite = storage.get("cx:rulesAllowOverwrite", false);
@@ -583,8 +593,8 @@
         if (mode === "light") iconName = "sun";
         if (icon) icon.setAttribute("data-lucide", iconName);
         if (span) span.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
-        if (icon && window.lucide) window.lucide.createIcons({ nodes: [icon] });
       }
+      if (window.lucide) window.lucide.createIcons({ nodes: [btn] });
     }
     applyTheme(settings.theme||"auto");
     $("#themeToggle")?.addEventListener("click", () => {
@@ -754,7 +764,27 @@
     function validateCurrentForm(show){ const rec=formToRec(); const v=validateRecord(rec); if(v.ok){ $("#formErrors").textContent=""; toast("Form is valid",{timeout:1200}); return true; } else { if(show) $("#formErrors").textContent=v.errors.join(" · "); return false; } }
 
     $("#validateBtn")?.addEventListener("click",()=>validateCurrentForm(true));
+    $("#aiSuggestBtn")?.addEventListener("click", async ()=>{
+      const f=$("#expenseForm");
+      const seed={
+        vendor: f.elements.namedItem("vendor").value,
+        description: f.elements.namedItem("description").value,
+        amount: Number(f.elements.namedItem("amount").value||0),
+        date: f.elements.namedItem("date").value
+      };
+      const sug = await smartSuggest(seed);
+      if(sug.vendor) f.elements.namedItem("vendor").value = sug.vendor;
+      if(sug.category) f.elements.namedItem("category").value = sug.category;
+      if(sug.amount) f.elements.namedItem("amount").value = sug.amount;
+      if(sug.date) f.elements.namedItem("date").value = sug.date;
+      applyRulesToForm();
+      toast("AI suggestions applied", { timeout: 1400 });
+    });
+
     $("#addToListBtn")?.addEventListener("click", async ()=>{
+      if(settings.autoAISuggest && settings.allowLLM && settings.geminiKey){
+        await $("#aiSuggestBtn")?.click();
+      }
       if(!validateCurrentForm(true)) return;
       const rec=formToRec(); rec.processed_at=new Date().toISOString();
       const v=validateRecord(rec); rec.validated=String(v.ok); rec.validation_errors=v.ok?"":(v.errors||[]).join("; ");
@@ -767,6 +797,7 @@
         try{
           if(!settings.spreadsheetId?.trim()){ throw new Error("Set Spreadsheet ID in Settings"); }
           const token = await ensureGoogleToken();
+          await ensureSheetStructure({token});
           await appendRecordToSheet(rec, { accessToken: token, spreadsheetId: settings.spreadsheetId.trim(), sheetName: settings.sheetName?.trim() || "Sheet1" });
           rec.sheet_appended_at = new Date().toISOString();
           persistAndRender();
@@ -957,7 +988,6 @@
                 oauth.expiresAt = Date.now() + (response.expires_in * 1000) - 60000;
                 $("#googleUser").textContent = 'Authorized ✓';
                 toast("Google authorized (Drive + Sheets)", {timeout:2000});
-                // If backup is due and enabled, auto-run after auth
                 maybeAutoRunWeeklyBackup(true);
               }
             },
@@ -990,6 +1020,7 @@
         try { oauth.tokenClient.requestAccessToken({prompt: 'consent'}); } catch(e) { clearTimeout(timeout); reject(e); }
       });
     }
+
     function recordsToCsvString(records) {
       const cols = ['date','vendor','description','category','subcategory','amount','currency','payment_method','invoice_number','reference_id','tax_amount','tip_amount','location','notes','source_type','source_filename','attachment_drive_file_id','record_drive_file_id','uploaded_at','sheet_appended_at','created_at','processed_at','validated'];
       const escape = (v) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
@@ -1078,6 +1109,7 @@
       if (!records.length) { toast("No records to append"); return; }
       if(!settings.spreadsheetId?.trim()){ toast("Set Spreadsheet ID in Settings"); return; }
       const token = await ensureGoogleToken();
+      await ensureSheetStructure({token});
       let ok=0;
       for(const rec of records){
         try{ await appendRecordToSheet(rec, { accessToken: token, spreadsheetId: settings.spreadsheetId.trim(), sheetName: settings.sheetName?.trim()||"Sheet1" }); rec.sheet_appended_at = rec.sheet_appended_at || new Date().toISOString(); ok++; }
@@ -1108,179 +1140,85 @@
           console.warn("Auto-backup skipped:", e?.message||e);
         }
       };
-      // If we came from auth, just run. Otherwise, prompt.
       if(afterAuth){ run(); }
-      else {
-        toast("Weekly backup due", { actionLabel: "Run now", action: run, timeout: 8000 });
-      }
+      else { toast("Weekly backup due", { actionLabel: "Run now", action: run, timeout: 8000 }); }
     }
 
-    // Ingest with manual Start OCR (images + PDF)
-    $("#fileInput")?.addEventListener("change", onFiles);
-    document.addEventListener("dragover", e=>e.preventDefault());
-    document.addEventListener("drop", e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
-    function onFiles(e){ handleFiles(e.target.files); e.target.value=""; }
-
-    async function handleFiles(fileList){
-      if(!fileList?.length) return; 
-      const files=Array.from(fileList);
-      const container=$("#ingestPreview"); if(!container) return;
-      if(container.textContent?.includes("Nothing ingested")) container.innerHTML="";
-      for(const f of files){
-        const id=Math.random().toString(36).slice(2);
-        const isImg = f.type.startsWith("image/");
-        const isPdf = /\.pdf$/i.test(f.name) || f.type==="application/pdf";
-        const url=isImg ? URL.createObjectURL(f) : "";
-
-        const card=document.createElement("div"); card.className="card glass"; card.style.marginBottom="10px";
-        card.innerHTML = `
-        <div class="card-b">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div style="font-weight:700; display:flex; align-items:center; gap:8px;"><i data-lucide="${isImg?'image':'file'}"></i> ${escapeHtml(f.name)}</div>
-            <div class="meta">${isImg?'image': (isPdf ? 'pdf' : 'file')}</div>
-          </div>
-          <div style="display:flex; gap:12px; align-items:flex-start;">
-            ${isImg ? `<img alt="preview" src="${url}" style="width:90px;height:90px;object-fit:cover;border:1px solid var(--border);border-radius:8px"/>` : ''}
-            <div style="flex:1 1 auto;">
-              <div class="bar"><span id="bar-${id}" style="width:0%; transition: width 0.2s ease;"></span></div>
-              <div id="txt-${id}" class="meta" style="margin-top:8px; max-height: 120px; overflow:auto;">Ready. Press “Start OCR”.</div>
-              <div id="chips-${id}" class="meta" style="display:flex; gap:6px; margin-top:6px;"></div>
-              <div id="edit-${id}" class="hidden" style="margin-top:8px; display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
-                <label><span class="label">Date</span><input class="input" data-f="date"></label>
-                <label><span class="label">Vendor</span><input class="input" data-f="vendor"></label>
-                <label><span class="label">Category</span><input class="input" data-f="category" list="categoryList"></label>
-                <label><span class="label">Amount</span><input class="input" data-f="amount" type="number" step="0.01"></label>
-                <label style="grid-column:1/-1"><span class="label">Description</span><input class="input" data-f="description"></label>
-                <div style="grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap">
-                  <button id="send-${id}" class="btn-s"><i data-lucide="file-pen-line"></i> Send to Form</button>
-                </div>
-              </div>
-              <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                <button id="start-${id}" class="btn-s"><i data-lucide="scan-text"></i> Start OCR</button>
-                <button id="attach-${id}" class="btn-s"><i data-lucide="paperclip"></i> Upload Attachment</button>
-              </div>
-            </div>
-          </div>
-        </div>`;
-        container.appendChild(card);
-        if(window.lucide) window.lucide.createIcons({ nodes: [card] });
-
-        const progressBar=$("#bar-"+id); const textEl=$("#txt-"+id); const chips=$("#chips-"+id);
-        const attachBtn=$("#attach-"+id);
-        const startBtn=$("#start-"+id);
-        const editBox=$("#edit-"+id);
-        const sendBtn=$("#send-"+id);
-        let parsed=null;
-
-        attachBtn?.addEventListener("click", async ()=>{
-          try{
-            const token = await ensureGoogleToken();
-            const { id:fileId } = await uploadAttachmentToDrive(f, { accessToken: token, folderId: settings.folderId?.trim()||null });
-            const form=$("#expenseForm");
-            form.elements.namedItem("attachment_drive_file_id").value = fileId;
-            form.elements.namedItem("source_type").value = isImg?"image":(isPdf?"pdf":"file");
-            form.elements.namedItem("source_filename").value = f.name;
-            toast("Attachment uploaded & linked ✓", { timeout: 1800 });
-            attachBtn.disabled = true;
-          }catch(e){
-            toast("Attach failed — sign in first", { timeout: 2200 });
-          }
-        });
-
-        startBtn?.addEventListener("click", async ()=>{
-          if(!settings.useTesseract){ toast("Enable Tesseract in Settings"); return; }
-          try{
-            if (typeof Tesseract === 'undefined') { throw new Error("Tesseract.js failed to load"); }
-            textEl.textContent = "Recognizing…";
-            let text="", confidence=0;
-
-            if(isImg){
-              const res=await Tesseract.recognize(f,"eng",{logger:(m)=>{ if(m.status==="recognizing text"){ const p=clamp01(m.progress||0); progressBar.style.width=(p*100).toFixed(0)+"%"; }}});
-              text=(res?.data?.text||"").trim(); confidence=(res?.data?.confidence ?? 0);
-            }else{
-              if(typeof pdfjsLib === "undefined"){ throw new Error("PDF.js not loaded"); }
-              const buf = await f.arrayBuffer();
-              pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-              const pdf = await pdfjsLib.getDocument({data:buf}).promise;
-              const pageCount = Math.min(pdf.numPages, 3);
-              let pieces=[], confs=[];
-              for(let p=1;p<=pageCount;p++){
-                const page = await pdf.getPage(p);
-                const viewport = page.getViewport({ scale: 2 });
-                const canvas = document.createElement("canvas");
-                const ctx = canvas.getContext("2d");
-                canvas.width = viewport.width; canvas.height = viewport.height;
-                await page.render({ canvasContext: ctx, viewport }).promise;
-                const res = await Tesseract.recognize(canvas, "eng", { logger:(m)=>{
-                  if(m.status==="recognizing text"){
-                    const progress = ((p-1) + clamp01(m.progress||0)) / pageCount;
-                    progressBar.style.width=(progress*100).toFixed(0)+"%";
-                  }
-                }});
-                pieces.push((res?.data?.text||"").trim());
-                confs.push(res?.data?.confidence ?? 0);
-              }
-              text = pieces.join("\n\n").trim();
-              confidence = confs.length ? Math.round(confs.reduce((a,b)=>a+b,0)/confs.length) : 0;
-            }
-
-            textEl.textContent = text ? (text.length>800?text.slice(0,800)+"…":text) : "(no text)";
-            chips.innerHTML = `<span class="chip">Lang: ENG</span><span class="chip">Confidence: ${Math.round(confidence)}%</span><span class="chip">Size: ${(f.size/1024).toFixed(1)} KB</span>`;
-            parsed = roughParse(text);
-            if (settings.allowLLM && settings.geminiKey) {
-              try { const llm=await geminiParse(text, settings.geminiKey); parsed={...parsed, ...llm, amount:(llm.amount??parsed.amount), date:(llm.date??parsed.date)}; }
-              catch(e){ console.warn("AI parse failed", e); }
-            }
-            // show quick edit
-            editBox.classList.remove("hidden");
-            editBox.querySelector('[data-f="date"]').value = parsed.date||"";
-            editBox.querySelector('[data-f="vendor"]').value = parsed.vendor||"";
-            editBox.querySelector('[data-f="category"]').value = parsed.category||"";
-            editBox.querySelector('[data-f="amount"]').value = parsed.amount||"";
-            editBox.querySelector('[data-f="description"]').value = parsed.description||"";
-          }catch(err){
-            console.error("OCR Error:", err);
-            textEl.textContent=`OCR failed: ${err.message}`;
-            textEl.style.color = "var(--bad)";
-          }
-        });
-
-        sendBtn?.addEventListener("click", ()=>{
-          const r={...parsed};
-          r.date = editBox.querySelector('[data-f="date"]').value||r.date;
-          r.vendor = editBox.querySelector('[data-f="vendor"]').value||r.vendor;
-          r.category = editBox.querySelector('[data-f="category"]').value||r.category;
-          r.amount = Number(editBox.querySelector('[data-f="amount"]').value||r.amount||0);
-          r.description = editBox.querySelector('[data-f="description"]').value||r.description;
-          r.property = "Cascade Hideaway_BRIA";
-          const {rec: rec2} = applyRules(r, rulesAllowOverwrite);
-          fillForm(rec2);
-          switchTab("form");
-          toast("Loaded parsed data into form");
-        });
+    // ----- SMART SUGGEST (Rules + Heuristics + Gemini) -----
+    async function smartSuggest(seed){
+      // 1) Heuristics
+      const base = heuristicExtract(seed.description || seed.vendor || "");
+      // 2) Rules
+      const { rec: ruled } = applyRules({...seed, ...base}, true);
+      // 3) LLM (optional)
+      if(settings.allowLLM && settings.geminiKey){
+        try{
+          const ai = await geminiParse((seed.description||"") + "\n" + (seed.vendor||""), settings.geminiKey);
+          const cat = await geminiCategorize({ ...ruled, ...ai });
+          return { ...base, ...ruled, ...ai, category: cat?.category || ai.category || ruled.category || base.category };
+        }catch(e){ console.warn("AI suggest failed", e); }
       }
-      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', container) });
-      toast(`${files.length} file(s) added`,{timeout:1400});
+      return { ...base, ...ruled };
+    }
+
+    function heuristicExtract(text){
+      const s = (text||"").replace(/\s+/g," ").trim();
+      const amount = pickAmount(s);
+      const date = pickDate(s);
+      const vendor = pickVendor(s);
+      const category = pickCategoryByKeywords(s);
+      return { amount, date, vendor, category };
+    }
+    function pickAmount(t){
+      const pri = t.match(/Total(?:\s+before\s+tax)?[:\s]+(?:PHP|₱)?\s?([\d,]+(?:\.\d{2})?)/i);
+      if(pri) return Number(pri[1].replace(/,/g,""));
+      const any = t.match(/(?:PHP|₱)\s?([\d,]+(?:\.\d{2})?)/i) || t.match(/\b([\d,]{3,}(?:\.\d{2})?)\b/);
+      return any ? Number(any[1].replace(/,/g,"")) : 0;
+    }
+    function pickDate(t){
+      const iso = t.match(/\b(20\d{2}[-/]\d{1,2}[-/]\d{1,2})\b/);
+      if(iso) return toISO(iso[1]);
+      const months="january|february|march|april|may|june|july|august|september|october|november|december".split("|");
+      const pat = new RegExp(`\\b(${months.join("|")})\\s+(\\d{1,2}),?\\s*(\\d{4})\\b`, "i");
+      const m=t.match(pat);
+      if(m){ const mm=("0"+(months.indexOf(m[1].toLowerCase())+1)).slice(-2); const dd=("0"+m[2]).slice(-2); return `${m[3]}-${mm}-${dd}`; }
+      return new Date().toISOString().slice(0,10);
+    }
+    function pickVendor(t){
+      const urlStripped = t.replace(/https?:\/\/\S+/g, " ").trim();
+      const line = urlStripped.split(/[|·•\-–—]\s*/)[0]; // first meaningful chunk
+      const m = line.match(/[A-Z][A-Za-z0-9 &'().-]{3,}/);
+      return m ? m[0].slice(0,48).trim() : "";
+    }
+    function pickCategoryByKeywords(t){
+      const map=[
+        [/electric|kwh|meralco|power|energy|electricity/i,"Electricity"],
+        [/water|manila water|maynilad|h2o/i,"Water"],
+        [/internet|wifi|broadband|fiber|converge|pldt/i,"Internet"],
+        [/domain|hosting|saas|subscription|netflix|spotify|adobe/i,"Subscriptions"],
+        [/repair|fix|technician|maintenance|service call/i,"Repairs"],
+        [/clean|detergent|soap|janitor/i,"Cleaning"],
+        [/shipping|delivery|courier|logistics/i,"Shipping"],
+        [/insurance|premium|coverage/i,"Insurance"],
+        [/tax|withholding|bir|vat/i,"Taxes"],
+        [/visa|flight|hotel|uber|grab|travel/i,"Travel"],
+        [/meal|food|restaurant|coffee|snack/i,"Meals"],
+        [/paper|ink|office|stationery/i,"Office"],
+        [/gloves|screws|suppl(y|ies)|tape/i,"Supplies"],
+      ];
+      for(const [re,cat] of map){ if(re.test(t)) return cat; }
+      return "";
     }
 
     async function geminiParse(text, apiKey) {
       const model = "gemini-2.0-flash-exp";
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const prompt = `You are an expert financial assistant. Extract expense details and return ONLY valid JSON.
-Format:
-{
-  "date": "YYYY-MM-DD",
-  "vendor": "Vendor Name",
-  "description": "Short description",
-  "category": "Expense Category",
-  "amount": 1234.50,
-  "currency": "PHP"
-}
-Today: ${new Date().toLocaleDateString('en-CA')}
+      const prompt = `Extract expense fields. Only valid JSON. Choose fields if present; avoid hallucinations.
+Return:
+{"date":"YYYY-MM-DD","vendor":"...","description":"...","category":"(one of: ${CATEGORY_TAXONOMY.join(", ")})","amount":1234.56,"currency":"PHP"}
+
 Text:
-<<<
-${(text||'').slice(0, 4000)}
->>>`.trim();
+${(text||'').slice(0, 6000)}`;
       const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, topP: 0.1, responseMimeType: "application/json" } };
       const resp = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!resp.ok) { const errBody = await resp.text(); console.error("Gemini API Error:", resp.status, errBody); throw new Error(`API failed: ${resp.status}`); }
@@ -1289,22 +1227,21 @@ ${(text||'').slice(0, 4000)}
       try { const parsed = JSON.parse(textOut); if(parsed.amount) parsed.amount = Number(parsed.amount); return parsed; } 
       catch (e) { console.error("Failed to parse Gemini JSON:", textOut, e); return {}; }
     }
-
-    function roughParse(text){
-      const amtMatch = text.match(/(?:PHP|₱)\s?([\d,]+(?:\.\d{2})?)/i) || text.match(/\b([\d,]+(?:\.\d{2})?)\b/);
-      const dateMatch = text.match(/\b(20\d{2}[-/]\d{1,2}[-/]\d{1,2})\b/) || text.match(/\b(\d{1,2}[-/]\d{1,2}[-/](?:20)?\d{2})\b/);
-      const vendorMatch = text.match(/(?:from|at|merchant|vendor)[:\s]+([^\n,]+)/i) || text.match(/^\s*([A-Za-z][A-Za-z0-9 &'.-]{2,})/m);
-      const amount = amtMatch ? Number(amtMatch[1].replace(/,/g,"")) : 0;
-      const dateISO = dateMatch ? toISO(dateMatch[1]) : (new Date().toISOString().slice(0,10));
-      const vendor = vendorMatch ? vendorMatch[1].trim() : "";
-      return {
-        date: dateISO, property:"Cascade Hideaway_BRIA", vendor, description:"", category:"", subcategory:"",
-        amount, currency:"PHP", payment_method:"", invoice_number:"", reference_id:"",
-        tax_amount:0, tip_amount:0, location:"", notes: text.length>140? text.slice(0,140)+"…" : text,
-        created_at:new Date().toISOString(), processed_at:"", validated:"false", validation_errors:"",
-        source_type:"", source_filename:"", attachment_drive_file_id:"", record_drive_file_id:"", uploaded_at:"", sheet_appended_at:""
-      };
+    async function geminiCategorize(rec) {
+      if(!settings.geminiKey) return {};
+      const model = "gemini-2.0-flash-exp";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${settings.geminiKey}`;
+      const prompt = `Pick best category (only one) from: ${CATEGORY_TAXONOMY.join(", ")}.
+Context:
+Date: ${rec.date} Vendor: ${rec.vendor} Desc: ${rec.description} Amount: ${rec.amount}
+Return ONLY: {"category":"..."}`;
+      const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.05, responseMimeType: "application/json" } };
+      const resp = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!resp.ok) return {};
+      const data = await resp.json();
+      try { return JSON.parse(data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}'); } catch { return {}; }
     }
+
     function toISO(s){
       try {
         const n=s.replace(/[./]/g,"-"); const parts=n.split("-").map(x=>x.padStart(2,"0"));
@@ -1315,6 +1252,7 @@ ${(text||'').slice(0, 4000)}
       } catch { return ""; }
     }
 
+    // Rules modal bindings (unchanged)
     function renderRules(){
       const list=$("#rulesList"); if(!list) return;
       list.innerHTML="";
@@ -1374,8 +1312,7 @@ ${(text||'').slice(0, 4000)}
     }
 
     function allCategoryOptions(){
-      const DEFAULT_CATEGORIES = ["Utilities","Subscriptions","Services","Maintenance","Repairs","Supplies","Cleaning","Internet","Electricity","Water","Gas","Waste","Landscaping","Security","Insurance","Taxes","Fees","Professional Services","Software","Travel","Meals","Office","Other"];
-      const set=new Set(DEFAULT_CATEGORIES);
+      const set=new Set(CATEGORY_TAXONOMY);
       records.forEach(r=>{ const c=(r.category||"").trim(); if(c) set.add(c); });
       rules.forEach(r=>{ const c=(r?.fields?.category||"").trim(); if(c) set.add(c); });
       return Array.from(set).sort((a,b)=>a.localeCompare(b));
@@ -1447,16 +1384,260 @@ ${(text||'').slice(0, 4000)}
       }
     }
 
+    // ----- SHEET SETUP -----
+    $("#setupSheet")?.addEventListener("click", async ()=>{
+      try{
+        const token = await ensureGoogleToken();
+        await ensureSheetStructure({token, force:true});
+        toast("Sheet structure set up ✓", { timeout: 2200 });
+      }catch(e){ toast("Setup failed: " + (e?.message||e)); }
+    });
+
+    async function ensureSheetStructure({token, force=false}){
+      const spreadsheetId = (settings.spreadsheetId||"").trim();
+      const sheetName = (settings.sheetName||"Sheet1").trim();
+      if(!spreadsheetId) throw new Error("Spreadsheet ID not set");
+      const meta = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=sheets.properties`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r=>r.json());
+      const sheets = (meta.sheets||[]).map(s=>s.properties);
+      let main = sheets.find(s=>s.title===sheetName);
+      let metaSheet = sheets.find(s=>s.title==="Meta");
+      const requests = [];
+
+      // Create sheets if missing
+      if(!main){ requests.push({ addSheet: { properties: { title: sheetName } } }); }
+      if(!metaSheet){ requests.push({ addSheet: { properties: { title: "Meta", hidden: false } } }); }
+
+      if(requests.length){
+        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`, {
+          method:"POST", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" },
+          body: JSON.stringify({ requests })
+        });
+        // Re-fetch to get IDs
+        const meta2 = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=sheets.properties`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(r=>r.json());
+        const sheets2 = (meta2.sheets||[]).map(s=>s.properties);
+        main = sheets2.find(s=>s.title===sheetName);
+        metaSheet = sheets2.find(s=>s.title==="Meta");
+      }
+
+      // Headers
+      const HEADERS = ["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","sheet_appended_at","created_at","processed_at"];
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(sheetName+'!A1')}:update?valueInputOption=RAW`, {
+        method:"PUT",
+        headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" },
+        body: JSON.stringify({ range: sheetName+"!A1", majorDimension:"ROWS", values: [HEADERS] })
+      });
+
+      // Meta categories
+      const catValues = CATEGORY_TAXONOMY.map(c=>[c]);
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent('Meta!A1')}:update?valueInputOption=RAW`, {
+        method:"PUT",
+        headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" },
+        body: JSON.stringify({ range: 'Meta!A1', majorDimension:"ROWS", values: catValues })
+      });
+
+      // Formatting & validation
+      const catRule = {
+        condition: { type: "ONE_OF_LIST", values: CATEGORY_TAXONOMY.map(v=>({ userEnteredValue: v })) },
+        strict: true, showCustomUi: true
+      };
+      const reqs2 = [
+        { updateSheetProperties: { properties: { sheetId: main.sheetId, gridProperties: { frozenRowCount: 1 } }, fields: "gridProperties.frozenRowCount" } },
+        { autoResizeDimensions: { dimensions: { sheetId: main.sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 26 } } },
+        { repeatCell: { range: { sheetId: main.sheetId, startRowIndex: 0, endRowIndex: 1 }, cell: { userEnteredFormat: { textFormat: { bold: true } } }, fields: "userEnteredFormat.textFormat.bold" } },
+        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "yyyy-mm-dd" } } }, fields: "userEnteredFormat.numberFormat" } },
+        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 6, endColumnIndex: 7 }, cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } }, fields: "userEnteredFormat.numberFormat" } },
+        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 11, endColumnIndex: 13 }, cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } }, fields: "userEnteredFormat.numberFormat" } },
+        { setDataValidation: { range: { sheetId: main.sheetId, startRowIndex: 1, startColumnIndex: 4, endColumnIndex: 5 }, rule: catRule } },
+      ];
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`, {
+        method:"POST",
+        headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" },
+        body: JSON.stringify({ requests: reqs2 })
+      });
+    }
+
+    // ----- Ingest with manual Start OCR + Smart Parse -----
+    $("#fileInput")?.addEventListener("change", onFiles);
+    document.addEventListener("dragover", e=>e.preventDefault());
+    document.addEventListener("drop", e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
+    function onFiles(e){ handleFiles(e.target.files); e.target.value=""; }
+
+    async function handleFiles(fileList){
+      if(!fileList?.length) return; 
+      const files=Array.from(fileList);
+      const container=$("#ingestPreview"); if(!container) return;
+      if(container.textContent?.includes("Nothing ingested")) container.innerHTML="";
+      for(const f of files){
+        const id=Math.random().toString(36).slice(2);
+        const isImg = f.type.startsWith("image/");
+        const isPdf = /\.pdf$/i.test(f.name) || f.type==="application/pdf";
+        const url=isImg ? URL.createObjectURL(f) : "";
+
+        const card=document.createElement("div"); card.className="card glass"; card.style.marginBottom="10px";
+        card.innerHTML = `
+        <div class="card-b">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:700; display:flex; align-items:center; gap:8px;"><i data-lucide="${isImg?'image':'file'}"></i> ${escapeHtml(f.name)}</div>
+            <div class="meta">${isImg?'image': (isPdf ? 'pdf' : 'file')}</div>
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-start;">
+            ${isImg ? `<img alt="preview" src="${url}" style="width:90px;height:90px;object-fit:cover;border:1px solid var(--border);border-radius:8px"/>` : ''}
+            <div style="flex:1 1 auto;">
+              <div class="bar"><span id="bar-${id}" style="width:0%; transition: width 0.2s ease;"></span></div>
+              <div id="txt-${id}" class="meta" style="margin-top:8px; max-height: 120px; overflow:auto;">Ready. Press “Start OCR”.</div>
+              <div id="chips-${id}" class="meta" style="display:flex; gap:6px; margin-top:6px;"></div>
+              <div id="edit-${id}" class="hidden" style="margin-top:8px; display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+                <label><span class="label">Date</span><input class="input" data-f="date"></label>
+                <label><span class="label">Vendor</span><input class="input" data-f="vendor"></label>
+                <label><span class="label">Category</span><input class="input" data-f="category" list="categoryList"></label>
+                <label><span class="label">Amount</span><input class="input" data-f="amount" type="number" step="0.01"></label>
+                <label style="grid-column:1/-1"><span class="label">Description</span><input class="input" data-f="description"></label>
+                <div style="grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap">
+                  <button id="ai-${id}" class="btn-s"><i data-lucide="wand-2"></i> Smart Parse</button>
+                  <button id="send-${id}" class="btn-s"><i data-lucide="file-pen-line"></i> Send to Form</button>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                <button id="start-${id}" class="btn-s"><i data-lucide="scan-text"></i> Start OCR</button>
+                <button id="attach-${id}" class="btn-s"><i data-lucide="paperclip"></i> Upload Attachment</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        container.appendChild(card);
+        if(window.lucide) window.lucide.createIcons({ nodes: [card] });
+
+        const progressBar=$("#bar-"+id); const textEl=$("#txt-"+id); const chips=$("#chips-"+id);
+        const attachBtn=$("#attach-"+id);
+        const startBtn=$("#start-"+id);
+        const editBox=$("#edit-"+id);
+        const sendBtn=$("#send-"+id);
+        const aiBtn=$("#ai-"+id);
+        let parsed=null, ocrText="";
+
+        attachBtn?.addEventListener("click", async ()=>{
+          try{
+            const token = await ensureGoogleToken();
+            const { id:fileId } = await uploadAttachmentToDrive(f, { accessToken: token, folderId: settings.folderId?.trim()||null });
+            const form=$("#expenseForm");
+            form.elements.namedItem("attachment_drive_file_id").value = fileId;
+            form.elements.namedItem("source_type").value = isImg?"image":(isPdf?"pdf":"file");
+            form.elements.namedItem("source_filename").value = f.name;
+            toast("Attachment uploaded & linked ✓", { timeout: 1800 });
+            attachBtn.disabled = true;
+          }catch(e){
+            toast("Attach failed — sign in first", { timeout: 2200 });
+          }
+        });
+
+        startBtn?.addEventListener("click", async ()=>{
+          if(!settings.useTesseract){ toast("Enable Tesseract in Settings"); return; }
+          try{
+            if (typeof Tesseract === 'undefined') { throw new Error("Tesseract.js failed to load"); }
+            textEl.textContent = "Recognizing…";
+            let text="", confidence=0;
+
+            if(isImg){
+              const res=await Tesseract.recognize(f,"eng",{logger:(m)=>{ if(m.status==="recognizing text"){ const p=clamp01(m.progress||0); progressBar.style.width=(p*100).toFixed(0)+"%"; }}});
+              text=(res?.data?.text||"").trim(); confidence=(res?.data?.confidence ?? 0);
+            }else{
+              if(typeof pdfjsLib === "undefined"){ throw new Error("PDF.js not loaded"); }
+              const buf = await f.arrayBuffer();
+              pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+              const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+              const pageCount = Math.min(pdf.numPages, 3);
+              let pieces=[], confs=[];
+              for(let p=1;p<=pageCount;p++){
+                const page = await pdf.getPage(p);
+                const viewport = page.getViewport({ scale: 2 });
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                canvas.width = viewport.width; canvas.height = viewport.height;
+                await page.render({ canvasContext: ctx, viewport }).promise;
+                const res = await Tesseract.recognize(canvas, "eng", { logger:(m)=>{
+                  if(m.status==="recognizing text"){
+                    const progress = ((p-1) + clamp01(m.progress||0)) / pageCount;
+                    progressBar.style.width=(progress*100).toFixed(0)+"%";
+                  }
+                }});
+                pieces.push((res?.data?.text||"").trim());
+                confs.push(res?.data?.confidence ?? 0);
+              }
+              text = pieces.join("\n\n").trim();
+              confidence = confs.length ? Math.round(confs.reduce((a,b)=>a+b,0)/confs.length) : 0;
+            }
+
+            ocrText = text;
+            textEl.textContent = text ? (text.length>800?text.slice(0,800)+"…":text) : "(no text)";
+            chips.innerHTML = `<span class="chip">Lang: ENG</span><span class="chip">Confidence: ${Math.round(confidence)}%</span><span class="chip">Size: ${(f.size/1024).toFixed(1)} KB</span>`;
+            parsed = heuristicExtract(text);
+            // show quick edit
+            editBox.classList.remove("hidden");
+            editBox.querySelector('[data-f="date"]').value = parsed.date||"";
+            editBox.querySelector('[data-f="vendor"]').value = parsed.vendor||"";
+            editBox.querySelector('[data-f="category"]').value = parsed.category||"";
+            editBox.querySelector('[data-f="amount"]').value = parsed.amount||"";
+            editBox.querySelector('[data-f="description"]').value = text.slice(0,180);
+          }catch(err){
+            console.error("OCR Error:", err);
+            textEl.textContent=`OCR failed: ${err.message}`;
+            textEl.style.color = "var(--bad)";
+          }
+        });
+
+        aiBtn?.addEventListener("click", async ()=>{
+          if(!ocrText){ toast("Run OCR first"); return; }
+          if(!settings.allowLLM || !settings.geminiKey){ toast("Enable Gemini in Settings"); return; }
+          aiBtn.disabled = true;
+          try{
+            const ai = await smartSuggest({ description: ocrText });
+            parsed = { ...(parsed||{}), ...ai };
+            editBox.querySelector('[data-f="date"]').value = parsed.date||"";
+            editBox.querySelector('[data-f="vendor"]').value = parsed.vendor||"";
+            editBox.querySelector('[data-f="category"]').value = parsed.category||"";
+            editBox.querySelector('[data-f="amount"]').value = parsed.amount||"";
+            editBox.querySelector('[data-f="description"]').value = parsed.description||ocrText.slice(0,180);
+            toast("Smart Parse complete ✓", { timeout: 1400 });
+          }catch(e){ toast("Smart Parse failed"); }
+          finally{ aiBtn.disabled = false; }
+        });
+
+        sendBtn?.addEventListener("click", ()=>{
+          const r={...parsed};
+          r.date = editBox.querySelector('[data-f="date"]').value||r.date;
+          r.vendor = editBox.querySelector('[data-f="vendor"]').value||r.vendor;
+          r.category = editBox.querySelector('[data-f="category"]').value||r.category;
+          r.amount = Number(editBox.querySelector('[data-f="amount"]').value||r.amount||0);
+          r.description = editBox.querySelector('[data-f="description"]').value||r.description;
+          r.property = "Cascade Hideaway_BRIA";
+          const {rec: rec2} = applyRules(r, rulesAllowOverwrite);
+          fillForm(rec2);
+          switchTab("form");
+          toast("Loaded parsed data into form");
+        });
+      }
+      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', container) });
+      toast(`${files.length} file(s) added`,{timeout:1400});
+    }
+
+    // ----- Settings hydrate -----
     $("#saveSettings")?.addEventListener("click", ()=>{
       settings.folderId=$("#driveFolderId").value.trim();
       settings.googleClientId=$("#googleClientId").value.trim();
       settings.geminiKey=$("#geminiKey").value.trim();
       settings.useTesseract=$("#toggleTesseract").checked;
       settings.allowLLM=$("#toggleLLM").checked;
+      settings.autoAISuggest=$("#toggleAISuggest").checked;
       settings.autoUpload=$("#toggleAutoUpload").checked;
       settings.spreadsheetId=$("#sheetId").value.trim();
       settings.sheetName=$("#sheetName").value.trim() || "Sheet1";
       settings.weeklyBackup=$("#toggleWeeklyBackup").checked;
+      settings.showGuides=$("#toggleGuides").checked;
+      document.body.classList.toggle('guides-hidden', !settings.showGuides);
       storage.set("cx:settings",settings);
       oauth.tokenClient = null; oauth.accessToken = null; $("#googleUser").textContent = 'Not signed in';
       toast("Settings saved",{timeout:1200});
@@ -1482,10 +1663,13 @@ ${(text||'').slice(0, 4000)}
       $("#geminiKey").value = settings.geminiKey || "";
       $("#toggleTesseract").checked = !!settings.useTesseract;
       $("#toggleLLM").checked = !!settings.allowLLM;
+      $("#toggleAISuggest").checked = settings.autoAISuggest !== false;
       $("#toggleAutoUpload").checked = settings.autoUpload !== false;
       $("#toggleWeeklyBackup").checked = settings.weeklyBackup !== false;
+      $("#toggleGuides").checked = settings.showGuides !== false;
       $("#sheetId").value = settings.spreadsheetId || "";
       $("#sheetName").value = settings.sheetName || "Sheet1";
+      document.body.classList.toggle('guides-hidden', !settings.showGuides);
     }
     const dateInput = $("#expenseForm")?.elements?.namedItem("date");
     if(dateInput && !dateInput.value) {dateInput.value = new Date().toISOString().slice(0, 10);}

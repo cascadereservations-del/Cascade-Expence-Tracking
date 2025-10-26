@@ -1,3 +1,4 @@
+<!-- /indexv4.html -->
 <!DOCTYPE html>
 <html lang="en" data-theme="auto">
 <head>
@@ -5,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Cascade Expense Capture — Earthen Luxe</title>
 
-  <!-- Google Identity Services for OAuth (Popup Flow - No Redirect URI needed) -->
+  <!-- Google Identity Services (OAuth popup flow) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <!-- External Libraries (Removed broken integrity hashes for reliability) -->
+  <!-- External Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
@@ -23,18 +24,18 @@
     }
     @media (prefers-color-scheme: dark) {
       html[data-theme="auto"]{
-        --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.9); --surface-tint:rgba(23,27,30,.8);
+        --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.90); --surface-tint:rgba(23,27,30,.80);
         --ink:#e9eef0; --muted:#aab3b8; --border:rgba(255,255,255,.09); --accent:#9cc6dd; --accent-2:#d7bfa2;
         --ring: rgba(156,198,221,.35); --toast-bg:#1f2529; --toast-fg:#e9eef0;
       }
     }
     html[data-theme="dark"]{
-      --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.9); --surface-tint:rgba(23,27,30,.8);
+      --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.90); --surface-tint:rgba(23,27,30,.80);
       --ink:#e9eef0; --muted:#aab3b8; --border:rgba(255,255,255,.09); --accent:#9cc6dd; --accent-2:#d7bfa2;
       --ring: rgba(156,198,221,.35); --toast-bg:#1f2529; --toast-fg:#e9eef0;
     }
     html[data-theme="light"]{
-      --bg:var(--ivory); --surface:#ffffff; --surface-2:rgba(255,255,255,.9); --surface-tint:rgba(255,255,255,.8);
+      --bg:var(--ivory); --surface:#ffffff; --surface-2:rgba(255,255,255,.90); --surface-tint:rgba(255,255,255,.80);
       --ink:#111; --muted:#3b4043; --border:rgba(34,51,59,.18); --accent:var(--slate); --accent-2:var(--earth);
       --ring: rgba(34,51,59,.22); --toast-bg:#111; --toast-fg:#fff;
     }
@@ -43,7 +44,7 @@
     html,body{height:100%}
     body{
       margin:0;
-      padding-bottom: 80px;
+      padding-bottom:80px;
       background:
         radial-gradient(1200px 600px at 10% 0%, rgba(198,172,142,.08), transparent 60%),
         radial-gradient(800px 800px at 100% 100%, rgba(94,80,63,.05), transparent 60%),
@@ -61,30 +62,29 @@
     .wrap{max-width:1200px;margin:0 auto;padding:16px;position:relative;z-index:1}
 
     header{position:sticky;top:0;z-index:40;background:linear-gradient(180deg, color-mix(in oklab, var(--bg), #fff 12%) 92%, transparent); backdrop-filter:blur(8px)}
-    .brand{font-size:clamp(18px, 1.2vw + .6rem, 24px);font-weight:900;letter-spacing:.2px;color:var(--accent); display: flex; align-items: center; gap: 8px;}
+    .brand{font-size:clamp(18px, 1.2vw + .6rem, 24px);font-weight:900;letter-spacing:.2px;color:var(--accent); display:flex; align-items:center; gap:8px;}
     .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
     .top-actions{display:flex;gap:8px;align-items:center}
     .quick{margin-left:8px}
 
     .tabs{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);overflow:auto}
-    .tab{padding:9px 12px;border-radius:12px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--accent);font-weight:800;white-space:nowrap;transition:background .15s ease; display: inline-flex; align-items: center; gap: 8px;}
+    .tab{padding:9px 12px;border-radius:12px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--accent);font-weight:800;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;}
     .tab[aria-selected="true"]{background:var(--surface);border-color:var(--border);color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.04)}
     .tab:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
     .hidden{display:none!important}
-    
-    .lucide{width: 1em; height: 1em; stroke-width: 2.5px;}
-    .btn .lucide, .btn-s .lucide, .tab .lucide { width: 0.9em; height: 0.9em; }
-    .brand .lucide { width: 1.1em; height: 1.1em; }
-    .mobile-nav .lucide { width: 24px; height: 24px; }
-    .fab .lucide { width: 28px; height: 28px; }
 
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.10); transition: transform 0.15s ease, box-shadow 0.15s ease;}
-    .card:hover{transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.12);}
+    .lucide{width:1em;height:1em;stroke-width:2.5px;}
+    .btn .lucide,.btn-s .lucide,.tab .lucide{width:.9em;height:.9em}
+    .brand .lucide{width:1.1em;height:1.1em}
+    .mobile-nav .lucide{width:24px;height:24px}
+    .fab .lucide{width:28px;height:28px}
 
-    #panel-form .card{background:linear-gradient(180deg, var(--surface-2), var(--surface-tint));backdrop-filter: blur(12px);border:1px solid color-mix(in oklab, var(--border), var(--accent-2) 30%);box-shadow:0 10px 30px rgba(0,0,0,.12)}
-    #panel-form .card:hover{transform: none; box-shadow: 0 10px 30px rgba(0,0,0,.12);}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.10);transition:transform .15s ease, box-shadow .15s ease;}
+    .card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.12)}
+    #panel-form .card{background:linear-gradient(180deg, var(--surface-2), var(--surface-tint));backdrop-filter:blur(12px);border:1px solid color-mix(in oklab, var(--border), var(--accent-2) 30%);box-shadow:0 10px 30px rgba(0,0,0,.12)}
+    #panel-form .card:hover{transform:none;box-shadow:0 10px 30px rgba(0,0,0,.12)}
 
-    .card-h{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:900;color:var(--accent);font-size:clamp(14px, .6vw + .6rem, 18px); display: flex; align-items: center; gap: 8px;}
+    .card-h{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:900;color:var(--accent);font-size:clamp(14px,.6vw + .6rem,18px);display:flex;align-items:center;gap:8px;}
     .card-h-actions{display:flex;gap:8px;align-items:center;margin-left:auto}
     .card-b{padding:14px 16px}
 
@@ -100,15 +100,15 @@
     .btn:hover{filter:brightness(1.05)}
     .btn:active{transform:translateY(1px)}
     .btn-s{background:#fff;color:var(--ink)}
-    html[data-theme="dark"] .btn-s { background: color-mix(in oklab, var(--surface), #fff 6%); }
-    .btn-s:active{transform:translateY(1px); filter: brightness(0.95);}
-    .btn:disabled, .btn-s:disabled { opacity: 0.6; cursor: not-allowed; transform: none; filter: none; }
+    html[data-theme="dark"] .btn-s{background:color-mix(in oklab, var(--surface), #fff 6%)}
+    .btn-s:active{transform:translateY(1px);filter:brightness(.95)}
+    .btn:disabled,.btn-s:disabled{opacity:.6;cursor:not-allowed;transform:none;filter:none}
 
     table{width:100%;border-collapse:separate;border-spacing:0}
     th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left}
     thead th{position:sticky;top:0;background:var(--surface);user-select:none;cursor:default}
     thead th[data-sort]{cursor:pointer}
-    thead th[data-sort] .arrow{opacity:.35;margin-left:6px; transition: opacity 0.15s ease, transform 0.15s ease;}
+    thead th[data-sort] .arrow{opacity:.35;margin-left:6px;transition:opacity .15s ease, transform .15s ease;}
     thead th[data-sort].asc .arrow{transform:rotate(180deg);opacity:.85}
     thead th[data-sort].desc .arrow{opacity:.85}
 
@@ -123,12 +123,12 @@
     .kpis{display:grid;gap:12px}
     @media(min-width:700px){.kpis{grid-template-columns:repeat(4,1fr)}}
     .kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
-    .kpi h4{margin:0 0 6px 0;font-size:12px;color:var(--muted); font-weight: 600;}
+    .kpi h4{margin:0 0 6px 0;font-size:12px;color:var(--muted);font-weight:600}
     .kpi .v{font-size:22px;font-weight:800}
 
     .bar{height:10px;background:#efe7d6;border-radius:999px;overflow:hidden;border:1px solid var(--border)}
     html[data-theme="dark"] .bar{background:#253039}
-    .bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition: width 0.3s ease;}
+    .bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .3s ease}
 
     .num{font-weight:800}
     .num--green{color:var(--ok)}
@@ -140,16 +140,16 @@
 
     .modal{position:fixed;inset:0;background:rgba(10,9,8,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
     .modal[aria-hidden="false"]{display:flex}
-    .modal-card{max-width:900px;width:100%;background:linear-gradient(180deg, var(--surface-2), var(--surface-tint));backdrop-filter: blur(14px); border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.25)}
+    .modal-card{max-width:900px;width:100%;background:linear-gradient(180deg, var(--surface-2), var(--surface-tint));backdrop-filter:blur(14px); border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.25)}
     .modal-card:focus{outline:none}
 
     .rule-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
     .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);padding:2px 8px;border-radius:999px;background:#fff}
-    html[data-theme="dark"] .chip{background: color-mix(in oklab, var(--surface), #fff 6%)}
+    html[data-theme="dark"] .chip{background:color-mix(in oklab, var(--surface), #fff 6%)}
 
     .ac-wrap{position:relative}
-    .ac-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.12);max-height:240px;overflow:auto; z-index: 10;}
-    html[data-theme="dark"] .ac-menu{background: color-mix(in oklab, var(--surface), #fff 6%)}
+    .ac-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.12);max-height:240px;overflow:auto;z-index:10}
+    html[data-theme="dark"] .ac-menu{background:color-mix(in oklab, var(--surface), #fff 6%)}
     .ac-menu.hidden{display:none}
     .ac-item{display:block;width:100%;text-align:left;padding:8px 12px;border:0;background:transparent;cursor:pointer}
     .ac-item:hover,.ac-item[aria-selected="true"]{background:#fffaf0}
@@ -160,108 +160,33 @@
     .toast .action{color:#ffd66b;border:1px solid rgba(255,214,107,.35);background:transparent;border-radius:10px;padding:6px 10px;font-weight:700;cursor:pointer}
     .toast .close{margin-left:4px;opacity:.7;cursor:pointer}
 
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      opacity: 0.8;
-    }
-    .empty-state .lucide {
-      width: 48px;
-      height: 48px;
-      stroke-width: 1.5px;
-      color: var(--accent-2);
-    }
-    .empty-state-h {
-      font-weight: 700;
-      font-size: 1.1em;
-      color: var(--accent);
-    }
-    .empty-state-p {
-      max-width: 300px;
-      margin: 0 auto;
-    }
+    .empty-state{ text-align:center; padding:40px 20px; display:flex; flex-direction:column; align-items:center; gap:12px; opacity:.8 }
+    .empty-state .lucide{ width:48px; height:48px; stroke-width:1.5px; color:var(--accent-2) }
+    .empty-state-h{ font-weight:700; font-size:1.1em; color:var(--accent) }
+    .empty-state-p{ max-width:300px; margin:0 auto }
 
-    .mobile-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 65px;
-      background: var(--surface-2);
-      backdrop-filter: blur(10px);
-      border-top: 1px solid var(--border);
-      display: none;
-      align-items: stretch;
-      z-index: 100;
-    }
-    .mobile-tab {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      flex: 1 1 0;
-      gap: 4px;
-      background: transparent;
-      border: 0;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 10px;
-      padding: 8px 4px;
-      transition: color 0.15s ease;
-    }
-    .mobile-tab[aria-selected="true"] {
-      color: var(--accent);
-    }
-    .fab {
-      position: fixed;
-      bottom: 80px;
-      right: 16px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid #fff;
-      box-shadow: 0 8px 24px rgba(0,0,0,.2);
-      cursor: pointer;
-      z-index: 101;
-    }
-    html[data-theme="dark"] .fab { border-color: var(--surface); }
+    .mobile-nav{ position:fixed; bottom:0; left:0; right:0; height:65px; background:var(--surface-2); backdrop-filter:blur(10px); border-top:1px solid var(--border); display:none; align-items:stretch; z-index:100 }
+    .mobile-tab{ display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1 1 0; gap:4px; background:transparent; border:0; color:var(--muted); cursor:pointer; font-size:10px; padding:8px 4px; transition:color .15s ease }
+    .mobile-tab[aria-selected="true"]{ color:var(--accent) }
+    .fab{ position:fixed; bottom:80px; right:16px; width:60px; height:60px; border-radius:50%; background:var(--accent); color:#fff; display:none; align-items:center; justify-content:center; border:2px solid #fff; box-shadow:0 8px 24px rgba(0,0,0,.2); cursor:pointer; z-index:101 }
+    html[data-theme="dark"] .fab{ border-color:var(--surface) }
 
-    @media(max-width: 768px) {
-      .tabs { display: none; }
-      .mobile-nav, .fab { display: flex; }
-      body { padding-bottom: 80px; } 
-      
-      #panel-form .card-h { flex-direction: column; align-items: flex-start; gap: 12px; }
-      #panel-form .card-h > div { margin-left: auto; }
-      
-      #panel-batch .card-h { flex-direction: column; align-items: flex-start; gap: 12px; }
-      #panel-batch .card-h-actions { flex-wrap: wrap; gap: 8px; }
+    @media(max-width:768px){
+      .tabs{display:none}
+      .mobile-nav,.fab{display:flex}
+      body{padding-bottom:80px}
 
-      .rule-row {
-        grid-template-columns: 1fr;
-        border: 1px solid var(--border);
-        padding: 10px;
-        border-radius: var(--radius);
-      }
-      .rule-row > div {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: flex-start;
-      }
+      #panel-form .card-h{flex-direction:column; align-items:flex-start; gap:12px}
+      #panel-form .card-h > div { margin-left:auto }
 
-      .grid-3 { grid-template-columns: 1fr; }
+      #panel-batch .card-h{flex-direction:column; align-items:flex-start; gap:12px}
+      #panel-batch .card-h-actions{flex-wrap:wrap; gap:8px}
 
-      .topbar .brand .lucide { display: none; } 
+      .rule-row{ grid-template-columns:1fr; border:1px solid var(--border); padding:10px; border-radius:var(--radius) }
+      .rule-row > div{ display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-start }
+
+      .grid-3{ grid-template-columns:1fr }
+      .topbar .brand .lucide{ display:none }
     }
   </style>
 </head>
@@ -322,23 +247,27 @@
           </div>
         </div>
         <div class="card-b">
-          <form id="expenseForm" autocomplete="off" novalidate>
+          <!-- Prioritized fields to match table columns -->
+          <form id="expenseForm" autocomplete="off" novalidate style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px,1fr))">
             <label><span class="label">Date *</span><input name="date" type="date" class="input" required></label>
-            <label><span class="label">Property *</span><input name="property" class="input" placeholder="e.g., Cascade Hideaway_BRIA"></label>
+            <label class="ac-wrap"><span class="label">Property *</span>
+              <input name="property" class="input" list="propertyList" placeholder="e.g., Cascade Hideaway_BRIA" required>
+              <datalist id="propertyList"></datalist>
+            </label>
+            <label><span class="label">Vendor</span><input name="vendor" class="input" placeholder="Merchant"></label>
             <label class="ac-wrap"><span class="label">Category *</span>
-              <input name="category" class="input" list="categoryList" placeholder="Utilities · Subscriptions · Services" aria-autocomplete="list" aria-expanded="false">
+              <input name="category" class="input" list="categoryList" placeholder="Utilities · Subscriptions · Services" aria-autocomplete="list" aria-expanded="false" required>
               <datalist id="categoryList"></datalist>
               <div id="catMenu" class="ac-menu hidden" role="listbox" aria-label="Categories"></div>
             </label>
             <label><span class="label">Amount *</span><input name="amount" type="number" step="0.01" class="input" required></label>
 
-            <label class="full"><span class="label">Description</span><input name="description" class="input" placeholder="Short description"></label>
-            <label class="full"><span class="label">Notes</span><textarea name="notes" class="textarea" placeholder="Optional notes"></textarea></label>
+            <label class="full" style="grid-column:1/-1"><span class="label">Description</span><input name="description" class="input" placeholder="Short description"></label>
+            <label class="full" style="grid-column:1/-1"><span class="label">Notes</span><textarea name="notes" class="textarea" placeholder="Optional notes"></textarea></label>
 
-            <details id="moreFields" class="full">
+            <details id="moreFields" class="full" style="grid-column:1/-1">
               <summary class="btn-s" style="display:inline-flex"><i data-lucide="chevron-down"></i> More fields</summary>
               <div style="margin-top:10px; display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-                <label><span class="label">Vendor</span><input name="vendor" class="input" placeholder="Merchant"></label>
                 <label><span class="label">Subcategory</span><input name="subcategory" class="input" placeholder="Optional"></label>
                 <label><span class="label">Currency</span><input name="currency" class="input" value="PHP"></label>
                 <label><span class="label">Payment Method</span><input name="payment_method" class="input" placeholder="e.g., Lloyd CC"></label>
@@ -347,9 +276,13 @@
                 <label><span class="label">Tax Amount</span><input name="tax_amount" type="number" step="0.01" class="input" value="0"></label>
                 <label><span class="label">Tip Amount</span><input name="tip_amount" type="number" step="0.01" class="input" value="0"></label>
                 <label><span class="label">Location</span><input name="location" class="input"></label>
+
+                <!-- Hidden / system fields (kept for compatibility) -->
                 <input type="hidden" name="source_type"/>
                 <input type="hidden" name="source_filename"/>
                 <input type="hidden" name="attachment_drive_file_id"/>
+                <input type="hidden" name="record_drive_file_id"/>
+                <input type="hidden" name="uploaded_at"/>
                 <input type="hidden" name="created_at"/>
                 <input type="hidden" name="processed_at"/>
                 <input type="hidden" name="validated"/>
@@ -380,7 +313,7 @@
           </div>
         </div>
         <div class="card">
-          <div class="card-h"><i data-lucide="sparkles"></i> Quick Parse Preview <span class="meta" style="float:right">Drop files anywhere to add</span></div>
+          <div class="card-h"><i data-lucide="sparkles"></i> Quick Parse Preview <span class="meta" style="margin-left:auto">Drop files anywhere to add</span></div>
           <div class="card-b" id="ingestPreview">Nothing ingested yet.</div>
         </div>
       </div>
@@ -418,7 +351,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <div class="meta"><span id="recordCount">0</span> items <span id="countAll" class="meta"></span> · Total <span id="recordTotal" class="num">₱0.00</span></div>
             <div style="display:flex;gap:8px">
-              <button id="uploadDriveBtn" class="btn-s"><i data-lucide="upload-cloud"></i> Upload to Drive</button>
+              <button id="uploadDriveBtn" class="btn-s" title="Upload entire dataset (JSON+CSV)"><i data-lucide="upload-cloud"></i> Upload to Drive</button>
               <button id="exportJsonBtn" class="btn-s"><i data-lucide="file-json"></i> Export JSON</button>
               <button id="exportCsvBtn" class="btn-s"><i data-lucide="file-text"></i> Export CSV</button>
             </div>
@@ -458,6 +391,7 @@
             <label><span class="label">Gemini API Key (optional)</span><input id="geminiKey" class="input" placeholder="AIzaSy... (enables AI parsing)"></label>
             <label style="display:flex;gap:8px;align-items:center"><input id="toggleTesseract" type="checkbox"> <span>Use Tesseract (client OCR)</span></label>
             <label style="display:flex;gap:8px;align-items:center"><input id="toggleLLM" type="checkbox"> <span>Allow LLM network (Gemini)</span></label>
+            <label style="display:flex;gap:8px;align-items:center"><input id="toggleAutoUpload" type="checkbox" checked> <span>Auto-upload on Add</span></label>
             <div style="display:flex;gap:8px">
               <button id="saveSettings" class="btn"><i data-lucide="save"></i> Save Settings</button>
               <button id="adminLogout" class="btn-s"><i data-lucide="log-out"></i> Admin Sign out</button>
@@ -512,8 +446,8 @@
       <div class="card-b">
         <ol class="meta" style="margin:0; padding-left:18px">
           <li>Go to <strong>Settings</strong> and enter your Google Client ID (from Google Cloud Console).</li>
-          <li>In Google Cloud Console, set <strong>Authorized JavaScript origins</strong> to <code>https://cascadereservations-del.github.io</code></li>
-          <li>Click <strong>Sign in to Google</strong> here - a popup will appear (no redirect needed!).</li>
+          <li>In Google Cloud Console, set <strong>Authorized JavaScript origins</strong> to your hosting domain (e.g. GitHub Pages).</li>
+          <li>Click <strong>Sign in to Google</strong> — a popup will appear (no redirect needed).</li>
           <li>(Optional) Add Gemini API Key for AI-powered parsing.</li>
           <li>Use <strong>Form</strong> or <strong>Capture</strong> to add expenses.</li>
           <li>Review in <strong>Batch</strong>, then <strong>Upload to Drive</strong>.</li>
@@ -543,13 +477,14 @@
   </button>
 
   <script>
-  (()=>{
-    'use strict';
+  (()=>{ 'use strict';
 
+    // ---------- utils ----------
     const $ = (s,root=document)=>root.querySelector(s);
     const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
     const fmtMoney = (n,ccy="PHP") => new Intl.NumberFormat(undefined,{style:"currency",currency:ccy||"PHP"}).format(Number(n||0));
     const escapeHtml = (s) => (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const clamp01 = (x)=>Math.max(0,Math.min(1,Number(x||0)));
 
     const storage = {
       get(k,f){ try{ return JSON.parse(localStorage.getItem(k)) ?? f; }catch{return f} },
@@ -557,16 +492,17 @@
       del(k){ try{ localStorage.removeItem(k); }catch{} }
     };
 
+    // ---------- state ----------
     let records = storage.get("cx:records", []).map(r=>({property:"", ...r}));
     let settings = storage.get("cx:settings", {
-      folderId:"",googleClientId:"",geminiKey:"",useTesseract:false,allowLLM:false,lastTab:"dashboard",theme:"auto"
+      folderId:"",googleClientId:"",geminiKey:"",useTesseract:false,allowLLM:false,lastTab:"dashboard",theme:"auto",autoUpload:true
     });
     let isAdmin = storage.get("cx:isAdmin", false);
     let rules = storage.get("cx:rules", []);
     let rulesAllowOverwrite = storage.get("cx:rulesAllowOverwrite", false);
-    
     let oauth = { accessToken: null, expiresAt: 0, tokenClient: null };
 
+    // ---------- theme ----------
     function applyTheme(mode){
       document.documentElement.setAttribute("data-theme", mode||"auto");
       const btn = $("#themeToggle");
@@ -581,9 +517,7 @@
         if (icon && window.lucide) window.lucide.createIcons({ nodes: [icon] });
       }
     }
-    
     applyTheme(settings.theme||"auto");
-    
     $("#themeToggle")?.addEventListener("click", () => {
       const order=["auto","light","dark"];
       const next=order[(order.indexOf(settings.theme||"auto")+1)%order.length];
@@ -591,6 +525,7 @@
       toast(`Theme: ${next}`, {timeout:1200});
     });
 
+    // ---------- toasts ----------
     const batchEmptyState = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="archive"></i><div class="empty-state-h">No Records Found</div><p class="empty-state-p meta">Try adding an expense from the 'Form' tab.</p><button class="btn-s" id="emptyGoToForm"><i data-lucide="file-plus-2"></i> Add First Expense</button></div></td></tr>`;
     const catEmptyState = `<div class="empty-state"><i data-lucide="pie-chart"></i><div class="empty-state-h">No Category Data</div><p class="empty-state-p meta">Add expenses and your category spending will appear here.</p></div>`;
     const recentEmptyState = `<div class="empty-state"><i data-lucide="activity"></i><div class="empty-state-h">No Recent Activity</div><p class="empty-state-p meta">Your 6 most recent expenses will show up here.</p></div>`;
@@ -617,6 +552,7 @@
       if(timeout>0){ setTimeout(()=>{ if(t.isConnected) area.removeChild(t); }, timeout); }
     }
 
+    // ---------- tabs ----------
     function switchTab(id){
       if(id==="settings" && !isAdmin){
         const pwd = prompt("Enter admin password:");
@@ -631,11 +567,11 @@
       if(id==="dashboard") renderDashboard();
       if(id==="batch") renderTable();
     }
-    
     $$(".tab").forEach(b=> b.addEventListener("click",()=>switchTab(b.dataset.tab)));
     $$(".mobile-tab").forEach(b=> b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
     $("#fab-add")?.addEventListener("click", ()=> switchTab("form"));
 
+    // ---------- schema & validation ----------
     const zExport = (window.zod && (window.zod.z || window.zod)) || null;
     const z = zExport && zExport.object ? (window.zod.z || window.zod) : null;
     const schema = z ? z.object({
@@ -657,12 +593,14 @@
       source_type: z.string().trim().optional(),
       source_filename: z.string().trim().optional(),
       attachment_drive_file_id: z.string().trim().optional(),
+      record_drive_file_id: z.string().trim().optional(),
+      uploaded_at: z.string().trim().optional(),
       created_at: z.string().trim().optional(),
       processed_at: z.string().trim().optional(),
       validated: z.string().trim().optional(),
       validation_errors: z.string().trim().optional(),
     }) : null;
-    
+
     function validateRecord(rec){
       if(schema){ const r = schema.safeParse(rec); return r.success ? {ok:true,data:r.data} : {ok:false,errors:r.error.errors.map(e=>e.message)}; }
       const errs=[];
@@ -677,6 +615,7 @@
       return {ok:errs.length===0,errors:errs,data:{...rec,amount:amt}};
     }
 
+    // ---------- rules ----------
     function saveRules(){ storage.set("cx:rules", rules); }
     function isRegex(p){ return /^\/.*\/i?$/.test(p) || p.startsWith("^") || p.endsWith("$"); }
     function ruleMatches(text, pattern){
@@ -685,7 +624,7 @@
         const body = pattern.replace(/^\/|\/i?$/g,"");
         try{ return new RegExp(body,"i").test(text); }catch{ return false; }
       }
-      return text.toLowerCase().includes(pattern.toLowerCase());
+      return text.toLowerCase().includes(String(pattern).toLowerCase());
     }
     function applyRules(rec, allowOverwrite){
       const hay = [rec.vendor||"", rec.description||""].join(" ");
@@ -694,10 +633,7 @@
         if(ruleMatches(hay, String(rule.pattern||""))){
           const out = {...rec};
           const f = rule.fields||{};
-          const maybeSet=(k,v)=>{
-            if(v==null || v==="") return;
-            if(out[k]==null || out[k]==="" || allowOverwrite) out[k]=v;
-          };
+          const maybeSet=(k,v)=>{ if(v==null || v==="") return; if(out[k]==null || out[k]==="" || allowOverwrite) out[k]=v; };
           maybeSet("category", f.category);
           maybeSet("subcategory", f.subcategory);
           maybeSet("property", f.property);
@@ -735,6 +671,7 @@
       });
     }
 
+    // ---------- form ----------
     function formToRec(){
       const f=$("#expenseForm"); const fd=new FormData(f); const rec=Object.fromEntries(fd.entries());
       rec.amount=Number(rec.amount||0); rec.tax_amount=Number(rec.tax_amount||0); rec.tip_amount=Number(rec.tip_amount||0);
@@ -744,29 +681,50 @@
     }
     function fillForm(r){ const f=$("#expenseForm"); for(const [k,v] of Object.entries(r)){ const el=f.elements.namedItem(k); if(!el) continue; el.value=(v??""); } }
     function validateCurrentForm(show){ const rec=formToRec(); const v=validateRecord(rec); if(v.ok){ $("#formErrors").textContent=""; toast("Form is valid",{timeout:1200}); return true; } else { if(show) $("#formErrors").textContent=v.errors.join(" · "); return false; } }
-    
+
     $("#validateBtn")?.addEventListener("click",()=>validateCurrentForm(true));
-    $("#addToListBtn")?.addEventListener("click",()=>{
+    $("#addToListBtn")?.addEventListener("click", async ()=>{
       if(!validateCurrentForm(true)) return;
       const rec=formToRec(); rec.processed_at=new Date().toISOString();
       const v=validateRecord(rec); rec.validated=String(v.ok); rec.validation_errors=v.ok?"":(v.errors||[]).join("; ");
+
+      // push to records first to never lose user data
       records.push(rec); persistAndRender(); switchTab("batch");
-      toast("Added to list", {actionLabel:"Undo",action:()=>{ records.pop(); persistAndRender(); switchTab("form"); }});
+
+      // auto-upload single record if enabled
+      if(settings.autoUpload){
+        try{
+          const token = await ensureDriveToken();
+          const { id:fileId } = await uploadRecordToDrive(rec, { accessToken: token, folderId: settings.folderId?.trim()||null });
+          rec.record_drive_file_id = fileId;
+          rec.uploaded_at = new Date().toISOString();
+          persistAndRender();
+          toast("Added & uploaded ✓", { timeout: 2000 });
+        }catch(e){
+          console.warn("Auto-upload skipped:", e?.message||e);
+          toast("Added (not uploaded — Sign in first)", { timeout: 2600 });
+        }
+      }else{
+        toast("Added to list", { timeout: 1400 });
+      }
+
+      // keep property/category; reset fast fields; date → today
       const f=$("#expenseForm");
       const keepProperty = f.elements.namedItem("property").value;
       const keepCategory = f.elements.namedItem("category").value;
-      ["date", "amount", "description", "notes", "vendor", "invoice_number", "reference_id"].forEach(name => {
-        const el = f.elements.namedItem(name);
-        if (el) el.value = (name === "tax_amount" || name === "tip_amount") ? "0" : "";
+      ["date","amount","description","notes","vendor","invoice_number","reference_id","tax_amount","tip_amount","location"].forEach(name=>{
+        const el=f.elements.namedItem(name);
+        if(el) el.value=(name==="tax_amount"||name==="tip_amount")?"0":"";
       });
       f.elements.namedItem("property").value = keepProperty;
       f.elements.namedItem("category").value = keepCategory;
-      f.elements.namedItem("date").value = new Date().toISOString().slice(0, 10);
+      f.elements.namedItem("date").value = new Date().toISOString().slice(0,10);
       f.elements.namedItem("date").focus();
     });
     $("#expenseForm")?.elements?.namedItem("vendor")?.addEventListener("input", applyRulesToForm);
     $("#expenseForm")?.elements?.namedItem("description")?.addEventListener("input", applyRulesToForm);
 
+    // ---------- table ----------
     function amountClass(a){ if(a>3000) return "num--red"; if(a>=500) return "num--yellow"; return "num--green"; }
     let tableSort = {key:"date", dir:"desc"};
     $$("#panel-batch thead th[data-sort]").forEach(th=>{
@@ -785,10 +743,7 @@
       dateFrom: $("#fltDateFrom"),dateTo: $("#fltDateTo"),amtMin: $("#fltAmtMin"),amtMax: $("#fltAmtMax"),
     };
     Object.values(filterEls).forEach(el=> el?.addEventListener("input", ()=>renderTable()));
-    $("#fltClear")?.addEventListener("click", ()=>{
-      Object.values(filterEls).forEach(el=>{ if(el) el.value=""; });
-      renderTable();
-    });
+    $("#fltClear")?.addEventListener("click", ()=>{ Object.values(filterEls).forEach(el=>{ if(el) el.value=""; }); renderTable(); });
 
     function filteredRecords(){
       const t=(filterEls.text?.value||"").trim().toLowerCase();
@@ -835,6 +790,7 @@
       $("#recordCount").textContent=String(rows.length);
       $("#countAll").textContent = rows.length !== records.length ? ` of ${records.length}` : "";
       const totalEl=$("#recordTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className="num "+amountClass(sum);
+
       if(!rows.length){ 
         tbody.innerHTML=batchEmptyState; 
         const btn = tbody.querySelector("#emptyGoToForm");
@@ -842,21 +798,36 @@
         if(window.lucide) window.lucide.createIcons({ nodes: [tbody] });
         return; 
       }
+
       const fragment = document.createDocumentFragment();
-      rows.forEach((r,i)=>{
+      rows.forEach((r)=>{
         const tr=document.createElement("tr");
-        const originalIndex = records.indexOf(r);
+        const uploaded = !!r.record_drive_file_id;
+        const attached = !!r.attachment_drive_file_id;
         tr.innerHTML=`
           <td>${r.date||""}</td>
           <td>${escapeHtml(r.property||"")}</td>
           <td>${escapeHtml(r.vendor||"")}</td>
           <td>${escapeHtml(r.category||"")}</td>
           <td class="num ${amountClass(Number(r.amount||0))}">${fmtMoney(r.amount,r.currency)}</td>
-          <td>${r.validated==="true"?'<span class="meta" style="display:flex; align-items:center; gap: 4px;"><i data-lucide="check" style="width: 1em; height: 1em; color: var(--ok);"></i> OK</span>':'<span class="meta" style="display:flex; align-items:center; gap: 4px;"><i data-lucide="alert-triangle" style="width: 1em; height: 1em; color: var(--warn);"></i> Needs fix</span>'}</td>
           <td>
-            <button class="btn-s" data-action="edit" data-id="${originalIndex}" title="Edit"><i data-lucide="edit-3"></i></button>
-            <button class="btn-s" data-action="delete" data-id="${originalIndex}" title="Delete"><i data-lucide="trash-2"></i></button>
+            <span class="meta" style="display:inline-flex; align-items:center; gap: 8px;">
+              ${r.validated==="true"
+                ? '<span style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="check" style="width:1em;height:1em;color:var(--ok)"></i>OK</span>'
+                : '<span style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="alert-triangle" style="width:1em;height:1em;color:var(--warn)"></i>Needs fix</span>'
+              }
+              ${uploaded ? '<span title="Uploaded"><i data-lucide="cloud-check"></i></span>' : '<span title="Local only"><i data-lucide="cloud-off"></i></span>'}
+              ${attached ? '<span title="Attachment linked"><i data-lucide="paperclip"></i></span>' : ''}
+            </span>
+          </td>
+          <td>
+            <button class="btn-s" data-action="edit" title="Edit"><i data-lucide="edit-3"></i></button>
+            <button class="btn-s" data-action="delete" title="Delete"><i data-lucide="trash-2"></i></button>
           </td>`;
+        // attach handlers with closure-safe index via dataset
+        tr.querySelectorAll('button[data-action]').forEach(b=>{
+          b.dataset.id = String(records.indexOf(r));
+        });
         fragment.appendChild(tr);
       });
       tbody.appendChild(fragment);
@@ -875,7 +846,8 @@
     function validateAll(){
       let changed=0;
       records = records.map(r=>{
-        const v=validateRecord(r); if(String(v.ok)!==r.validated || (v.errors||[]).join("; ")!==(r.validation_errors||"")) changed++;
+        const v=validateRecord(r);
+        if(String(v.ok)!==r.validated || (v.errors||[]).join("; ")!==(r.validation_errors||"")) changed++;
         return {...r, validated:String(v.ok), validation_errors:v.ok?"":(v.errors||[]).join("; ")};
       });
       persistAndRender();
@@ -894,13 +866,12 @@
     $("#dedupeBtn")?.addEventListener("click", dedupe);
     $("#clearAllBtn")?.addEventListener("click", ()=>{ if(confirm("Clear all records?")){ const prev = records.slice(); records=[]; persistAndRender(); toast("Cleared all",{actionLabel:"Undo", action:()=>{ records=prev; persistAndRender(); }}); }});
     $("#applyRulesAllBtn")?.addEventListener("click", applyRulesToAll);
-    $("#rulesOverwriteToggle")?.addEventListener("change", (e)=>{
-      rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite);
-    });
+    $("#rulesOverwriteToggle")?.addEventListener("change", (e)=>{ rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite); });
     $("#rulesOverwriteToggle").checked = !!rulesAllowOverwrite;
 
+    // ---------- export ----------
     function csvBlob(data){
-      const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","created_at","processed_at"];
+      const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","created_at","processed_at"];
       const NL = "\r\n";
       const csv=[cols.join(",")].concat(data.map(r=>cols.map(c=>csvCell(r[c])).join(","))).join(NL);
       return new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], {type:"text/csv;charset=utf-8"});
@@ -910,6 +881,7 @@
     $("#exportJsonBtn")?.addEventListener("click", ()=>download("expenses.json", new Blob([JSON.stringify(records,null,2)], {type:"application/json;charset=utf-8"})));
     $("#exportCsvBtn")?.addEventListener("click", ()=>download("expenses.csv", csvBlob(records)));
 
+    // ---------- Google Drive ----------
     function initGoogleAuth() {
       if(!settings.googleClientId?.trim()) {
         toast("Google Client ID not set in Settings");
@@ -946,7 +918,6 @@
       }
       return true;
     }
-    
     async function ensureDriveToken() {
       const now = Date.now();
       if (oauth.accessToken && now < oauth.expiresAt) {
@@ -956,51 +927,37 @@
         throw new Error('Google auth not initialized');
       }
       return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Auth timeout'));
-        }, 60000);
+        const timeout = setTimeout(() => { reject(new Error('Auth timeout')); }, 60000);
         const originalCallback = oauth.tokenClient.callback;
         oauth.tokenClient.callback = (response) => {
           clearTimeout(timeout);
           originalCallback(response);
-          if (response.error) {
-            reject(new Error(response.error));
-          } else {
-            resolve(response.access_token);
-          }
+          if (response.error) { reject(new Error(response.error)); } else { resolve(response.access_token); }
           oauth.tokenClient.callback = originalCallback;
         };
-        try {
-          oauth.tokenClient.requestAccessToken({prompt: 'consent'});
-        } catch(e) {
-          clearTimeout(timeout);
-          reject(e);
-        }
+        try { oauth.tokenClient.requestAccessToken({prompt: 'consent'}); } catch(e) { clearTimeout(timeout); reject(e); }
       });
     }
-    
     function recordsToCsvString(records) {
-      const cols = ['date','vendor','description','category','subcategory','amount','currency','payment_method','invoice_number','reference_id','tax_amount','tip_amount','location','notes','source_type','source_filename','attachment_drive_file_id','created_at','processed_at','validated'];
-      const escape = (v) => {
-        const s = v == null ? '' : String(v);
-        return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
-      };
+      const cols = ['date','vendor','description','category','subcategory','amount','currency','payment_method','invoice_number','reference_id','tax_amount','tip_amount','location','notes','source_type','source_filename','attachment_drive_file_id','record_drive_file_id','uploaded_at','created_at','processed_at','validated'];
+      const escape = (v) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
       const rows = [cols.join(',')];
       for (const r of records) { rows.push(cols.map((c) => escape(r[c])).join(',')); }
       return rows.join('\n');
     }
-    
     function makeMultipart(metadata, fileBlob) {
       const boundary = '-------314159265358979323846';
       const delimiter = `\r\n--${boundary}\r\n`;
       const close = `\r\n--${boundary}--`;
       const multipartBody = new Blob(
-        [delimiter,'Content-Type: application/json; charset=UTF-8\r\n\r\n',JSON.stringify(metadata),delimiter,(fileBlob.type ? `Content-Type: ${fileBlob.type}\r\n\r\n` : 'Content-Type: application/json\r\n\r\n'),fileBlob,close,],
+        [
+          delimiter,'Content-Type: application/json; charset=UTF-8\r\n\r\n',JSON.stringify(metadata),
+          delimiter,(fileBlob.type ? `Content-Type: ${fileBlob.type}\r\n\r\n` : 'Content-Type: application/json\r\n\r\n'),fileBlob,close,
+        ],
         { type: `multipart/related; boundary=${boundary}` }
       );
       return { body: multipartBody, boundary };
     }
-
     async function uploadDatasetToDrive(records, opts) {
       const { accessToken, folderId } = opts;
       const jsonStr = JSON.stringify(records, null, 2);
@@ -1014,13 +971,10 @@
         const meta = { name: file.name, mimeType: file.mime, ...(folderId ? { parents: [folderId] } : {}) };
         const { body } = makeMultipart(meta, file.content);
         const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
-          body,
+          method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body,
         });
         if (!resp.ok) {
-          const errBody = await resp.text();
-          console.error("Drive upload failed:", errBody);
+          const errBody = await resp.text(); console.error("Drive upload failed:", errBody);
           throw new Error('Drive upload failed: ' + resp.status);
         }
         const data = await resp.json();
@@ -1028,12 +982,32 @@
       }
       return { mainFileId: uploaded[0].id, mainFileName: uploaded[0].name };
     }
-    
+    async function uploadRecordToDrive(rec, opts){
+      const { accessToken, folderId } = opts;
+      const blob = new Blob([JSON.stringify(rec, null, 2)], { type: 'application/json' });
+      const timestamp = (rec.processed_at || new Date().toISOString()).replace(/:/g,'-').slice(0,19);
+      const meta = { name: `expense_${timestamp}.json`, mimeType: 'application/json', ...(folderId ? { parents: [folderId] } : {}) };
+      const { body } = makeMultipart(meta, blob);
+      const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body,
+      });
+      if(!resp.ok){ const err=await resp.text(); console.error(err); throw new Error('Record upload failed'); }
+      const data = await resp.json();
+      return { id: data.id, name: data.name };
+    }
+    async function uploadAttachmentToDrive(file, opts){
+      const { accessToken, folderId } = opts;
+      const meta = { name: file.name, mimeType: file.type || 'application/octet-stream', ...(folderId ? { parents: [folderId] } : {}) };
+      const { body } = makeMultipart(meta, file);
+      const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body,
+      });
+      if(!resp.ok){ const err=await resp.text(); console.error(err); throw new Error('Attachment upload failed'); }
+      const data = await resp.json();
+      return { id: data.id, name: data.name };
+    }
     async function uploadAllToDrive() {
-      if (!records.length) {
-        toast("No records to upload");
-        return;
-      }
+      if (!records.length) { toast("No records to upload"); return; }
       const folderId = settings.folderId?.trim() || null;
       toast("Starting Drive upload...", { timeout: 2000 });
       try {
@@ -1049,90 +1023,157 @@
     }
     $("#uploadDriveBtn")?.addEventListener("click", uploadAllToDrive);
     $("#googleSignIn")?.addEventListener("click", async () => {
-      try {
-        await ensureDriveToken();
-      } catch(e) {
-        console.error('Sign in failed:', e);
-      }
+      try { await ensureDriveToken(); } catch(e) { console.error('Sign in failed:', e); }
     });
 
+    // ---------- ingest & OCR ----------
     $("#fileInput")?.addEventListener("change", onFiles);
     document.addEventListener("dragover", e=>e.preventDefault());
     document.addEventListener("drop", e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
     $("#parsePasteBtn")?.addEventListener("click", parseFromPaste);
     function onFiles(e){ handleFiles(e.target.files); e.target.value=""; }
+
     async function handleFiles(fileList){
-      if(!fileList?.length) return; const files=Array.from(fileList);
+      if(!fileList?.length) return; 
+      const files=Array.from(fileList);
       const container=$("#ingestPreview"); container.innerHTML="";
       for(const f of files){
         if(settings.useTesseract && f.type.startsWith("image/")){ await processImageWithOCR(f, container); }
         else{
           const row=document.createElement("div"); row.className="meta"; row.style.padding="8px";
-          row.innerHTML=`<i data-lucide="file" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> ${escapeHtml(f.name)} <span class="meta">(${(f.size/1024).toFixed(1)} KB) (non-image)</span>`;
+          row.innerHTML=`<i data-lucide="file" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> ${escapeHtml(f.name)} <span class="meta">(${(f.size/1024).toFixed(1)} KB) ${f.type==='application/pdf'?'(PDF)':'(non-image)'}</span>`;
           container.appendChild(row);
         }
       }
       if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', container) });
       toast(`${files.length} file(s) ingested`,{timeout:1400});
     }
+
     async function processImageWithOCR(file, container){
       const id=Math.random().toString(36).slice(2);
+      const url = URL.createObjectURL(file);
       const card=document.createElement("div"); card.className="card"; card.style.marginBottom="10px";
-      card.innerHTML=`<div class="card-b"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-weight:700; display: flex; align-items: center; gap: 8px;"><i data-lucide="image"></i> ${escapeHtml(file.name)}</div><div class="meta">image OCR</div></div><div class="bar"><span id="bar-${id}" style="width:0%; transition: width 0.2s ease;"></span></div><div id="txt-${id}" class="meta" style="margin-top:8px; max-height: 100px; overflow-y: auto;">Recognizing…</div><div style="display:flex;gap:8px;margin-top:8px"><button id="use-${id}" class="btn-s" disabled><i data-lucide="file-pen-line"></i> Parse into form</button><button id="copy-${id}" class="btn-s" disabled><i data-lucide="clipboard"></i> Copy text</button></div></div>`;
+      card.innerHTML=`
+        <div class="card-b">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-weight:700; display:flex; align-items:center; gap:8px;"><i data-lucide="image"></i> ${escapeHtml(file.name)}</div>
+            <div class="meta">image OCR</div>
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-start;">
+            <img alt="preview" src="${url}" style="width:90px;height:90px;object-fit:cover;border:1px solid var(--border);border-radius:8px"/>
+            <div style="flex:1 1 auto;">
+              <div class="bar"><span id="bar-${id}" style="width:0%; transition: width 0.2s ease;"></span></div>
+              <div id="txt-${id}" class="meta" style="margin-top:8px; max-height: 120px; overflow:auto;">Recognizing…</div>
+              <div id="chips-${id}" class="meta" style="display:flex; gap:6px; margin-top:6px;"></div>
+              <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                <button id="use-${id}" class="btn-s" disabled><i data-lucide="file-pen-line"></i> Parse into form</button>
+                <button id="attach-${id}" class="btn-s"><i data-lucide="paperclip"></i> Attach evidence</button>
+                <button id="copy-${id}" class="btn-s" disabled><i data-lucide="clipboard"></i> Copy text</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
       container.appendChild(card);
       if(window.lucide) window.lucide.createIcons({ nodes: [card] });
+
       try{
-        if (typeof Tesseract === 'undefined') {
-          throw new Error("Tesseract.js failed to load");
-        }
-        const progressBar=$("#bar-"+id); const textEl=$("#txt-"+id);
-        const res=await Tesseract.recognize(file,"eng",{logger:(m)=>{
-          if(m.status==="recognizing text"){ const p=Math.max(0,Math.min(1,m.progress||0)); progressBar.style.width=(p*100).toFixed(0)+"%"; }
-        }});
-        const text=(res?.data?.text||"").trim(); textEl.textContent = text ? (text.length>500?text.slice(0,500)+"…":text) : "(no text)";
-        const useBtn=$("#use-"+id), copyBtn=$("#copy-"+id); useBtn.disabled=!text; copyBtn.disabled=!text;
+        if (typeof Tesseract === 'undefined') { throw new Error("Tesseract.js failed to load"); }
+        const progressBar=$("#bar-"+id); const textEl=$("#txt-"+id); const chips=$("#chips-"+id);
+        const res=await Tesseract.recognize(file,"eng",{logger:(m)=>{ if(m.status==="recognizing text"){ const p=clamp01(m.progress||0); progressBar.style.width=(p*100).toFixed(0)+"%"; }}});
+        const text=(res?.data?.text||"").trim(); 
+        const conf=(res?.data?.confidence ?? 0);
+        textEl.textContent = text ? (text.length>800?text.slice(0,800)+"…":text) : "(no text)";
+        chips.innerHTML = `
+          <span class="chip">Lang: ENG</span>
+          <span class="chip">Confidence: ${Math.round(conf)}%</span>
+          <span class="chip">Size: ${(file.size/1024).toFixed(1)} KB</span>
+        `;
+        const useBtn=$("#use-"+id), copyBtn=$("#copy-"+id), attachBtn=$("#attach-"+id);
+        useBtn.disabled=!text; copyBtn.disabled=!text;
+
         useBtn.addEventListener("click",()=> parseFromText(text, 'ocr', file.name));
         copyBtn.addEventListener("click", async()=>{ try{ const ta = document.createElement("textarea");ta.value = text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();toast("Copied OCR text",{timeout:1200}); }catch{} });
-      }catch(err){ console.error("OCR Error:", err);$("#txt-"+id).textContent=`OCR failed: ${err.message}`; $("#txt-"+id).style.color = "var(--bad)";}
+
+        attachBtn.addEventListener("click", async ()=>{
+          try{
+            const token = await ensureDriveToken();
+            const { id:fileId } = await uploadAttachmentToDrive(file, { accessToken: token, folderId: settings.folderId?.trim()||null });
+            const f=$("#expenseForm");
+            f.elements.namedItem("attachment_drive_file_id").value = fileId;
+            f.elements.namedItem("source_type").value = "ocr";
+            f.elements.namedItem("source_filename").value = file.name;
+            toast("Attachment uploaded & linked ✓", { timeout: 1800 });
+            attachBtn.disabled = true;
+          }catch(e){
+            toast("Attach failed — sign in first", { timeout: 2200 });
+          }
+        });
+      }catch(err){
+        console.error("OCR Error:", err);
+        $("#txt-"+id).textContent=`OCR failed: ${err.message}`;
+        $("#txt-"+id).style.color = "var(--bad)";
+      }finally{
+        // release preview URL
+        setTimeout(()=>URL.revokeObjectURL(url), 5000);
+      }
     }
+
     function parseFromPaste(){
       const text=($("#pasteBox").value||"").trim(); if(!text){ toast("Nothing to parse",{timeout:1200}); return; }
       parseFromText(text, 'paste', '');
     }
+
     async function parseFromText(text, sourceType, sourceFilename) {
       let rec = roughParse(text);
       rec.source_type = sourceType;
       rec.source_filename = sourceFilename;
+
       if (settings.allowLLM && settings.geminiKey) {
-        toast("Parsing with AI...", { timeout: 3000 });
+        toast("Parsing with AI…", { timeout: 2000 });
         try {
           const llm = await geminiParse(text, settings.geminiKey);
-          rec = { ...rec, ...llm, amount: llm.amount || rec.amount,date: llm.date || rec.date,source_type: sourceType, source_filename: sourceFilename };
+          rec = { ...rec, ...llm, amount: (llm.amount ?? rec.amount), date: (llm.date ?? rec.date), source_type: sourceType, source_filename: sourceFilename };
         } catch (e) {
           console.error("Gemini parse failed:", e);
-          toast("AI parse failed, using basic parser.", { timeout: 2000 });
+          toast("AI parse failed, using basic parser.", { timeout: 1800 });
         }
       }
+
       const { rec: rec2 } = applyRules(rec, rulesAllowOverwrite);
       fillForm(rec2);
       switchTab("form");
       toast("Parsed into form", { timeout: 1400 });
     }
+
     async function geminiParse(text, apiKey) {
       const model = "gemini-2.0-flash-exp";
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const prompt = `You are an expert financial assistant. Extract expense details and return ONLY valid JSON.\nFormat:\n{\n  "date": "YYYY-MM-DD", \n  "vendor": "Vendor Name", \n  "description": "Short description", \n  "category": "Expense Category", \n  "amount": 1234.50, \n  "currency": "PHP"\n}\n\nContext:\n- Today is ${new Date().toLocaleDateString('en-CA')}.\n- Default currency is PHP.\n\nText:\n"""${text.slice(0, 4000)}"""`.trim();
-      const payload = {contents: [{ parts: [{ text: prompt }] }],generationConfig: { temperature: 0.1, topP: 0.1,responseMimeType: "application/json",},};
-      const resp = await fetch(apiUrl, {method: 'POST',headers: { 'Content-Type': 'application/json' },body: JSON.stringify(payload),});
-      if (!resp.ok) {
-        const errBody = await resp.text();
-        console.error("Gemini API Error:", resp.status, errBody);
-        throw new Error(`API failed: ${resp.status}`);
-      }
+      const prompt = `You are an expert financial assistant. Extract expense details and return ONLY valid JSON.
+Format:
+{
+  "date": "YYYY-MM-DD",
+  "vendor": "Vendor Name",
+  "description": "Short description",
+  "category": "Expense Category",
+  "amount": 1234.50,
+  "currency": "PHP"
+}
+
+Context:
+- Today is ${new Date().toLocaleDateString('en-CA')}.
+- Default currency is PHP.
+
+Text:
+"""${text.slice(0, 4000)}"""`.trim();
+      const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, topP: 0.1, responseMimeType: "application/json" } };
+      const resp = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!resp.ok) { const errBody = await resp.text(); console.error("Gemini API Error:", resp.status, errBody); throw new Error(`API failed: ${resp.status}`); }
       const data = await resp.json();
       const textOut = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-      try { const parsed = JSON.parse(textOut);if(parsed.amount) parsed.amount = Number(parsed.amount);return parsed;} catch (e) { console.error("Failed to parse Gemini JSON:", textOut, e);return {};}
+      try { const parsed = JSON.parse(textOut); if(parsed.amount) parsed.amount = Number(parsed.amount); return parsed; } 
+      catch (e) { console.error("Failed to parse Gemini JSON:", textOut, e); return {}; }
     }
+
     function roughParse(text){
       const amtMatch = text.match(/(?:PHP|₱)\s?([\d,]+(?:\.\d{2})?)/i) || text.match(/\b([\d,]+(?:\.\d{2})?)\b/);
       const dateMatch = text.match(/\b(20\d{2}[-/]\d{1,2}[-/]\d{1,2})\b/) || text.match(/\b(\d{1,2}[-/]\d{1,2}[-/](?:20)?\d{2})\b/);
@@ -1140,7 +1181,13 @@
       const amount = amtMatch ? Number(amtMatch[1].replace(/,/g,"")) : 0;
       const dateISO = dateMatch ? toISO(dateMatch[1]) : (new Date().toISOString().slice(0,10));
       const vendor = vendorMatch ? vendorMatch[1].trim() : "";
-      return {date: dateISO, property:"", vendor, description:"", category:"", subcategory:"",amount, currency:"PHP", payment_method:"", invoice_number:"", reference_id:"",tax_amount:0, tip_amount:0, location:"", notes: text.length>140? text.slice(0,140)+"…" : text,created_at:new Date().toISOString(), processed_at:"", validated:"false", validation_errors:"",source_type:"", source_filename:"", attachment_drive_file_id:"",};
+      return {
+        date: dateISO, property:"", vendor, description:"", category:"", subcategory:"",
+        amount, currency:"PHP", payment_method:"", invoice_number:"", reference_id:"",
+        tax_amount:0, tip_amount:0, location:"", notes: text.length>140? text.slice(0,140)+"…" : text,
+        created_at:new Date().toISOString(), processed_at:"", validated:"false", validation_errors:"",
+        source_type:"", source_filename:"", attachment_drive_file_id:"", record_drive_file_id:"", uploaded_at:""
+      };
     }
     function toISO(s){
       try {
@@ -1152,109 +1199,193 @@
       } catch { return ""; }
     }
 
-    let lastInvoker=null;
-    function toggleModal(sel, show, invoker){
-      const m=$(sel); if(!m) return;
-      if(show){lastInvoker = invoker || document.activeElement;m.setAttribute("aria-hidden","false");focusTrap(m);}
-      else{m.setAttribute("aria-hidden","true");lastInvoker && lastInvoker.focus?.();}
-    }
-    function focusTrap(modal){
-      const card = modal.querySelector(".modal-card");
-      if(!card) return;
-      const focusables = ()=>$$('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])', card).filter(el=>!el.disabled && el.offsetParent!==null);
-      card.focus({preventScroll:true});
-      const trap = (e)=>{if(e.key!=="Tab") return;const f = focusables(); if(!f.length) { e.preventDefault(); return; }const first=f[0], last=f[f.length-1];if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }};
-      const onClick=(e)=>{ if(e.target===modal) { toggleModal("#"+modal.id, false); cleanup(); } };
-      const onEsc=(e)=>{ if(e.key==="Escape") { toggleModal("#"+modal.id, false); cleanup(); } };
-      const cleanup = () => {modal.removeEventListener("keydown", trap);modal.removeEventListener("click", onClick);document.removeEventListener("keydown", onEsc);};
-      modal.addEventListener("keydown", trap);modal.addEventListener("click", onClick);document.addEventListener("keydown", onEsc);
+    // ---------- rules modal (minimal, safe) ----------
+    function renderRules(){
+      const list=$("#rulesList"); if(!list) return;
+      list.innerHTML="";
+      if(!rules.length){
+        list.innerHTML = `<div class="meta">No rules yet.</div>`;
+        return;
+      }
+      rules.forEach((r,i)=>{
+        const row=document.createElement("div"); row.className="rule-row";
+        row.innerHTML = `
+          <div><span class="label">Pattern</span><input class="input" value="${escapeHtml(r.pattern||"")}" data-k="pattern"></div>
+          <div><span class="label">Category</span><input class="input" value="${escapeHtml(r.fields?.category||"")}" data-k="category"></div>
+          <div><span class="label">Property</span><input class="input" value="${escapeHtml(r.fields?.property||"")}" data-k="property"></div>
+          <div><span class="label">Notes</span><input class="input" value="${escapeHtml(r.fields?.notes||"")}" data-k="notes"></div>
+          <div style="display:flex; gap:6px">
+            <label class="meta" style="display:flex;gap:6px;align-items:center"><input type="checkbox" ${r.enabled!==false?"checked":""} data-k="enabled"> Enabled</label>
+            <button class="btn-s" data-act="del">Del</button>
+          </div>
+        `;
+        row.addEventListener("input",(e)=>{
+          const el=e.target;
+          if(el.dataset.k==="pattern"){ rules[i].pattern = el.value; }
+          if(el.dataset.k==="category"){ rules[i].fields = {...(rules[i].fields||{}), category: el.value}; }
+          if(el.dataset.k==="property"){ rules[i].fields = {...(rules[i].fields||{}), property: el.value}; }
+          if(el.dataset.k==="notes"){ rules[i].fields = {...(rules[i].fields||{}), notes: el.value}; }
+          saveRules();
+        });
+        row.querySelector('[data-k="enabled"]')?.addEventListener("change",(e)=>{ rules[i].enabled = e.target.checked; saveRules(); });
+        row.querySelector('[data-act="del"]')?.addEventListener("click",()=>{ rules.splice(i,1); saveRules(); renderRules(); });
+        list.appendChild(row);
+      });
     }
     $("#openRulesBtn")?.addEventListener("click", (e)=>{ renderRules(); toggleModal("#rulesModal", true, e.currentTarget); });
     $("#rulesClose")?.addEventListener("click", ()=>toggleModal("#rulesModal", false));
-    $("#quickGuideBtn")?.addEventListener("click", (e)=>toggleModal("#guideModal", true, e.currentTarget));
-    $("#guideClose")?.addEventListener("click", ()=>toggleModal("#guideModal", false));
+    $("#addRuleBtn")?.addEventListener("click", ()=>{ rules.push({ pattern:"", enabled:true, fields: {} }); saveRules(); renderRules(); });
+    $("#exportRulesBtn")?.addEventListener("click", ()=>download("rules.json", new Blob([JSON.stringify(rules,null,2)], {type:"application/json;charset=utf-8"})));
+    $("#importRulesFile")?.addEventListener("change", async (e)=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      try{ const text=await f.text(); const obj=JSON.parse(text); if(Array.isArray(obj)){ rules=obj; saveRules(); renderRules(); toast("Rules imported"); } else { toast("Invalid rules file"); } }catch{ toast("Failed to import rules"); }
+      e.target.value="";
+    });
     $("#rulesAllowOverwrite").checked = !!rulesAllowOverwrite;
-    $("#rulesAllowOverwrite").addEventListener("change", (e)=>{rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite);const twin=$("#rulesOverwriteToggle"); if(twin){ twin.checked = rulesAllowOverwrite; }});
-    $("#addRuleBtn")?.addEventListener("click", ()=>{const r = { id: cryptoRandomId(), pattern:"", fields:{category:"", subcategory:"", property:"", vendor:"", notes:""}, enabled:true };rules.push(r); saveRules(); renderRules();});
-    $("#exportRulesBtn")?.addEventListener("click", ()=>{download("rules.json", new Blob([JSON.stringify(rules,null,2)], {type:"application/json;charset=utf-8"}));});
-    $("#importRulesFile")?.addEventListener("change", async (e)=>{const f=e.target.files?.[0]; if(!f) return;try{const txt=await f.text(); const arr=JSON.parse(txt);if(Array.isArray(arr)){ rules=arr; saveRules(); renderRules(); toast("Imported rules",{timeout:1400}); }else toast("Invalid rules file");}catch{ toast("Failed to import"); }e.target.value="";});
-    function cryptoRandomId(){ try{ return crypto.randomUUID(); }catch{ return Math.random().toString(36).slice(2); } }
-    function renderRules(){
-      const host=$("#rulesList"); if(!host) return; host.innerHTML="";
-      if(!rules.length){ host.innerHTML=`<div class="empty-state"><i data-lucide="list-filter"></i><div class="empty-state-h">No Rules Added</div><p class="empty-state-p meta">Click "Add Rule" to automatically categorize expenses.</p></div>`;if(window.lucide) window.lucide.createIcons({ nodes: [host] });return; }
-      const fragment = document.createDocumentFragment();
-      rules.forEach((r,idx)=>{
-        const row=document.createElement("div"); row.className="rule-row";
-        row.innerHTML=`<input class="input" placeholder="pattern (substring or /regex/i)" value="${escapeHtml(r.pattern||"")}" aria-label="pattern"><input class="input" placeholder="category" value="${escapeHtml(r.fields?.category||"")}"><input class="input" placeholder="subcategory" value="${escapeHtml(r.fields?.subcategory||"")}"><input class="input" placeholder="property" value="${escapeHtml(r.fields?.property||"")}"><div style="display:flex;gap:6px;justify-content:flex-end"><label class="meta" title="enable/disable"><input type="checkbox" ${r.enabled?"checked":""}/> On</label><button class="btn-s" data-act="edit" title="Edit more fields"><i data-lucide="edit-3"></i></button><button class="btn-s" data-act="up" title="Move up" ${idx===0?'disabled':''}><i data-lucide="arrow-up"></i></button><button class="btn-s" data-act="down" title="Move down" ${idx===rules.length-1?'disabled':''}><i data-lucide="arrow-down"></i></button><button class="btn-s" data-act="del" title="Delete"><i data-lucide="trash-2"></i></button></div>`;
-        const [pat, cat, sub, prop] = row.querySelectorAll("input.input");
-        const en = row.querySelector('input[type="checkbox"]');
-        pat.addEventListener("input", ()=>{ r.pattern=pat.value; saveRules(); });
-        cat.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.category=cat.value; saveRules(); refreshCategoryDatalist(); });
-        sub.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.subcategory=sub.value; saveRules(); });
-        prop.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.property=prop.value; saveRules(); });
-        en.addEventListener("change", ()=>{ r.enabled=en.checked; saveRules(); });
-        row.querySelector('[data-act="edit"]').addEventListener("click", ()=>{const vendor = prompt("Vendor alias (optional)", r.fields?.vendor||"") ?? "";const notes = prompt("Notes (optional)", r.fields?.notes||"") ?? "";r.fields = {...(r.fields||{}), vendor, notes};saveRules(); toast("Rule fields updated",{timeout:1200});});
-        row.querySelector('[data-act="up"]').addEventListener("click", ()=>{ if(idx>0){ const t=rules[idx-1]; rules[idx-1]=rules[idx]; rules[idx]=t; saveRules(); renderRules(); }});
-        row.querySelector('[data-act="down"]').addEventListener("click", ()=>{ if(idx<rules.length-1){ const t=rules[idx+1]; rules[idx+1]=rules[idx]; rules[idx]=t; saveRules(); renderRules(); }});
-        row.querySelector('[data-act="del"]').addEventListener("click", ()=>{ if(confirm("Delete this rule?")){ const prev=rules.slice(); rules.splice(idx,1); saveRules(); renderRules(); refreshCategoryDatalist(); toast("Rule deleted",{actionLabel:"Undo", action:()=>{ rules=prev; saveRules(); renderRules(); }}); }});
-        fragment.appendChild(row);
-      });
-      host.appendChild(fragment);
-      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', host) });
+    $("#rulesAllowOverwrite").addEventListener("change", (e)=>{rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite);});
+
+    function toggleModal(sel, show, invoker){
+      const m=$(sel); if(!m) return;
+      if(show){ m.setAttribute("aria-hidden","false"); (invoker||document.activeElement); focusTrap(m); }
+      else{ m.setAttribute("aria-hidden","true"); invoker && invoker.focus?.(); }
+    }
+    function focusTrap(modal){
+      const card = modal.querySelector(".modal-card"); if(!card) return;
+      const focusables = ()=>$$('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])', card).filter(el=>!el.disabled && el.offsetParent!==null);
+      card.focus({preventScroll:true});
+      const trap = (e)=>{ if(e.key!=="Tab") return; const f = focusables(); if(!f.length){ e.preventDefault(); return; } const first=f[0], last=f[f.length-1]; if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); } else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); } };
+      const onClick=(e)=>{ if(e.target===modal) { toggleModal("#"+modal.id, false); cleanup(); } };
+      const onEsc=(e)=>{ if(e.key==="Escape") { toggleModal("#"+modal.id, false); cleanup(); } };
+      const cleanup=()=>{ modal.removeEventListener("keydown", trap); modal.removeEventListener("click", onClick); document.removeEventListener("keydown", onEsc); };
+      modal.addEventListener("keydown", trap); modal.addEventListener("click", onClick); document.addEventListener("keydown", onEsc);
     }
 
-    $("#adminLogout")?.addEventListener("click", ()=>{ storage.set("cx:isAdmin", false); isAdmin=false; toast("Admin signed out",{timeout:1200}); switchTab("dashboard"); });
-    $("#driveFolderId").value=settings.folderId||"";
-    $("#googleClientId").value=settings.googleClientId||"";
-    $("#geminiKey").value=settings.geminiKey||"";
-    $("#toggleTesseract").checked=!!settings.useTesseract;
-    $("#toggleLLM").checked=!!settings.allowLLM;
-    $("#saveSettings")?.addEventListener("click", ()=>{settings.folderId=$("#driveFolderId").value.trim();settings.googleClientId=$("#googleClientId").value.trim();settings.geminiKey=$("#geminiKey").value.trim();settings.useTesseract=$("#toggleTesseract").checked;settings.allowLLM=$("#toggleLLM").checked;storage.set("cx:settings",settings); oauth.tokenClient = null;oauth.accessToken = null;$("#googleUser").textContent = 'Not signed in';toast("Settings saved",{timeout:1200});});
+    // ---------- category menu ----------
+    function allCategoryOptions(){
+      const DEFAULT_CATEGORIES = ["Utilities","Subscriptions","Services","Maintenance","Repairs","Supplies","Cleaning","Internet","Electricity","Water","Gas","Waste","Landscaping","Security","Insurance","Taxes","Fees","Professional Services","Software","Travel","Meals","Office","Other"];
+      const set=new Set(DEFAULT_CATEGORIES);
+      records.forEach(r=>{ const c=(r.category||"").trim(); if(c) set.add(c); });
+      rules.forEach(r=>{ const c=(r?.fields?.category||"").trim(); if(c) set.add(c); });
+      return Array.from(set).sort((a,b)=>a.localeCompare(b));
+    }
+    function refreshPropertyDatalist(){
+      const dl=$("#propertyList"); if(!dl) return;
+      const set=new Set(records.map(r=>(r.property||"").trim()).filter(Boolean));
+      dl.innerHTML = Array.from(set).sort((a,b)=>a.localeCompare(b)).map(p=>`<option value="${escapeHtml(p)}"></option>`).join("");
+    }
+    function refreshCategoryDatalist(){
+      const dl=$("#categoryList"); if(!dl) return;
+      const opts = allCategoryOptions().map(c=>`<option value="${escapeHtml(c)}"></option>`).join("");
+      dl.innerHTML = opts;
+      buildCategoryMenu();
+    }
+    function buildCategoryMenu(){
+      const menu = $("#catMenu"); if(!menu) return;
+      const items = allCategoryOptions().map(c=>`<button class="ac-item" type="button" data-val="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join("");
+      menu.innerHTML = items || "";
+      const input = $("#expenseForm")?.elements?.namedItem("category");
+      menu.addEventListener("click",(e)=>{ const b=e.target.closest(".ac-item"); if(!b) return; input.value=b.dataset.val||""; closeCatMenu(); });
+      function open(){ menu.classList.remove("hidden"); input.setAttribute("aria-expanded","true"); }
+      function close(){ menu.classList.add("hidden"); input.setAttribute("aria-expanded","false"); }
+      function closeCatMenu(){ close(); }
+      input?.addEventListener("focus", open);
+      input?.addEventListener("blur", ()=>setTimeout(close, 150));
+      input?.addEventListener("input", ()=>{
+        const q=(input.value||"").toLowerCase();
+        $$(".ac-item", menu).forEach(btn=>{ const ok = btn.dataset.val.toLowerCase().includes(q); btn.style.display = ok ? "" : "none"; });
+        open();
+      });
+    }
 
-    const DEFAULT_CATEGORIES = ["Utilities","Subscriptions","Services","Maintenance","Repairs","Supplies","Cleaning","Internet","Electricity","Water","Gas","Waste","Landscaping","Security","Insurance","Taxes","Fees","Professional Services","Software","Travel","Meals","Office","Other"];
-    function persistAndRender(){ storage.set("cx:records", records); renderTable(); refreshCategoryDatalist(); renderDashboard(); }
-    function allCategoryOptions(){const set=new Set(DEFAULT_CATEGORIES);records.forEach(r=>{ const c=(r.category||"").trim(); if(c) set.add(c); });rules.forEach(r=>{ const c=(r?.fields?.category||"").trim(); if(c) set.add(c); });return Array.from(set).sort((a,b)=>a.localeCompare(b));}
-    function refreshPropertyDatalist(){const dl=$("#propertyList"); if(!dl) return;const set=new Set(records.map(r=>(r.property||"").trim()).filter(Boolean));dl.innerHTML = Array.from(set).sort((a,b)=>a.localeCompare(b)).map(p=>`<option value="${escapeHtml(p)}"></option>`).join("");}
-    function refreshCategoryDatalist(){const dl=$("#categoryList"); if(!dl) return;const opts = allCategoryOptions().map(c=>`<option value="${escapeHtml(c)}"></option>`).join("");dl.innerHTML = opts;buildCategoryMenu();}
+    // ---------- dashboard ----------
     function renderDashboard(){
       const count=records.length; const sum=records.reduce((a,r)=>a+Number(r.amount||0),0); const ccy=records[0]?.currency||"PHP";
       const latest=records.map(r=>r.date).filter(Boolean).sort().pop();
       const avg=count? sum/count : 0;
       const topCat=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1])[0];
+
       const totalEl=$("#kpiTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className="v num "+(sum>3000?"num--red":sum>=500?"num--yellow":"num--green");
       $("#kpiCount").textContent=`${count} item${count!==1?"s":""}`;
       $("#kpiLatest").textContent=latest||"—";
       const avgEl=$("#kpiAvg"); avgEl.textContent=count?fmtMoney(avg,ccy):"—"; avgEl.className="v num "+(avg>3E3?"num--red":avg>=500?"num--yellow":"num--green");
       $("#kpiTopCat").textContent=topCat? topCat[0] : "—";
+
       const cont=$("#catBreakdown"); cont.innerHTML="";
       const catTotals=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1]);
       if(!catTotals.length){ cont.innerHTML=catEmptyState; if(window.lucide) window.lucide.createIcons({ nodes: [cont] });}
-      else{const max=Math.max(...catTotals.map(x=>x[1]));catTotals.slice(0,8).forEach(([k,v])=>{const row=document.createElement("div"); row.style.marginBottom="10px";row.innerHTML=`<div style="display:flex;justify-content:space-between"><div>${escapeHtml(k)}</div><div class="meta">${fmtMoney(v,ccy)}</div></div><div class="bar"><span style="width:${max? (v/max*100).toFixed(1):0}%"></span></div>`;cont.appendChild(row);});}
+      else{
+        const max=Math.max(...catTotals.map(x=>x[1]));
+        catTotals.slice(0,8).forEach(([k,v])=>{
+          const row=document.createElement("div"); row.style.marginBottom="10px";
+          row.innerHTML=`<div style="display:flex;justify-content:space-between"><div>${escapeHtml(k)}</div><div class="meta">${fmtMoney(v,ccy)}</div></div><div class="bar"><span style="width:${max? (v/max*100).toFixed(1):0}%"></span></div>`;
+          cont.appendChild(row);
+        });
+      }
+
       const recent=$("#recentList"); recent.innerHTML="";
       if(!records.length){ recent.innerHTML=recentEmptyState; if(window.lucide) window.lucide.createIcons({ nodes: [recent] });}
-      else{const fragment = document.createDocumentFragment();records.slice(-6).reverse().forEach(r=>{const item=document.createElement("div"); item.style.padding="8px 0"; item.style.borderBottom="1px solid var(--border)";item.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><div><i data-lucide="tag" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> <strong>${escapeHtml(r.category||"(category)")}</strong> · ${escapeHtml(r.property||"")}</div><div class="num ${amountClass(Number(r.amount||0))}">${fmtMoney(r.amount,r.currency)}</div></div><div class="meta" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;"><span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="calendar" style="width: 1em; height: 1em;"></i> ${r.date||""}</span><span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="receipt" style="width: 1em; height: 1em;"></i> ${escapeHtml(r.vendor||"")}</span></div><div class="meta" style="padding-left: 20px;">${escapeHtml(r.description||"")}</div>`;fragment.appendChild(item);});recent.appendChild(fragment);if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', recent) });}
+      else{
+        const fragment=document.createDocumentFragment();
+        records.slice(-6).reverse().forEach(r=>{
+          const item=document.createElement("div"); item.style.padding="8px 0"; item.style.borderBottom="1px solid var(--border)";
+          item.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><i data-lucide="tag" style="width:1em;height:1em;vertical-align:-2px;"></i> ${escapeHtml(r.vendor||r.description||r.category||"Item")}</div>
+              <div class="meta">${r.date||""}</div>
+            </div>
+            <div class="meta">${escapeHtml(r.category||"Uncategorized")} · ${fmtMoney(r.amount, r.currency||"PHP")}</div>`;
+          fragment.appendChild(item);
+        });
+        recent.appendChild(fragment);
+        if(window.lucide) window.lucide.createIcons({ nodes: [recent] });
+      }
     }
 
-    const catInput = $("#expenseForm")?.elements?.namedItem("category");
-    const catMenu = $("#catMenu");
-    function buildCategoryMenu(){if(!catInput || !catMenu) return;const items = allCategoryOptions();catMenu.innerHTML = items.map((c,i)=>`<button type="button" class="ac-item" role="option" data-val="${escapeHtml(c)}" ${i===0?'aria-selected="true"':''}>${escapeHtml(c)}</button>`).join("");}
-    function openCatMenu(){ buildCategoryMenu(); catMenu.classList.remove("hidden"); catInput.setAttribute("aria-expanded","true"); filterCatMenu(catInput.value); }
-    function closeCatMenu(){ catMenu.classList.add("hidden"); catInput.setAttribute("aria-expanded","false"); }
-    function filterCatMenu(q){const ql=q.trim().toLowerCase();const items=[...catMenu.querySelectorAll(".ac-item")];let first=null;items.forEach(btn=>{const keep = !ql || btn.dataset.val.toLowerCase().includes(ql);btn.style.display = keep ? "block" : "none";if(keep && !first) first=btn;btn.setAttribute("aria-selected","false");});if(first) first.setAttribute("aria-selected","true");}
-    catInput?.addEventListener("focus", ()=>{ openCatMenu(); });
-    catInput?.addEventListener("click", ()=>{ openCatMenu(); });
-    catInput?.addEventListener("input", ()=>{ openCatMenu(); filterCatMenu(catInput.value); });
-    document.addEventListener("click",(e)=>{if(!catMenu || !catInput) return;if(e.target.closest("#catMenu")) return;if(e.target===catInput) return;closeCatMenu();});
-    catMenu?.addEventListener("click",(e)=>{const b=e.target.closest(".ac-item"); if(!b) return;catInput.value = b.dataset.val || ""; closeCatMenu(); catInput.dispatchEvent(new Event("change",{bubbles:true}));});
-    catInput?.addEventListener("keydown",(e)=>{if(catMenu.classList.contains("hidden")) return;const items=[...catMenu.querySelectorAll(".ac-item")].filter(i=>i.style.display!=="none");let idx=items.findIndex(i=>i.getAttribute("aria-selected")==="true");if(e.key==="ArrowDown"){ e.preventDefault(); idx=Math.min(items.length-1, idx+1); items.forEach(i=>i.setAttribute("aria-selected","false")); if(items[idx]) { items[idx].setAttribute("aria-selected","true"); items[idx].scrollIntoView({block:"nearest"}); } }if(e.key==="ArrowUp"){ e.preventDefault(); idx=Math.max(0, idx-1); items.forEach(i=>i.setAttribute("aria-selected","false")); if(items[idx]) { items[idx].setAttribute("aria-selected","true"); items[idx].scrollIntoView({block:"nearest"}); } }if(e.key==="Enter"){ e.preventDefault(); const sel=items[idx]; if(sel){ catInput.value=sel.dataset.val||""; closeCatMenu(); } }if(e.key==="Escape"){ closeCatMenu(); }});
+    // ---------- quick guide & settings ----------
+    $("#quickGuideBtn")?.addEventListener("click", (e)=>toggleModal("#guideModal", true, e.currentTarget));
+    $("#guideClose")?.addEventListener("click", ()=>toggleModal("#guideModal", false));
+    $("#saveSettings")?.addEventListener("click", ()=>{
+      settings.folderId=$("#driveFolderId").value.trim();
+      settings.googleClientId=$("#googleClientId").value.trim();
+      settings.geminiKey=$("#geminiKey").value.trim();
+      settings.useTesseract=$("#toggleTesseract").checked;
+      settings.allowLLM=$("#toggleLLM").checked;
+      settings.autoUpload=$("#toggleAutoUpload").checked;
+      storage.set("cx:settings",settings);
+      oauth.tokenClient = null; oauth.accessToken = null; $("#googleUser").textContent = 'Not signed in';
+      toast("Settings saved",{timeout:1200});
+    });
+    $("#adminLogout")?.addEventListener("click", ()=>{ isAdmin=false; storage.set("cx:isAdmin", false); switchTab("dashboard"); toast("Admin signed out",{timeout:1200}); });
 
-    document.addEventListener("keydown",(e)=>{const isInput = !!e.target.closest("input,textarea,select");const onForm = $("#panel-form") && !$("#panel-form").classList.contains("hidden");if((e.ctrlKey||e.metaKey) && e.key==="Enter" && onForm){ e.preventDefault(); $("#addToListBtn")?.click(); }if(e.altKey && (e.key==="v"||e.key==="V")){ e.preventDefault(); $("#validateBtn")?.click(); }if(e.key==="?" || (e.shiftKey && e.key==="/")){ if(!isInput) { e.preventDefault(); toggleModal("#guideModal", true, $("#quickGuideBtn")); } }if(e.altKey && (e.key==="f"||e.key==="F")){ e.preventDefault(); switchTab("form"); }if(e.altKey && (e.key==="b"||e.key==="B")){ e.preventDefault(); switchTab("batch"); }if((e.ctrlKey||e.metaKey) && (e.key==="k"||e.key==="K")){ e.preventDefault(); $("#expenseForm")?.elements?.namedItem("category")?.focus(); }if(isInput) return;});
+    // ---------- shortcuts ----------
+    document.addEventListener("keydown",(e)=>{
+      const isInput = !!e.target.closest("input,textarea,select");
+      const onForm = $("#panel-form") && !$("#panel-form").classList.contains("hidden");
+      if((e.ctrlKey||e.metaKey) && e.key==="Enter" && onForm){ e.preventDefault(); $("#addToListBtn")?.click(); }
+      if(e.altKey && (e.key==="v"||e.key==="V")){ e.preventDefault(); $("#validateBtn")?.click(); }
+      if(e.key==="?" || (e.shiftKey && e.key==="/")){ if(!isInput) { e.preventDefault(); toggleModal("#guideModal", true, $("#quickGuideBtn")); } }
+      if(e.altKey && (e.key==="f"||e.key==="F")){ e.preventDefault(); switchTab("form"); }
+      if(e.altKey && (e.key==="b"||e.key==="B")){ e.preventDefault(); switchTab("batch"); }
+      if((e.ctrlKey||e.metaKey) && (e.key==="k"||e.key==="K")){ e.preventDefault(); $("#expenseForm")?.elements?.namedItem("category")?.focus(); }
+      if(isInput) return;
+    });
 
+    // ---------- boot ----------
+    function persistAndRender(){ storage.set("cx:records", records); renderTable(); refreshCategoryDatalist(); renderDashboard(); }
+    function hydrateSettingsUI(){
+      $("#driveFolderId").value = settings.folderId || "";
+      $("#googleClientId").value = settings.googleClientId || "";
+      $("#geminiKey").value = settings.geminiKey || "";
+      $("#toggleTesseract").checked = !!settings.useTesseract;
+      $("#toggleLLM").checked = !!settings.allowLLM;
+      $("#toggleAutoUpload").checked = settings.autoUpload !== false;
+    }
     const dateInput = $("#expenseForm")?.elements?.namedItem("date");
     if(dateInput && !dateInput.value) {dateInput.value = new Date().toISOString().slice(0, 10);}
+    hydrateSettingsUI();
     switchTab(settings.lastTab || "dashboard");
     persistAndRender();
-    if (window.lucide) {window.lucide.createIcons();} else {console.warn("Lucide loading...");setTimeout(() => {if (window.lucide) {window.lucide.createIcons();}}, 1000);}
+    if (window.lucide) {window.lucide.createIcons();} else {setTimeout(() => {if (window.lucide) {window.lucide.createIcons();}}, 1000);}
   })();
   </script>
 </body>

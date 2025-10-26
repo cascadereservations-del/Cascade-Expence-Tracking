@@ -1,14 +1,14 @@
 {
-  "name": "expense-capture",
-  "version": "1.0.0",
+  "name": "cascade-expense-capture",
+  "version": "1.3.0",
   "private": true,
-  "type": "module",
+  "description": "Playwright E2E for OCR (image+PDF) + automatic upload modes",
   "scripts": {
-    "serve": "http-server -c-1 -p 5173 .",
-    "test:e2e": "playwright test"
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "pw:install": "playwright install --with-deps"
   },
   "devDependencies": {
-    "@playwright/test": "^1.48.2",
-    "http-server": "^14.1.1"
+    "@playwright/test": "^1.48.2"
   }
 }

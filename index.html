@@ -1,4 +1,3 @@
-<!-- /indexv4.html -->
 <!DOCTYPE html>
 <html lang="en" data-theme="auto">
 <head>
@@ -12,6 +11,9 @@
   <!-- External Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js" crossorigin="anonymous"></script>
+  <!-- PDF.js for PDF OCR (render pages to canvas first) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js" crossorigin="anonymous"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
 
   <style>
@@ -20,24 +22,32 @@
       --bg:var(--ivory); --surface:#ffffff; --surface-tint:rgba(255,255,255,.70); --surface-2:rgba(255,255,255,.85);
       --ink:#111; --muted:#3b4043; --border:rgba(34,51,59,.18); --accent:var(--slate); --accent-2:var(--earth);
       --ok:#2e7d32; --warn:#c48900; --bad:#b91c1c; --radius:16px; --ring: rgba(34,51,59,.22);
+      --glass-bg:linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.45));
+      --glass-bd: color-mix(in oklab, var(--border), var(--accent-2) 24%);
       --toast-bg:#111; --toast-fg:#fff;
     }
     @media (prefers-color-scheme: dark) {
       html[data-theme="auto"]{
         --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.90); --surface-tint:rgba(23,27,30,.80);
         --ink:#e9eef0; --muted:#aab3b8; --border:rgba(255,255,255,.09); --accent:#9cc6dd; --accent-2:#d7bfa2;
-        --ring: rgba(156,198,221,.35); --toast-bg:#1f2529; --toast-fg:#e9eef0;
+        --ring: rgba(156,198,221,.35); --glass-bg:linear-gradient(180deg, rgba(23,27,30,.70), rgba(23,27,30,.55));
+        --glass-bd: color-mix(in oklab, var(--border), var(--accent) 30%);
+        --toast-bg:#1f2529; --toast-fg:#e9eef0;
       }
     }
     html[data-theme="dark"]{
       --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.90); --surface-tint:rgba(23,27,30,.80);
       --ink:#e9eef0; --muted:#aab3b8; --border:rgba(255,255,255,.09); --accent:#9cc6dd; --accent-2:#d7bfa2;
-      --ring: rgba(156,198,221,.35); --toast-bg:#1f2529; --toast-fg:#e9eef0;
+      --ring: rgba(156,198,221,.35); --glass-bg:linear-gradient(180deg, rgba(23,27,30,.70), rgba(23,27,30,.55));
+      --glass-bd: color-mix(in oklab, var(--border), var(--accent) 30%);
+      --toast-bg:#1f2529; --toast-fg:#e9eef0;
     }
     html[data-theme="light"]{
       --bg:var(--ivory); --surface:#ffffff; --surface-2:rgba(255,255,255,.90); --surface-tint:rgba(255,255,255,.80);
       --ink:#111; --muted:#3b4043; --border:rgba(34,51,59,.18); --accent:var(--slate); --accent-2:var(--earth);
-      --ring: rgba(34,51,59,.22); --toast-bg:#111; --toast-fg:#fff;
+      --ring: rgba(34,51,59,.22); --glass-bg:linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.45));
+      --glass-bd: color-mix(in oklab, var(--border), var(--accent-2) 24%);
+      --toast-bg:#111; --toast-fg:#fff;
     }
 
     *{box-sizing:border-box}
@@ -65,9 +75,8 @@
     .brand{font-size:clamp(18px, 1.2vw + .6rem, 24px);font-weight:900;letter-spacing:.2px;color:var(--accent); display:flex; align-items:center; gap:8px;}
     .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
     .top-actions{display:flex;gap:8px;align-items:center}
-    .quick{margin-left:8px}
 
-    .tabs{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);overflow:auto}
+    .tabs{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);overflow:auto;justify-content:center}
     .tab{padding:9px 12px;border-radius:12px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--accent);font-weight:800;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;}
     .tab[aria-selected="true"]{background:var(--surface);border-color:var(--border);color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.04)}
     .tab:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
@@ -81,16 +90,24 @@
 
     .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.10);transition:transform .15s ease, box-shadow .15s ease;}
     .card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.12)}
-    #panel-form .card{background:linear-gradient(180deg, var(--surface-2), var(--surface-tint));backdrop-filter:blur(12px);border:1px solid color-mix(in oklab, var(--border), var(--accent-2) 30%);box-shadow:0 10px 30px rgba(0,0,0,.12)}
-    #panel-form .card:hover{transform:none;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+    #panel-form .card, .glass{background:var(--glass-bg);backdrop-filter:blur(14px);border:1px solid var(--glass-bd);box-shadow:0 20px 50px rgba(0,0,0,.15)}
+    #panel-form .card:hover{transform:none;box-shadow:0 20px 50px rgba(0,0,0,.15)}
 
     .card-h{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:900;color:var(--accent);font-size:clamp(14px,.6vw + .6rem,18px);display:flex;align-items:center;gap:8px;}
     .card-h-actions{display:flex;gap:8px;align-items:center;margin-left:auto}
     .card-b{padding:14px 16px}
+    .center-mobile{text-align:left}
+    @media(max-width:768px){ .center-mobile{ text-align:center } }
+
+    .guide{ background:var(--glass-bg); border:1px solid var(--glass-bd); border-radius:14px; padding:12px; color:var(--muted); display:grid; gap:8px; grid-template-columns: auto 1fr; align-items:flex-start; box-shadow:0 18px 40px rgba(0,0,0,.12)}
+    .guide i{ stroke-width:1.5px }
+    .guide strong{ color:var(--ink) }
+    .guide .steps{ margin:0; padding-left:16px }
+    .guide .tip{ background: color-mix(in oklab, var(--surface), #000 3%); border:1px dashed var(--border); padding:8px 10px; border-radius:10px }
 
     .input,.select,.textarea{width:100%;background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:12px;color:var(--ink);padding:10px 12px;outline:none;transition:box-shadow .15s ease, border-color .15s ease}
     html[data-theme="dark"] .input, html[data-theme="dark"] .select, html[data-theme="dark"] .textarea,
-    html[data-theme="auto"] .input, html[data-theme="auto"] .select, html[data-theme="auto"] .textarea { background: color-mix(in oklab, var(--surface), #000 5%); }
+    html[data-theme="auto"] .input, html[data-theme="auto"] .select, html[data-theme="auto"] .textarea { background: color-mix(in oklab, var(--surface), #fff 6%); }
     .textarea{min-height:120px;resize:vertical}
     .input:focus,.select:focus,.textarea:focus{box-shadow:0 0 0 3px var(--ring)}
     .label{display:block;font-size:12px;color:var(--muted);margin:4px 0 6px}
@@ -118,7 +135,7 @@
     .h-1{font-size:clamp(20px, 1.4vw + .7rem, 28px)}
     .h-2{font-size:clamp(16px, .8vw + .6rem, 20px); color:var(--earth)}
 
-    footer{padding:28px 16px;color:var(--muted)}
+    footer{padding:28px 16px;color:var(--muted); text-align:center}
 
     .kpis{display:grid;gap:12px}
     @media(min-width:700px){.kpis{grid-template-columns:repeat(4,1fr)}}
@@ -175,16 +192,13 @@
       .tabs{display:none}
       .mobile-nav,.fab{display:flex}
       body{padding-bottom:80px}
-
-      #panel-form .card-h{flex-direction:column; align-items:flex-start; gap:12px}
-      #panel-form .card-h > div { margin-left:auto }
-
-      #panel-batch .card-h{flex-direction:column; align-items:flex-start; gap:12px}
-      #panel-batch .card-h-actions{flex-wrap:wrap; gap:8px}
-
+      .topbar{ justify-content:center }
+      .brand{ justify-content:center }
+      #panel-form .card-h,
+      #panel-batch .card-h { flex-direction:column; align-items:center; gap:12px }
+      #panel-batch .card-h-actions{flex-wrap:wrap; gap:8px; justify-content:center}
       .rule-row{ grid-template-columns:1fr; border:1px solid var(--border); padding:10px; border-radius:var(--radius) }
       .rule-row > div{ display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-start }
-
       .grid-3{ grid-template-columns:1fr }
       .topbar .brand .lucide{ display:none }
     }
@@ -192,16 +206,14 @@
 </head>
 <body>
   <header>
-    <div class="topbar wrap">
-      <div class="brand"><i data-lucide="leaf"></i> Cascade Expense Capture
-        <button id="quickGuideBtn" class="btn-s quick" title="Show Quick Guide"><i data-lucide="help-circle"></i> Quick Guide</button>
-      </div>
+    <div class="topbar wrap center-mobile">
+      <div class="brand"><i data-lucide="leaf"></i> Cascade Expense Capture</div>
       <div class="top-actions">
         <button id="themeToggle" class="btn-s" title="Toggle theme"><i data-lucide="sun-moon"></i> <span>Theme</span></button>
         <span id="appStatus" class="meta" aria-live="polite"></span>
       </div>
     </div>
-    <div class="tabs wrap" role="tablist" aria-label="Sections">
+    <div class="tabs wrap center-mobile" role="tablist" aria-label="Sections">
       <button class="tab" id="tab-dashboard" data-tab="dashboard" aria-selected="true" role="tab"><i data-lucide="layout-grid"></i> Dashboard</button>
       <button class="tab" id="tab-form" data-tab="form" aria-selected="false" role="tab"><i data-lucide="file-plus-2"></i> Form</button>
       <button class="tab" id="tab-capture" data-tab="capture" aria-selected="false" role="tab"><i data-lucide="camera"></i> Capture</button>
@@ -212,8 +224,21 @@
 
   <main class="wrap" id="main">
     <!-- Dashboard -->
-    <section id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard">
-      <div class="kpis" id="kpiGrid">
+    <section id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard" class="center-mobile">
+      <div class="guide glass">
+        <i data-lucide="info"></i>
+        <div>
+          <strong>Dashboard</strong>
+          <ol class="steps meta">
+            <li><b>KPIs</b> update as you add items.</li>
+            <li><b>Category Breakdown</b> visualizes spend by category.</li>
+            <li><b>Recent Activity</b> lists the last 6 entries.</li>
+          </ol>
+          <div class="tip meta"><b>Swipe</b> left/right on mobile to switch tabs. Use the floating <b>+</b> to open the Form.</div>
+        </div>
+      </div>
+
+      <div class="kpis" id="kpiGrid" style="margin-top:12px">
         <div class="kpi"><h4>Total Expenses</h4><div class="v num" id="kpiTotal">—</div><div class="meta" id="kpiCount">0 items</div></div>
         <div class="kpi"><h4>Latest Date</h4><div class="v" id="kpiLatest">—</div><div class="meta">Most recent record</div></div>
         <div class="kpi"><h4>Avg Amount</h4><div class="v num" id="kpiAvg">—</div><div class="meta">Across all items</div></div>
@@ -222,11 +247,11 @@
 
       <div class="grid" style="margin-top:16px">
         <div class="card">
-          <div class="card-h"><i data-lucide="tag"></i> Category Breakdown</div>
+          <div class="card-h center-mobile"><i data-lucide="tag"></i> Category Breakdown</div>
           <div class="card-b" id="catBreakdown"><div class="meta">No data yet.</div></div>
         </div>
         <div class="card">
-          <div class="card-h">
+          <div class="card-h center-mobile">
             <i data-lucide="clock"></i> <span>Recent Activity</span>
             <button id="openRulesBtn" class="btn-s card-h-actions"><i data-lucide="list-filter"></i> Manage Rules</button>
           </div>
@@ -237,8 +262,22 @@
 
     <!-- Form -->
     <section id="panel-form" role="tabpanel" aria-labelledby="tab-form" class="hidden">
-      <div class="card">
-        <div class="card-h">
+      <div class="guide glass">
+        <i data-lucide="file-pen-line"></i>
+        <div>
+          <strong>Form</strong>
+          <ol class="steps meta">
+            <li><b>Priority fields:</b> Date, Category, Amount, Vendor, Description.</li>
+            <li><b>Property</b> is fixed to <b>Cascade Hideaway_BRIA</b> for consistency.</li>
+            <li>Click <b>Validate</b> to check; click <b>Add</b> to save and auto-append to <b>Sheets</b> (live ops).</li>
+            <li><b>More fields</b> reveals optional columns (invoice #, notes, etc.).</li>
+          </ol>
+          <div class="tip meta"><b>Auto upload:</b> When you press <b>Add</b>, we append to <b>Google Sheets</b>. A weekly <b>Drive</b> backup (JSON+CSV) runs automatically.</div>
+        </div>
+      </div>
+
+      <div class="card glass">
+        <div class="card-h center-mobile">
           <i data-lucide="file-pen-line"></i> <span>Quick Entry</span>
           <div class="card-h-actions">
             <span id="rulesBadge" class="chip meta hidden">Rules applied</span>
@@ -247,13 +286,10 @@
           </div>
         </div>
         <div class="card-b">
-          <!-- Prioritized fields to match table columns -->
           <form id="expenseForm" autocomplete="off" novalidate style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px,1fr))">
+            <input type="hidden" name="property" value="Cascade Hideaway_BRIA"/>
+
             <label><span class="label">Date *</span><input name="date" type="date" class="input" required></label>
-            <label class="ac-wrap"><span class="label">Property *</span>
-              <input name="property" class="input" list="propertyList" placeholder="e.g., Cascade Hideaway_BRIA" required>
-              <datalist id="propertyList"></datalist>
-            </label>
             <label><span class="label">Vendor</span><input name="vendor" class="input" placeholder="Merchant"></label>
             <label class="ac-wrap"><span class="label">Category *</span>
               <input name="category" class="input" list="categoryList" placeholder="Utilities · Subscriptions · Services" aria-autocomplete="list" aria-expanded="false" required>
@@ -277,12 +313,13 @@
                 <label><span class="label">Tip Amount</span><input name="tip_amount" type="number" step="0.01" class="input" value="0"></label>
                 <label><span class="label">Location</span><input name="location" class="input"></label>
 
-                <!-- Hidden / system fields (kept for compatibility) -->
+                <!-- Hidden / system fields -->
                 <input type="hidden" name="source_type"/>
                 <input type="hidden" name="source_filename"/>
                 <input type="hidden" name="attachment_drive_file_id"/>
                 <input type="hidden" name="record_drive_file_id"/>
                 <input type="hidden" name="uploaded_at"/>
+                <input type="hidden" name="sheet_appended_at"/>
                 <input type="hidden" name="created_at"/>
                 <input type="hidden" name="processed_at"/>
                 <input type="hidden" name="validated"/>
@@ -291,29 +328,50 @@
             </details>
           </form>
           <div id="formErrors" class="meta" style="color:#b30000;margin-top:6px"></div>
+
+          <div class="guide glass" style="margin-top:12px">
+            <i data-lucide="help-circle"></i>
+            <div>
+              <strong>Buttons & fields</strong>
+              <ul class="steps meta">
+                <li><b>Validate</b> checks required fields and amounts.</li>
+                <li><b>Add</b> saves locally and <b>appends to Sheets</b> (live ops).</li>
+                <li><b>More fields</b> maps exactly to table columns so nothing is lost.</li>
+                <li>Rules auto-fill category/vendor from description/vendor text.</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- Capture -->
     <section id="panel-capture" role="tabpanel" aria-labelledby="tab-capture" class="hidden">
+      <div class="guide glass">
+        <i data-lucide="camera"></i>
+        <div>
+          <strong>Capture</strong>
+          <ol class="steps meta">
+            <li><b>Upload</b> images or PDFs.</li>
+            <li>Click <b>Start OCR</b> on each file to extract text (progress shows).</li>
+            <li>Review the <b>Quick Edit</b> card; tweak fields, then <b>Send to Form</b>.</li>
+            <li><b>Upload Attachment</b> pushes the source file to Drive and links it.</li>
+          </ol>
+          <div class="tip meta">PDF OCR uses PDF.js → Tesseract. For speed, we scan the first 3 pages at 2× scale.</div>
+        </div>
+      </div>
+
       <div class="grid grid-3">
-        <div class="card">
-          <div class="card-h"><i data-lucide="inbox"></i> Ingest</div>
+        <div class="card glass">
+          <div class="card-h center-mobile"><i data-lucide="inbox"></i> Ingest</div>
           <div class="card-b">
             <label class="label">Upload images / PDF</label>
             <input id="fileInput" type="file" accept=".pdf,image/*" multiple class="input"/>
-            <div style="height:8px"></div>
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <label class="label" style="margin:0">Paste raw text / email</label>
-              <button id="parsePasteBtn" class="btn-s"><i data-lucide="search"></i> Parse</button>
-            </div>
-            <textarea id="pasteBox" class="textarea" placeholder="Paste any receipt text, bank line item, or email here..."></textarea>
-            <div class="meta" style="margin-top:8px">OCR runs locally when enabled in Settings. AI Parsing (Gemini) requires API key.</div>
+            <div class="meta" style="margin-top:8px">Tip: Add files first, then run OCR per-file using the “Start OCR” button.</div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-h"><i data-lucide="sparkles"></i> Quick Parse Preview <span class="meta" style="margin-left:auto">Drop files anywhere to add</span></div>
+        <div class="card glass">
+          <div class="card-h center-mobile"><i data-lucide="sparkles"></i> OCR & Quick Parse <span class="meta" style="margin-left:auto">Drop files anywhere to add</span></div>
           <div class="card-b" id="ingestPreview">Nothing ingested yet.</div>
         </div>
       </div>
@@ -321,8 +379,21 @@
 
     <!-- Batch -->
     <section id="panel-batch" role="tabpanel" aria-labelledby="tab-batch" class="hidden">
-      <div class="card">
-        <div class="card-h">
+      <div class="guide glass">
+        <i data-lucide="package"></i>
+        <div>
+          <strong>Batch</strong>
+          <ol class="steps meta">
+            <li><b>Filters</b> narrow the list (text, category, date, amount).</li>
+            <li><b>Validate All</b>, <b>Deduplicate</b>, then <b>Append All to Sheet</b> or <b>Upload to Drive</b> (dataset export).</li>
+            <li>Status chips show <b>OK / Needs fix</b>, <b>Drive uploaded</b>, <b>Sheet appended</b>, and <b>Attachment linked</b>.</li>
+          </ol>
+          <div class="tip meta"><b>Backups:</b> Weekly Drive backups run automatically. Use “Run Backup Now” in Settings to force a snapshot.</div>
+        </div>
+      </div>
+
+      <div class="card glass">
+        <div class="card-h center-mobile">
           <i data-lucide="package-check"></i> <span>Preview & Batch</span>
           <div class="card-h-actions">
             <label class="meta" style="display:flex;gap:6px;align-items:center">
@@ -335,11 +406,8 @@
           </div>
         </div>
         <div class="card-b">
-          <!-- Filters -->
           <div id="batchFilters" style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:10px">
             <input id="fltText" class="input" placeholder="Search text… (vendor/desc)"/>
-            <input id="fltProperty" class="input" list="propertyList" placeholder="Property"/>
-            <datalist id="propertyList"></datalist>
             <input id="fltCategory" class="input" list="categoryList" placeholder="Category"/>
             <input id="fltDateFrom" type="date" class="input" placeholder="From"/>
             <input id="fltDateTo" type="date" class="input" placeholder="To"/>
@@ -348,10 +416,11 @@
             <button id="fltClear" class="btn-s">Clear filters</button>
           </div>
 
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px" class="center-mobile">
             <div class="meta"><span id="recordCount">0</span> items <span id="countAll" class="meta"></span> · Total <span id="recordTotal" class="num">₱0.00</span></div>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
               <button id="uploadDriveBtn" class="btn-s" title="Upload entire dataset (JSON+CSV)"><i data-lucide="upload-cloud"></i> Upload to Drive</button>
+              <button id="uploadSheetAllBtn" class="btn-s" title="Append All to Sheet"><i data-lucide="table-2"></i> Append All to Sheet</button>
               <button id="exportJsonBtn" class="btn-s"><i data-lucide="file-json"></i> Export JSON</button>
               <button id="exportCsvBtn" class="btn-s"><i data-lucide="file-text"></i> Export CSV</button>
             </div>
@@ -361,7 +430,6 @@
               <thead>
                 <tr>
                   <th data-sort="date">Date <span class="arrow">▲</span></th>
-                  <th data-sort="property">Property <span class="arrow">▲</span></th>
                   <th data-sort="vendor">Vendor <span class="arrow">▲</span></th>
                   <th data-sort="category">Category <span class="arrow">▲</span></th>
                   <th data-sort="amount">Amount <span class="arrow">▲</span></th>
@@ -378,25 +446,48 @@
 
     <!-- Settings -->
     <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="hidden">
-      <div class="card">
-        <div class="card-h"><i data-lucide="settings-2"></i> Settings</div>
+      <div class="guide glass">
+        <i data-lucide="settings-2"></i>
+        <div>
+          <strong>Settings</strong>
+          <ol class="steps meta">
+            <li>Paste <b>Google Client ID</b>, then click <b>Sign in to Google</b>.</li>
+            <li>Provide <b>Spreadsheet ID</b> + <b>Sheet Name</b> for live operations (Sheets append on Add).</li>
+            <li>Set <b>Drive Folder ID</b> for weekly backups and attachments.</li>
+            <li>Enable <b>Tesseract</b> for client OCR; optionally enable <b>Gemini</b> for smarter parsing.</li>
+          </ol>
+          <div class="tip meta"><b>Automatic mode:</b> We auto-append to <b>Sheets</b> on Add and run a weekly <b>Drive</b> backup (JSON+CSV). You can trigger a backup anytime via <b>Run Backup Now</b>.</div>
+        </div>
+      </div>
+
+      <div class="card glass">
+        <div class="card-h center-mobile"><i data-lucide="settings-2"></i> Settings</div>
         <div class="card-b">
           <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
             <label><span class="label">Default Drive Folder ID</span><input id="driveFolderId" class="input" placeholder="1ZVwc58gkaNWW8rw2tbbCUJRIQWhkPEnz"></label>
             <label><span class="label">Google Client ID *</span><input id="googleClientId" class="input" placeholder="Your-OAuth-Client-ID.apps.googleusercontent.com"></label>
-            <div style="display:flex;gap:8px;align-items:end">
+
+            <div style="display:flex;gap:8px;align-items:end;justify-content:center">
               <button id="googleSignIn" class="btn"><i data-lucide="log-in"></i> Sign in to Google</button>
               <span id="googleUser" class="meta">Not signed in</span>
             </div>
+
+            <label><span class="label">Spreadsheet ID</span><input id="sheetId" class="input" placeholder="1vA...YourSheetId"></label>
+            <label><span class="label">Sheet Name</span><input id="sheetName" class="input" value="Sheet1"></label>
+
             <label><span class="label">Gemini API Key (optional)</span><input id="geminiKey" class="input" placeholder="AIzaSy... (enables AI parsing)"></label>
-            <label style="display:flex;gap:8px;align-items:center"><input id="toggleTesseract" type="checkbox"> <span>Use Tesseract (client OCR)</span></label>
-            <label style="display:flex;gap:8px;align-items:center"><input id="toggleLLM" type="checkbox"> <span>Allow LLM network (Gemini)</span></label>
-            <label style="display:flex;gap:8px;align-items:center"><input id="toggleAutoUpload" type="checkbox" checked> <span>Auto-upload on Add</span></label>
-            <div style="display:flex;gap:8px">
+            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleTesseract" type="checkbox"> <span>Use Tesseract (client OCR)</span></label>
+            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleLLM" type="checkbox"> <span>Allow LLM network (Gemini)</span></label>
+
+            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleAutoUpload" type="checkbox" checked> <span>Append to Sheets on Add (recommended)</span></label>
+            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleWeeklyBackup" type="checkbox" checked> <span>Weekly Drive backup (JSON+CSV)</span></label>
+
+            <div style="display:flex;gap:8px;justify-content:center">
               <button id="saveSettings" class="btn"><i data-lucide="save"></i> Save Settings</button>
+              <button id="runBackupNow" class="btn-s"><i data-lucide="clock-8"></i> Run Backup Now</button>
               <button id="adminLogout" class="btn-s"><i data-lucide="log-out"></i> Admin Sign out</button>
             </div>
-            <div class="meta" style="grid-column:1/-1">
+            <div class="meta center-mobile" style="grid-column:1/-1">
               <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> <strong>Security:</strong> All data stays in your browser's <code>localStorage</code>. No data leaves your device unless you export or upload.
             </div>
           </div>
@@ -414,7 +505,7 @@
   <!-- Rules Modal -->
   <div id="rulesModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="modal-card" tabindex="-1">
-      <div class="card-h">
+      <div class="card-h center-mobile">
         <i data-lucide="list-filter"></i> <span>Auto-categorization Rules</span>
         <div class="card-h-actions">
           <button id="rulesClose" class="btn-s"><i data-lucide="x"></i> Close</button>
@@ -422,7 +513,7 @@
       </div>
       <div class="card-b">
         <div class="meta" style="margin-bottom:8px">First enabled match wins. Pattern is case-insensitive substring or a <code>/regex/i</code>.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;justify-content:center">
           <button id="addRuleBtn" class="btn-s"><i data-lucide="plus"></i> Add Rule</button>
           <button id="exportRulesBtn" class="btn-s"><i data-lucide="upload"></i> Export JSON</button>
           <label class="btn-s" for="importRulesFile" style="cursor:pointer"><i data-lucide="download"></i> Import JSON</label>
@@ -432,26 +523,6 @@
           </label>
         </div>
         <div id="rulesList"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Quick Guide Modal -->
-  <div id="guideModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
-    <div class="modal-card" tabindex="-1">
-      <div class="card-h">
-        <i data-lucide="help-circle"></i> <span>Quick Guide</span>
-        <button id="guideClose" class="btn-s card-h-actions"><i data-lucide="x"></i> Close</button>
-      </div>
-      <div class="card-b">
-        <ol class="meta" style="margin:0; padding-left:18px">
-          <li>Go to <strong>Settings</strong> and enter your Google Client ID (from Google Cloud Console).</li>
-          <li>In Google Cloud Console, set <strong>Authorized JavaScript origins</strong> to your hosting domain (e.g. GitHub Pages).</li>
-          <li>Click <strong>Sign in to Google</strong> — a popup will appear (no redirect needed).</li>
-          <li>(Optional) Add Gemini API Key for AI-powered parsing.</li>
-          <li>Use <strong>Form</strong> or <strong>Capture</strong> to add expenses.</li>
-          <li>Review in <strong>Batch</strong>, then <strong>Upload to Drive</strong>.</li>
-        </ol>
       </div>
     </div>
   </div>
@@ -479,7 +550,6 @@
   <script>
   (()=>{ 'use strict';
 
-    // ---------- utils ----------
     const $ = (s,root=document)=>root.querySelector(s);
     const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
     const fmtMoney = (n,ccy="PHP") => new Intl.NumberFormat(undefined,{style:"currency",currency:ccy||"PHP"}).format(Number(n||0));
@@ -492,17 +562,16 @@
       del(k){ try{ localStorage.removeItem(k); }catch{} }
     };
 
-    // ---------- state ----------
-    let records = storage.get("cx:records", []).map(r=>({property:"", ...r}));
+    let records = storage.get("cx:records", []).map(r=>({property:"Cascade Hideaway_BRIA", ...r}));
     let settings = storage.get("cx:settings", {
-      folderId:"",googleClientId:"",geminiKey:"",useTesseract:false,allowLLM:false,lastTab:"dashboard",theme:"auto",autoUpload:true
+      folderId:"",googleClientId:"",geminiKey:"",useTesseract:false,allowLLM:false,lastTab:"dashboard",theme:"auto",
+      autoUpload:true, spreadsheetId:"", sheetName:"Sheet1", weeklyBackup:true, lastBackupAt: null
     });
     let isAdmin = storage.get("cx:isAdmin", false);
     let rules = storage.get("cx:rules", []);
     let rulesAllowOverwrite = storage.get("cx:rulesAllowOverwrite", false);
     let oauth = { accessToken: null, expiresAt: 0, tokenClient: null };
 
-    // ---------- theme ----------
     function applyTheme(mode){
       document.documentElement.setAttribute("data-theme", mode||"auto");
       const btn = $("#themeToggle");
@@ -524,11 +593,6 @@
       settings.theme=next; storage.set("cx:settings", settings); applyTheme(next);
       toast(`Theme: ${next}`, {timeout:1200});
     });
-
-    // ---------- toasts ----------
-    const batchEmptyState = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="archive"></i><div class="empty-state-h">No Records Found</div><p class="empty-state-p meta">Try adding an expense from the 'Form' tab.</p><button class="btn-s" id="emptyGoToForm"><i data-lucide="file-plus-2"></i> Add First Expense</button></div></td></tr>`;
-    const catEmptyState = `<div class="empty-state"><i data-lucide="pie-chart"></i><div class="empty-state-h">No Category Data</div><p class="empty-state-p meta">Add expenses and your category spending will appear here.</p></div>`;
-    const recentEmptyState = `<div class="empty-state"><i data-lucide="activity"></i><div class="empty-state-h">No Recent Activity</div><p class="empty-state-p meta">Your 6 most recent expenses will show up here.</p></div>`;
 
     let statusTimer=null;
     function toast(msg, opts={}){
@@ -552,7 +616,6 @@
       if(timeout>0){ setTimeout(()=>{ if(t.isConnected) area.removeChild(t); }, timeout); }
     }
 
-    // ---------- tabs ----------
     function switchTab(id){
       if(id==="settings" && !isAdmin){
         const pwd = prompt("Enter admin password:");
@@ -571,7 +634,27 @@
     $$(".mobile-tab").forEach(b=> b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
     $("#fab-add")?.addEventListener("click", ()=> switchTab("form"));
 
-    // ---------- schema & validation ----------
+    // Swipe navigation (mobile)
+    (function enableSwipe(){
+      let startX=null, startY=null, t0=0;
+      const threshold = 50; const restraint=80; const allowedTime=500;
+      window.addEventListener("touchstart",(e)=>{
+        const t=e.changedTouches[0]; startX=t.pageX; startY=t.pageY; t0=Date.now();
+      }, {passive:true});
+      window.addEventListener("touchend",(e)=>{
+        if(startX==null) return;
+        const t=e.changedTouches[0]; const dx=t.pageX-startX; const dy=t.pageY-startY; const dt=Date.now()-t0;
+        if(Math.abs(dx)>=threshold && Math.abs(dy)<=restraint && dt<=allowedTime){
+          const order=["dashboard","capture","batch","settings"];
+          const cur=settings.lastTab||"dashboard";
+          const idx=Math.max(0,order.indexOf(cur));
+          if(dx<0 && idx<order.length-1) switchTab(order[idx+1]); // swipe left → next
+          if(dx>0 && idx>0) switchTab(order[idx-1]); // swipe right → prev
+        }
+        startX=null; startY=null;
+      }, {passive:true});
+    })();
+
     const zExport = (window.zod && (window.zod.z || window.zod)) || null;
     const z = zExport && zExport.object ? (window.zod.z || window.zod) : null;
     const schema = z ? z.object({
@@ -595,6 +678,7 @@
       attachment_drive_file_id: z.string().trim().optional(),
       record_drive_file_id: z.string().trim().optional(),
       uploaded_at: z.string().trim().optional(),
+      sheet_appended_at: z.string().trim().optional(),
       created_at: z.string().trim().optional(),
       processed_at: z.string().trim().optional(),
       validated: z.string().trim().optional(),
@@ -615,7 +699,6 @@
       return {ok:errs.length===0,errors:errs,data:{...rec,amount:amt}};
     }
 
-    // ---------- rules ----------
     function saveRules(){ storage.set("cx:rules", rules); }
     function isRegex(p){ return /^\/.*\/i?$/.test(p) || p.startsWith("^") || p.endsWith("$"); }
     function ruleMatches(text, pattern){
@@ -636,7 +719,6 @@
           const maybeSet=(k,v)=>{ if(v==null || v==="") return; if(out[k]==null || out[k]==="" || allowOverwrite) out[k]=v; };
           maybeSet("category", f.category);
           maybeSet("subcategory", f.subcategory);
-          maybeSet("property", f.property);
           maybeSet("vendor", f.vendor);
           if(f.notes){ out.notes = (out.notes? out.notes + " · " : "") + f.notes; }
           return {rec:out, matched:rule};
@@ -644,16 +726,7 @@
       }
       return {rec, matched:null};
     }
-    function applyRulesToForm(){
-      const allow = rulesAllowOverwrite || $("#rulesAllowOverwrite")?.checked;
-      const before=formToRec();
-      const {rec, matched}=applyRules(before, allow);
-      if(matched){
-        fillForm(rec);
-        const badge=$("#rulesBadge");
-        if(badge){ badge.classList.remove("hidden"); badge.textContent = "Rule applied: " + String(matched.pattern||""); }
-      }
-    }
+    function applyRulesToForm(){ const allow = rulesAllowOverwrite || $("#rulesAllowOverwrite")?.checked; const before=formToRec(); const {rec, matched}=applyRules(before, allow); if(matched){ fillForm(rec); const badge=$("#rulesBadge"); if(badge){ badge.classList.remove("hidden"); badge.textContent = "Rule applied: " + String(matched.pattern||""); } } }
     function applyRulesToAll(){
       const allow = $("#rulesOverwriteToggle")?.checked || rulesAllowOverwrite;
       const prev = JSON.parse(JSON.stringify(records));
@@ -666,14 +739,12 @@
         return r;
       });
       persistAndRender();
-      toast(`Applied rules to ${records.length} item(s) · changed ${changed} · matched ${used}`, {
-        actionLabel:"Undo",action:()=>{ records = prev; persistAndRender(); }
-      });
+      toast(`Applied rules to ${records.length} item(s) · changed ${changed} · matched ${used}`, { actionLabel:"Undo",action:()=>{ records = prev; persistAndRender(); } });
     }
 
-    // ---------- form ----------
     function formToRec(){
       const f=$("#expenseForm"); const fd=new FormData(f); const rec=Object.fromEntries(fd.entries());
+      rec.property = "Cascade Hideaway_BRIA";
       rec.amount=Number(rec.amount||0); rec.tax_amount=Number(rec.tax_amount||0); rec.tip_amount=Number(rec.tip_amount||0);
       rec.validated=String(false); rec.validation_errors="";
       if(!rec.created_at) rec.created_at=new Date().toISOString(); if(!rec.currency) rec.currency="PHP";
@@ -688,43 +759,39 @@
       const rec=formToRec(); rec.processed_at=new Date().toISOString();
       const v=validateRecord(rec); rec.validated=String(v.ok); rec.validation_errors=v.ok?"":(v.errors||[]).join("; ");
 
-      // push to records first to never lose user data
+      // Always push to local list
       records.push(rec); persistAndRender(); switchTab("batch");
 
-      // auto-upload single record if enabled
+      // AUTOMATIC MODE: Append to Sheets on Add (live ops)
       if(settings.autoUpload){
         try{
-          const token = await ensureDriveToken();
-          const { id:fileId } = await uploadRecordToDrive(rec, { accessToken: token, folderId: settings.folderId?.trim()||null });
-          rec.record_drive_file_id = fileId;
-          rec.uploaded_at = new Date().toISOString();
+          if(!settings.spreadsheetId?.trim()){ throw new Error("Set Spreadsheet ID in Settings"); }
+          const token = await ensureGoogleToken();
+          await appendRecordToSheet(rec, { accessToken: token, spreadsheetId: settings.spreadsheetId.trim(), sheetName: settings.sheetName?.trim() || "Sheet1" });
+          rec.sheet_appended_at = new Date().toISOString();
           persistAndRender();
-          toast("Added & uploaded ✓", { timeout: 2000 });
+          toast("Added & appended to Sheet ✓", { timeout: 2000 });
         }catch(e){
-          console.warn("Auto-upload skipped:", e?.message||e);
-          toast("Added (not uploaded — Sign in first)", { timeout: 2600 });
+          console.warn("Auto-append failed:", e?.message||e);
+          toast("Added (Sheet append skipped — check Settings/Sign-in)", { timeout: 2600 });
         }
       }else{
         toast("Added to list", { timeout: 1400 });
       }
 
-      // keep property/category; reset fast fields; date → today
+      // Reset form
       const f=$("#expenseForm");
-      const keepProperty = f.elements.namedItem("property").value;
-      const keepCategory = f.elements.namedItem("category").value;
       ["date","amount","description","notes","vendor","invoice_number","reference_id","tax_amount","tip_amount","location"].forEach(name=>{
         const el=f.elements.namedItem(name);
         if(el) el.value=(name==="tax_amount"||name==="tip_amount")?"0":"";
       });
-      f.elements.namedItem("property").value = keepProperty;
-      f.elements.namedItem("category").value = keepCategory;
+      f.elements.namedItem("category").value = "";
       f.elements.namedItem("date").value = new Date().toISOString().slice(0,10);
       f.elements.namedItem("date").focus();
     });
     $("#expenseForm")?.elements?.namedItem("vendor")?.addEventListener("input", applyRulesToForm);
     $("#expenseForm")?.elements?.namedItem("description")?.addEventListener("input", applyRulesToForm);
 
-    // ---------- table ----------
     function amountClass(a){ if(a>3000) return "num--red"; if(a>=500) return "num--yellow"; return "num--green"; }
     let tableSort = {key:"date", dir:"desc"};
     $$("#panel-batch thead th[data-sort]").forEach(th=>{
@@ -738,16 +805,12 @@
       });
     });
 
-    const filterEls = {
-      text: $("#fltText"),property: $("#fltProperty"),category: $("#fltCategory"),
-      dateFrom: $("#fltDateFrom"),dateTo: $("#fltDateTo"),amtMin: $("#fltAmtMin"),amtMax: $("#fltAmtMax"),
-    };
+    const filterEls = { text: $("#fltText"), category: $("#fltCategory"), dateFrom: $("#fltDateFrom"),dateTo: $("#fltDateTo"),amtMin: $("#fltAmtMin"),amtMax: $("#fltAmtMax") };
     Object.values(filterEls).forEach(el=> el?.addEventListener("input", ()=>renderTable()));
     $("#fltClear")?.addEventListener("click", ()=>{ Object.values(filterEls).forEach(el=>{ if(el) el.value=""; }); renderTable(); });
 
     function filteredRecords(){
       const t=(filterEls.text?.value||"").trim().toLowerCase();
-      const prop=(filterEls.property?.value||"").trim().toLowerCase();
       const cat=(filterEls.category?.value||"").trim().toLowerCase();
       const df=filterEls.dateFrom?.value || "";
       const dt=filterEls.dateTo?.value || "";
@@ -758,7 +821,6 @@
           const hay=[r.vendor||"", r.description||"", r.notes||""].join(" ").toLowerCase();
           if(!hay.includes(t)) return false;
         }
-        if(prop && (r.property||"").toLowerCase().indexOf(prop)===-1) return false;
         if(cat && (r.category||"").toLowerCase().indexOf(cat)===-1) return false;
         if(df && (!r.date || r.date < df)) return false;
         if(dt && (!r.date || r.date > dt)) return false;
@@ -781,7 +843,6 @@
     }
 
     function renderTable(){
-      refreshPropertyDatalist();
       refreshCategoryDatalist();
       const tbody=$("#previewTable"); if(!tbody) return; tbody.innerHTML="";
       const rows = sortRecs(filteredRecords());
@@ -792,9 +853,7 @@
       const totalEl=$("#recordTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className="num "+amountClass(sum);
 
       if(!rows.length){ 
-        tbody.innerHTML=batchEmptyState; 
-        const btn = tbody.querySelector("#emptyGoToForm");
-        if(btn) btn.addEventListener("click", () => switchTab("form"));
+        tbody.innerHTML=`<tr><td colspan="6"><div class="empty-state"><i data-lucide="archive"></i><div class="empty-state-h">No Records Found</div><p class="empty-state-p meta">Try adding an expense from the 'Form' tab.</p></div></td></tr>`;
         if(window.lucide) window.lucide.createIcons({ nodes: [tbody] });
         return; 
       }
@@ -804,9 +863,9 @@
         const tr=document.createElement("tr");
         const uploaded = !!r.record_drive_file_id;
         const attached = !!r.attachment_drive_file_id;
+        const sheeted = !!r.sheet_appended_at;
         tr.innerHTML=`
           <td>${r.date||""}</td>
-          <td>${escapeHtml(r.property||"")}</td>
           <td>${escapeHtml(r.vendor||"")}</td>
           <td>${escapeHtml(r.category||"")}</td>
           <td class="num ${amountClass(Number(r.amount||0))}">${fmtMoney(r.amount,r.currency)}</td>
@@ -816,7 +875,8 @@
                 ? '<span style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="check" style="width:1em;height:1em;color:var(--ok)"></i>OK</span>'
                 : '<span style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="alert-triangle" style="width:1em;height:1em;color:var(--warn)"></i>Needs fix</span>'
               }
-              ${uploaded ? '<span title="Uploaded"><i data-lucide="cloud-check"></i></span>' : '<span title="Local only"><i data-lucide="cloud-off"></i></span>'}
+              ${uploaded ? '<span title="Drive uploaded"><i data-lucide="cloud-check"></i></span>' : '<span title="Local only"><i data-lucide="cloud-off"></i></span>'}
+              ${sheeted ? '<span title="Appended to Sheet"><i data-lucide="table-2"></i></span>' : ''}
               ${attached ? '<span title="Attachment linked"><i data-lucide="paperclip"></i></span>' : ''}
             </span>
           </td>
@@ -824,10 +884,7 @@
             <button class="btn-s" data-action="edit" title="Edit"><i data-lucide="edit-3"></i></button>
             <button class="btn-s" data-action="delete" title="Delete"><i data-lucide="trash-2"></i></button>
           </td>`;
-        // attach handlers with closure-safe index via dataset
-        tr.querySelectorAll('button[data-action]').forEach(b=>{
-          b.dataset.id = String(records.indexOf(r));
-        });
+        tr.querySelectorAll('button[data-action]').forEach(b=>{ b.dataset.id = String(records.indexOf(r)); });
         fragment.appendChild(tr);
       });
       tbody.appendChild(fragment);
@@ -856,7 +913,7 @@
     function dedupe(){
       const seen=new Set(); const out=[];
       for(const r of records){
-        const key=[r.date||"", (r.vendor||"").trim().toLowerCase(), (r.property||"").trim().toLowerCase(), Number(r.amount||0)].join("|");
+        const key=[r.date||"", (r.vendor||"").trim().toLowerCase(), "cascade hideaway_bria", Number(r.amount||0)].join("|");
         if(seen.has(key)) continue; seen.add(key); out.push(r);
       }
       const removed=records.length-out.length; records=out; persistAndRender();
@@ -869,9 +926,8 @@
     $("#rulesOverwriteToggle")?.addEventListener("change", (e)=>{ rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite); });
     $("#rulesOverwriteToggle").checked = !!rulesAllowOverwrite;
 
-    // ---------- export ----------
     function csvBlob(data){
-      const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","created_at","processed_at"];
+      const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","sheet_appended_at","created_at","processed_at"];
       const NL = "\r\n";
       const csv=[cols.join(",")].concat(data.map(r=>cols.map(c=>csvCell(r[c])).join(","))).join(NL);
       return new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], {type:"text/csv;charset=utf-8"});
@@ -881,21 +937,15 @@
     $("#exportJsonBtn")?.addEventListener("click", ()=>download("expenses.json", new Blob([JSON.stringify(records,null,2)], {type:"application/json;charset=utf-8"})));
     $("#exportCsvBtn")?.addEventListener("click", ()=>download("expenses.csv", csvBlob(records)));
 
-    // ---------- Google Drive ----------
+    // Google auth (Drive + Sheets)
     function initGoogleAuth() {
-      if(!settings.googleClientId?.trim()) {
-        toast("Google Client ID not set in Settings");
-        return false;
-      }
-      if(typeof google === 'undefined' || !google.accounts?.oauth2) {
-        toast("Google auth library not loaded yet. Try again.");
-        return false;
-      }
+      if(!settings.googleClientId?.trim()) { toast("Google Client ID not set in Settings"); return false; }
+      if(typeof google === 'undefined' || !google.accounts?.oauth2) { toast("Google auth library not loaded yet. Try again."); return false; }
       if(!oauth.tokenClient) {
         try {
           oauth.tokenClient = google.accounts.oauth2.initTokenClient({
             client_id: settings.googleClientId,
-            scope: 'https://www.googleapis.com/auth/drive.file',
+            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
             callback: (response) => {
               if (response.error) {
                 console.error('OAuth Error:', response);
@@ -906,7 +956,9 @@
                 oauth.accessToken = response.access_token;
                 oauth.expiresAt = Date.now() + (response.expires_in * 1000) - 60000;
                 $("#googleUser").textContent = 'Authorized ✓';
-                toast("Google Drive authorized", {timeout:2000});
+                toast("Google authorized (Drive + Sheets)", {timeout:2000});
+                // If backup is due and enabled, auto-run after auth
+                maybeAutoRunWeeklyBackup(true);
               }
             },
           });
@@ -918,7 +970,7 @@
       }
       return true;
     }
-    async function ensureDriveToken() {
+    async function ensureGoogleToken() {
       const now = Date.now();
       if (oauth.accessToken && now < oauth.expiresAt) {
         return oauth.accessToken;
@@ -939,7 +991,7 @@
       });
     }
     function recordsToCsvString(records) {
-      const cols = ['date','vendor','description','category','subcategory','amount','currency','payment_method','invoice_number','reference_id','tax_amount','tip_amount','location','notes','source_type','source_filename','attachment_drive_file_id','record_drive_file_id','uploaded_at','created_at','processed_at','validated'];
+      const cols = ['date','vendor','description','category','subcategory','amount','currency','payment_method','invoice_number','reference_id','tax_amount','tip_amount','location','notes','source_type','source_filename','attachment_drive_file_id','record_drive_file_id','uploaded_at','sheet_appended_at','created_at','processed_at','validated'];
       const escape = (v) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
       const rows = [cols.join(',')];
       for (const r of records) { rows.push(cols.map((c) => escape(r[c])).join(',')); }
@@ -982,19 +1034,6 @@
       }
       return { mainFileId: uploaded[0].id, mainFileName: uploaded[0].name };
     }
-    async function uploadRecordToDrive(rec, opts){
-      const { accessToken, folderId } = opts;
-      const blob = new Blob([JSON.stringify(rec, null, 2)], { type: 'application/json' });
-      const timestamp = (rec.processed_at || new Date().toISOString()).replace(/:/g,'-').slice(0,19);
-      const meta = { name: `expense_${timestamp}.json`, mimeType: 'application/json', ...(folderId ? { parents: [folderId] } : {}) };
-      const { body } = makeMultipart(meta, blob);
-      const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-        method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body,
-      });
-      if(!resp.ok){ const err=await resp.text(); console.error(err); throw new Error('Record upload failed'); }
-      const data = await resp.json();
-      return { id: data.id, name: data.name };
-    }
     async function uploadAttachmentToDrive(file, opts){
       const { accessToken, folderId } = opts;
       const meta = { name: file.name, mimeType: file.type || 'application/octet-stream', ...(folderId ? { parents: [folderId] } : {}) };
@@ -1006,13 +1045,27 @@
       const data = await resp.json();
       return { id: data.id, name: data.name };
     }
+    async function appendRecordToSheet(rec, opts){
+      const { accessToken, spreadsheetId, sheetName } = opts;
+      if(!spreadsheetId) throw new Error("Spreadsheet ID missing");
+      const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","sheet_appended_at","created_at","processed_at"];
+      const values = [ cols.map(k => (rec[k] ?? "")) ];
+      const range = encodeURIComponent(`${sheetName||'Sheet1'}!A1`);
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+      const body = JSON.stringify({ range: `${sheetName||'Sheet1'}!A1`, majorDimension: "ROWS", values });
+      const resp = await fetch(url, { method:"POST", headers:{ Authorization:`Bearer ${accessToken}`, "Content-Type":"application/json" }, body });
+      if(!resp.ok){ const err=await resp.text(); console.error(err); throw new Error('Sheet append failed'); }
+      return await resp.json();
+    }
     async function uploadAllToDrive() {
       if (!records.length) { toast("No records to upload"); return; }
       const folderId = settings.folderId?.trim() || null;
       toast("Starting Drive upload...", { timeout: 2000 });
       try {
-        const token = await ensureDriveToken();
+        const token = await ensureGoogleToken();
         const result = await uploadDatasetToDrive(records, { accessToken: token, folderId });
+        settings.lastBackupAt = new Date().toISOString();
+        storage.set("cx:settings", settings);
         toast(`Success! Uploaded: ${result.mainFileName}`, { timeout: 4000 });
       } catch (e) {
         console.error("Drive upload failed:", e);
@@ -1021,128 +1074,193 @@
         $("#googleUser").textContent = 'Auth failed';
       }
     }
+    async function appendAllToSheet(){
+      if (!records.length) { toast("No records to append"); return; }
+      if(!settings.spreadsheetId?.trim()){ toast("Set Spreadsheet ID in Settings"); return; }
+      const token = await ensureGoogleToken();
+      let ok=0;
+      for(const rec of records){
+        try{ await appendRecordToSheet(rec, { accessToken: token, spreadsheetId: settings.spreadsheetId.trim(), sheetName: settings.sheetName?.trim()||"Sheet1" }); rec.sheet_appended_at = rec.sheet_appended_at || new Date().toISOString(); ok++; }
+        catch(e){ console.warn("Append failed for one record:", e); }
+      }
+      persistAndRender();
+      toast(`Appended ${ok}/${records.length} to Sheet`, { timeout: 2500 });
+    }
     $("#uploadDriveBtn")?.addEventListener("click", uploadAllToDrive);
+    $("#uploadSheetAllBtn")?.addEventListener("click", appendAllToSheet);
     $("#googleSignIn")?.addEventListener("click", async () => {
-      try { await ensureDriveToken(); } catch(e) { console.error('Sign in failed:', e); }
+      try { await ensureGoogleToken(); } catch(e) { console.error('Sign in failed:', e); }
     });
 
-    // ---------- ingest & OCR ----------
+    // Weekly automatic backup scheduler
+    function maybeAutoRunWeeklyBackup(afterAuth=false){
+      if(!settings.weeklyBackup) return;
+      if(!records.length) return;
+      const last = settings.lastBackupAt ? new Date(settings.lastBackupAt).getTime() : 0;
+      const week = 7*24*60*60*1000;
+      const due = Date.now() - last >= week;
+      if(!due) return;
+      const run = async ()=>{
+        try{
+          const token = await ensureGoogleToken();
+          await uploadAllToDrive(); // sets lastBackupAt
+        }catch(e){
+          console.warn("Auto-backup skipped:", e?.message||e);
+        }
+      };
+      // If we came from auth, just run. Otherwise, prompt.
+      if(afterAuth){ run(); }
+      else {
+        toast("Weekly backup due", { actionLabel: "Run now", action: run, timeout: 8000 });
+      }
+    }
+
+    // Ingest with manual Start OCR (images + PDF)
     $("#fileInput")?.addEventListener("change", onFiles);
     document.addEventListener("dragover", e=>e.preventDefault());
     document.addEventListener("drop", e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
-    $("#parsePasteBtn")?.addEventListener("click", parseFromPaste);
     function onFiles(e){ handleFiles(e.target.files); e.target.value=""; }
 
     async function handleFiles(fileList){
       if(!fileList?.length) return; 
       const files=Array.from(fileList);
-      const container=$("#ingestPreview"); container.innerHTML="";
+      const container=$("#ingestPreview"); if(!container) return;
+      if(container.textContent?.includes("Nothing ingested")) container.innerHTML="";
       for(const f of files){
-        if(settings.useTesseract && f.type.startsWith("image/")){ await processImageWithOCR(f, container); }
-        else{
-          const row=document.createElement("div"); row.className="meta"; row.style.padding="8px";
-          row.innerHTML=`<i data-lucide="file" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> ${escapeHtml(f.name)} <span class="meta">(${(f.size/1024).toFixed(1)} KB) ${f.type==='application/pdf'?'(PDF)':'(non-image)'}</span>`;
-          container.appendChild(row);
-        }
-      }
-      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', container) });
-      toast(`${files.length} file(s) ingested`,{timeout:1400});
-    }
+        const id=Math.random().toString(36).slice(2);
+        const isImg = f.type.startsWith("image/");
+        const isPdf = /\.pdf$/i.test(f.name) || f.type==="application/pdf";
+        const url=isImg ? URL.createObjectURL(f) : "";
 
-    async function processImageWithOCR(file, container){
-      const id=Math.random().toString(36).slice(2);
-      const url = URL.createObjectURL(file);
-      const card=document.createElement("div"); card.className="card"; card.style.marginBottom="10px";
-      card.innerHTML=`
+        const card=document.createElement("div"); card.className="card glass"; card.style.marginBottom="10px";
+        card.innerHTML = `
         <div class="card-b">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div style="font-weight:700; display:flex; align-items:center; gap:8px;"><i data-lucide="image"></i> ${escapeHtml(file.name)}</div>
-            <div class="meta">image OCR</div>
+            <div style="font-weight:700; display:flex; align-items:center; gap:8px;"><i data-lucide="${isImg?'image':'file'}"></i> ${escapeHtml(f.name)}</div>
+            <div class="meta">${isImg?'image': (isPdf ? 'pdf' : 'file')}</div>
           </div>
           <div style="display:flex; gap:12px; align-items:flex-start;">
-            <img alt="preview" src="${url}" style="width:90px;height:90px;object-fit:cover;border:1px solid var(--border);border-radius:8px"/>
+            ${isImg ? `<img alt="preview" src="${url}" style="width:90px;height:90px;object-fit:cover;border:1px solid var(--border);border-radius:8px"/>` : ''}
             <div style="flex:1 1 auto;">
               <div class="bar"><span id="bar-${id}" style="width:0%; transition: width 0.2s ease;"></span></div>
-              <div id="txt-${id}" class="meta" style="margin-top:8px; max-height: 120px; overflow:auto;">Recognizing…</div>
+              <div id="txt-${id}" class="meta" style="margin-top:8px; max-height: 120px; overflow:auto;">Ready. Press “Start OCR”.</div>
               <div id="chips-${id}" class="meta" style="display:flex; gap:6px; margin-top:6px;"></div>
+              <div id="edit-${id}" class="hidden" style="margin-top:8px; display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+                <label><span class="label">Date</span><input class="input" data-f="date"></label>
+                <label><span class="label">Vendor</span><input class="input" data-f="vendor"></label>
+                <label><span class="label">Category</span><input class="input" data-f="category" list="categoryList"></label>
+                <label><span class="label">Amount</span><input class="input" data-f="amount" type="number" step="0.01"></label>
+                <label style="grid-column:1/-1"><span class="label">Description</span><input class="input" data-f="description"></label>
+                <div style="grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap">
+                  <button id="send-${id}" class="btn-s"><i data-lucide="file-pen-line"></i> Send to Form</button>
+                </div>
+              </div>
               <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                <button id="use-${id}" class="btn-s" disabled><i data-lucide="file-pen-line"></i> Parse into form</button>
-                <button id="attach-${id}" class="btn-s"><i data-lucide="paperclip"></i> Attach evidence</button>
-                <button id="copy-${id}" class="btn-s" disabled><i data-lucide="clipboard"></i> Copy text</button>
+                <button id="start-${id}" class="btn-s"><i data-lucide="scan-text"></i> Start OCR</button>
+                <button id="attach-${id}" class="btn-s"><i data-lucide="paperclip"></i> Upload Attachment</button>
               </div>
             </div>
           </div>
         </div>`;
-      container.appendChild(card);
-      if(window.lucide) window.lucide.createIcons({ nodes: [card] });
+        container.appendChild(card);
+        if(window.lucide) window.lucide.createIcons({ nodes: [card] });
 
-      try{
-        if (typeof Tesseract === 'undefined') { throw new Error("Tesseract.js failed to load"); }
         const progressBar=$("#bar-"+id); const textEl=$("#txt-"+id); const chips=$("#chips-"+id);
-        const res=await Tesseract.recognize(file,"eng",{logger:(m)=>{ if(m.status==="recognizing text"){ const p=clamp01(m.progress||0); progressBar.style.width=(p*100).toFixed(0)+"%"; }}});
-        const text=(res?.data?.text||"").trim(); 
-        const conf=(res?.data?.confidence ?? 0);
-        textEl.textContent = text ? (text.length>800?text.slice(0,800)+"…":text) : "(no text)";
-        chips.innerHTML = `
-          <span class="chip">Lang: ENG</span>
-          <span class="chip">Confidence: ${Math.round(conf)}%</span>
-          <span class="chip">Size: ${(file.size/1024).toFixed(1)} KB</span>
-        `;
-        const useBtn=$("#use-"+id), copyBtn=$("#copy-"+id), attachBtn=$("#attach-"+id);
-        useBtn.disabled=!text; copyBtn.disabled=!text;
+        const attachBtn=$("#attach-"+id);
+        const startBtn=$("#start-"+id);
+        const editBox=$("#edit-"+id);
+        const sendBtn=$("#send-"+id);
+        let parsed=null;
 
-        useBtn.addEventListener("click",()=> parseFromText(text, 'ocr', file.name));
-        copyBtn.addEventListener("click", async()=>{ try{ const ta = document.createElement("textarea");ta.value = text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();toast("Copied OCR text",{timeout:1200}); }catch{} });
-
-        attachBtn.addEventListener("click", async ()=>{
+        attachBtn?.addEventListener("click", async ()=>{
           try{
-            const token = await ensureDriveToken();
-            const { id:fileId } = await uploadAttachmentToDrive(file, { accessToken: token, folderId: settings.folderId?.trim()||null });
-            const f=$("#expenseForm");
-            f.elements.namedItem("attachment_drive_file_id").value = fileId;
-            f.elements.namedItem("source_type").value = "ocr";
-            f.elements.namedItem("source_filename").value = file.name;
+            const token = await ensureGoogleToken();
+            const { id:fileId } = await uploadAttachmentToDrive(f, { accessToken: token, folderId: settings.folderId?.trim()||null });
+            const form=$("#expenseForm");
+            form.elements.namedItem("attachment_drive_file_id").value = fileId;
+            form.elements.namedItem("source_type").value = isImg?"image":(isPdf?"pdf":"file");
+            form.elements.namedItem("source_filename").value = f.name;
             toast("Attachment uploaded & linked ✓", { timeout: 1800 });
             attachBtn.disabled = true;
           }catch(e){
             toast("Attach failed — sign in first", { timeout: 2200 });
           }
         });
-      }catch(err){
-        console.error("OCR Error:", err);
-        $("#txt-"+id).textContent=`OCR failed: ${err.message}`;
-        $("#txt-"+id).style.color = "var(--bad)";
-      }finally{
-        // release preview URL
-        setTimeout(()=>URL.revokeObjectURL(url), 5000);
+
+        startBtn?.addEventListener("click", async ()=>{
+          if(!settings.useTesseract){ toast("Enable Tesseract in Settings"); return; }
+          try{
+            if (typeof Tesseract === 'undefined') { throw new Error("Tesseract.js failed to load"); }
+            textEl.textContent = "Recognizing…";
+            let text="", confidence=0;
+
+            if(isImg){
+              const res=await Tesseract.recognize(f,"eng",{logger:(m)=>{ if(m.status==="recognizing text"){ const p=clamp01(m.progress||0); progressBar.style.width=(p*100).toFixed(0)+"%"; }}});
+              text=(res?.data?.text||"").trim(); confidence=(res?.data?.confidence ?? 0);
+            }else{
+              if(typeof pdfjsLib === "undefined"){ throw new Error("PDF.js not loaded"); }
+              const buf = await f.arrayBuffer();
+              pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+              const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+              const pageCount = Math.min(pdf.numPages, 3);
+              let pieces=[], confs=[];
+              for(let p=1;p<=pageCount;p++){
+                const page = await pdf.getPage(p);
+                const viewport = page.getViewport({ scale: 2 });
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                canvas.width = viewport.width; canvas.height = viewport.height;
+                await page.render({ canvasContext: ctx, viewport }).promise;
+                const res = await Tesseract.recognize(canvas, "eng", { logger:(m)=>{
+                  if(m.status==="recognizing text"){
+                    const progress = ((p-1) + clamp01(m.progress||0)) / pageCount;
+                    progressBar.style.width=(progress*100).toFixed(0)+"%";
+                  }
+                }});
+                pieces.push((res?.data?.text||"").trim());
+                confs.push(res?.data?.confidence ?? 0);
+              }
+              text = pieces.join("\n\n").trim();
+              confidence = confs.length ? Math.round(confs.reduce((a,b)=>a+b,0)/confs.length) : 0;
+            }
+
+            textEl.textContent = text ? (text.length>800?text.slice(0,800)+"…":text) : "(no text)";
+            chips.innerHTML = `<span class="chip">Lang: ENG</span><span class="chip">Confidence: ${Math.round(confidence)}%</span><span class="chip">Size: ${(f.size/1024).toFixed(1)} KB</span>`;
+            parsed = roughParse(text);
+            if (settings.allowLLM && settings.geminiKey) {
+              try { const llm=await geminiParse(text, settings.geminiKey); parsed={...parsed, ...llm, amount:(llm.amount??parsed.amount), date:(llm.date??parsed.date)}; }
+              catch(e){ console.warn("AI parse failed", e); }
+            }
+            // show quick edit
+            editBox.classList.remove("hidden");
+            editBox.querySelector('[data-f="date"]').value = parsed.date||"";
+            editBox.querySelector('[data-f="vendor"]').value = parsed.vendor||"";
+            editBox.querySelector('[data-f="category"]').value = parsed.category||"";
+            editBox.querySelector('[data-f="amount"]').value = parsed.amount||"";
+            editBox.querySelector('[data-f="description"]').value = parsed.description||"";
+          }catch(err){
+            console.error("OCR Error:", err);
+            textEl.textContent=`OCR failed: ${err.message}`;
+            textEl.style.color = "var(--bad)";
+          }
+        });
+
+        sendBtn?.addEventListener("click", ()=>{
+          const r={...parsed};
+          r.date = editBox.querySelector('[data-f="date"]').value||r.date;
+          r.vendor = editBox.querySelector('[data-f="vendor"]').value||r.vendor;
+          r.category = editBox.querySelector('[data-f="category"]').value||r.category;
+          r.amount = Number(editBox.querySelector('[data-f="amount"]').value||r.amount||0);
+          r.description = editBox.querySelector('[data-f="description"]').value||r.description;
+          r.property = "Cascade Hideaway_BRIA";
+          const {rec: rec2} = applyRules(r, rulesAllowOverwrite);
+          fillForm(rec2);
+          switchTab("form");
+          toast("Loaded parsed data into form");
+        });
       }
-    }
-
-    function parseFromPaste(){
-      const text=($("#pasteBox").value||"").trim(); if(!text){ toast("Nothing to parse",{timeout:1200}); return; }
-      parseFromText(text, 'paste', '');
-    }
-
-    async function parseFromText(text, sourceType, sourceFilename) {
-      let rec = roughParse(text);
-      rec.source_type = sourceType;
-      rec.source_filename = sourceFilename;
-
-      if (settings.allowLLM && settings.geminiKey) {
-        toast("Parsing with AI…", { timeout: 2000 });
-        try {
-          const llm = await geminiParse(text, settings.geminiKey);
-          rec = { ...rec, ...llm, amount: (llm.amount ?? rec.amount), date: (llm.date ?? rec.date), source_type: sourceType, source_filename: sourceFilename };
-        } catch (e) {
-          console.error("Gemini parse failed:", e);
-          toast("AI parse failed, using basic parser.", { timeout: 1800 });
-        }
-      }
-
-      const { rec: rec2 } = applyRules(rec, rulesAllowOverwrite);
-      fillForm(rec2);
-      switchTab("form");
-      toast("Parsed into form", { timeout: 1400 });
+      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', container) });
+      toast(`${files.length} file(s) added`,{timeout:1400});
     }
 
     async function geminiParse(text, apiKey) {
@@ -1158,13 +1276,11 @@ Format:
   "amount": 1234.50,
   "currency": "PHP"
 }
-
-Context:
-- Today is ${new Date().toLocaleDateString('en-CA')}.
-- Default currency is PHP.
-
+Today: ${new Date().toLocaleDateString('en-CA')}
 Text:
-"""${text.slice(0, 4000)}"""`.trim();
+<<<
+${(text||'').slice(0, 4000)}
+>>>`.trim();
       const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, topP: 0.1, responseMimeType: "application/json" } };
       const resp = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!resp.ok) { const errBody = await resp.text(); console.error("Gemini API Error:", resp.status, errBody); throw new Error(`API failed: ${resp.status}`); }
@@ -1182,11 +1298,11 @@ Text:
       const dateISO = dateMatch ? toISO(dateMatch[1]) : (new Date().toISOString().slice(0,10));
       const vendor = vendorMatch ? vendorMatch[1].trim() : "";
       return {
-        date: dateISO, property:"", vendor, description:"", category:"", subcategory:"",
+        date: dateISO, property:"Cascade Hideaway_BRIA", vendor, description:"", category:"", subcategory:"",
         amount, currency:"PHP", payment_method:"", invoice_number:"", reference_id:"",
         tax_amount:0, tip_amount:0, location:"", notes: text.length>140? text.slice(0,140)+"…" : text,
         created_at:new Date().toISOString(), processed_at:"", validated:"false", validation_errors:"",
-        source_type:"", source_filename:"", attachment_drive_file_id:"", record_drive_file_id:"", uploaded_at:""
+        source_type:"", source_filename:"", attachment_drive_file_id:"", record_drive_file_id:"", uploaded_at:"", sheet_appended_at:""
       };
     }
     function toISO(s){
@@ -1199,7 +1315,6 @@ Text:
       } catch { return ""; }
     }
 
-    // ---------- rules modal (minimal, safe) ----------
     function renderRules(){
       const list=$("#rulesList"); if(!list) return;
       list.innerHTML="";
@@ -1212,7 +1327,6 @@ Text:
         row.innerHTML = `
           <div><span class="label">Pattern</span><input class="input" value="${escapeHtml(r.pattern||"")}" data-k="pattern"></div>
           <div><span class="label">Category</span><input class="input" value="${escapeHtml(r.fields?.category||"")}" data-k="category"></div>
-          <div><span class="label">Property</span><input class="input" value="${escapeHtml(r.fields?.property||"")}" data-k="property"></div>
           <div><span class="label">Notes</span><input class="input" value="${escapeHtml(r.fields?.notes||"")}" data-k="notes"></div>
           <div style="display:flex; gap:6px">
             <label class="meta" style="display:flex;gap:6px;align-items:center"><input type="checkbox" ${r.enabled!==false?"checked":""} data-k="enabled"> Enabled</label>
@@ -1223,7 +1337,6 @@ Text:
           const el=e.target;
           if(el.dataset.k==="pattern"){ rules[i].pattern = el.value; }
           if(el.dataset.k==="category"){ rules[i].fields = {...(rules[i].fields||{}), category: el.value}; }
-          if(el.dataset.k==="property"){ rules[i].fields = {...(rules[i].fields||{}), property: el.value}; }
           if(el.dataset.k==="notes"){ rules[i].fields = {...(rules[i].fields||{}), notes: el.value}; }
           saveRules();
         });
@@ -1260,18 +1373,12 @@ Text:
       modal.addEventListener("keydown", trap); modal.addEventListener("click", onClick); document.addEventListener("keydown", onEsc);
     }
 
-    // ---------- category menu ----------
     function allCategoryOptions(){
       const DEFAULT_CATEGORIES = ["Utilities","Subscriptions","Services","Maintenance","Repairs","Supplies","Cleaning","Internet","Electricity","Water","Gas","Waste","Landscaping","Security","Insurance","Taxes","Fees","Professional Services","Software","Travel","Meals","Office","Other"];
       const set=new Set(DEFAULT_CATEGORIES);
       records.forEach(r=>{ const c=(r.category||"").trim(); if(c) set.add(c); });
       rules.forEach(r=>{ const c=(r?.fields?.category||"").trim(); if(c) set.add(c); });
       return Array.from(set).sort((a,b)=>a.localeCompare(b));
-    }
-    function refreshPropertyDatalist(){
-      const dl=$("#propertyList"); if(!dl) return;
-      const set=new Set(records.map(r=>(r.property||"").trim()).filter(Boolean));
-      dl.innerHTML = Array.from(set).sort((a,b)=>a.localeCompare(b)).map(p=>`<option value="${escapeHtml(p)}"></option>`).join("");
     }
     function refreshCategoryDatalist(){
       const dl=$("#categoryList"); if(!dl) return;
@@ -1297,7 +1404,6 @@ Text:
       });
     }
 
-    // ---------- dashboard ----------
     function renderDashboard(){
       const count=records.length; const sum=records.reduce((a,r)=>a+Number(r.amount||0),0); const ccy=records[0]?.currency||"PHP";
       const latest=records.map(r=>r.date).filter(Boolean).sort().pop();
@@ -1312,7 +1418,7 @@ Text:
 
       const cont=$("#catBreakdown"); cont.innerHTML="";
       const catTotals=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1]);
-      if(!catTotals.length){ cont.innerHTML=catEmptyState; if(window.lucide) window.lucide.createIcons({ nodes: [cont] });}
+      if(!catTotals.length){ cont.innerHTML=`<div class="empty-state"><i data-lucide="pie-chart"></i><div class="empty-state-h">No Category Data</div><p class="empty-state-p meta">Add expenses and your category spending will appear here.</p></div>`; if(window.lucide) window.lucide.createIcons({ nodes: [cont] });}
       else{
         const max=Math.max(...catTotals.map(x=>x[1]));
         catTotals.slice(0,8).forEach(([k,v])=>{
@@ -1323,7 +1429,7 @@ Text:
       }
 
       const recent=$("#recentList"); recent.innerHTML="";
-      if(!records.length){ recent.innerHTML=recentEmptyState; if(window.lucide) window.lucide.createIcons({ nodes: [recent] });}
+      if(!records.length){ recent.innerHTML=`<div class="empty-state"><i data-lucide="activity"></i><div class="empty-state-h">No Recent Activity</div><p class="empty-state-p meta">Your 6 most recent expenses will show up here.</p></div>`; if(window.lucide) window.lucide.createIcons({ nodes: [recent] });}
       else{
         const fragment=document.createDocumentFragment();
         records.slice(-6).reverse().forEach(r=>{
@@ -1341,9 +1447,6 @@ Text:
       }
     }
 
-    // ---------- quick guide & settings ----------
-    $("#quickGuideBtn")?.addEventListener("click", (e)=>toggleModal("#guideModal", true, e.currentTarget));
-    $("#guideClose")?.addEventListener("click", ()=>toggleModal("#guideModal", false));
     $("#saveSettings")?.addEventListener("click", ()=>{
       settings.folderId=$("#driveFolderId").value.trim();
       settings.googleClientId=$("#googleClientId").value.trim();
@@ -1351,26 +1454,27 @@ Text:
       settings.useTesseract=$("#toggleTesseract").checked;
       settings.allowLLM=$("#toggleLLM").checked;
       settings.autoUpload=$("#toggleAutoUpload").checked;
+      settings.spreadsheetId=$("#sheetId").value.trim();
+      settings.sheetName=$("#sheetName").value.trim() || "Sheet1";
+      settings.weeklyBackup=$("#toggleWeeklyBackup").checked;
       storage.set("cx:settings",settings);
       oauth.tokenClient = null; oauth.accessToken = null; $("#googleUser").textContent = 'Not signed in';
       toast("Settings saved",{timeout:1200});
     });
+    $("#runBackupNow")?.addEventListener("click", uploadAllToDrive);
     $("#adminLogout")?.addEventListener("click", ()=>{ isAdmin=false; storage.set("cx:isAdmin", false); switchTab("dashboard"); toast("Admin signed out",{timeout:1200}); });
 
-    // ---------- shortcuts ----------
     document.addEventListener("keydown",(e)=>{
       const isInput = !!e.target.closest("input,textarea,select");
       const onForm = $("#panel-form") && !$("#panel-form").classList.contains("hidden");
       if((e.ctrlKey||e.metaKey) && e.key==="Enter" && onForm){ e.preventDefault(); $("#addToListBtn")?.click(); }
       if(e.altKey && (e.key==="v"||e.key==="V")){ e.preventDefault(); $("#validateBtn")?.click(); }
-      if(e.key==="?" || (e.shiftKey && e.key==="/")){ if(!isInput) { e.preventDefault(); toggleModal("#guideModal", true, $("#quickGuideBtn")); } }
       if(e.altKey && (e.key==="f"||e.key==="F")){ e.preventDefault(); switchTab("form"); }
       if(e.altKey && (e.key==="b"||e.key==="B")){ e.preventDefault(); switchTab("batch"); }
       if((e.ctrlKey||e.metaKey) && (e.key==="k"||e.key==="K")){ e.preventDefault(); $("#expenseForm")?.elements?.namedItem("category")?.focus(); }
       if(isInput) return;
     });
 
-    // ---------- boot ----------
     function persistAndRender(){ storage.set("cx:records", records); renderTable(); refreshCategoryDatalist(); renderDashboard(); }
     function hydrateSettingsUI(){
       $("#driveFolderId").value = settings.folderId || "";
@@ -1379,13 +1483,25 @@ Text:
       $("#toggleTesseract").checked = !!settings.useTesseract;
       $("#toggleLLM").checked = !!settings.allowLLM;
       $("#toggleAutoUpload").checked = settings.autoUpload !== false;
+      $("#toggleWeeklyBackup").checked = settings.weeklyBackup !== false;
+      $("#sheetId").value = settings.spreadsheetId || "";
+      $("#sheetName").value = settings.sheetName || "Sheet1";
     }
     const dateInput = $("#expenseForm")?.elements?.namedItem("date");
     if(dateInput && !dateInput.value) {dateInput.value = new Date().toISOString().slice(0, 10);}
     hydrateSettingsUI();
     switchTab(settings.lastTab || "dashboard");
     persistAndRender();
+    maybeAutoRunWeeklyBackup(false);
     if (window.lucide) {window.lucide.createIcons();} else {setTimeout(() => {if (window.lucide) {window.lucide.createIcons();}}, 1000);}
+
+    // Test helpers
+    window.__APP = {
+      getRecords: ()=>records.slice(),
+      clearRecords: ()=>{ records=[]; persistAndRender(); },
+      setSettings: (obj)=>{ settings={...settings,...obj}; storage.set("cx:settings",settings); hydrateSettingsUI(); },
+      fillFormAndAdd: (payload)=>{ fillForm(payload); $("#addToListBtn").click(); }
+    };
   })();
   </script>
 </body>

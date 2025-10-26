@@ -726,6 +726,7 @@
     }) : null;
     function validateRecord(rec){
       if(schema){ const r = schema.safeParse(rec); return r.success ? {ok:true,data:r.data} : {ok:false,errors:r.error.errors.map(e=>e.message)}; }
+      // Fallback validation if Zod fails to load (e.g., due to corrected integrity hash)
       const errs=[]; if(!rec.date) errs.push("Date required"); if(!rec.property?.trim()) errs.push("Property required"); if(!rec.category?.trim()) errs.push("Category required");
       const amt=Number(rec.amount); if(!(amt>0)) errs.push("Amount must be > 0"); if(!rec.currency?.trim()) errs.push("Currency required");
       if(Number(rec.tax_amount)<0) errs.push("Tax must be ≥ 0"); if(Number(rec.tip_amount)<0) errs.push("Tip must be ≥ 0");
@@ -817,6 +818,8 @@
         const el = f.elements.namedItem(name);
         if (el) el.value = (name === "tax_amount" || name === "tip_amount") ? "0" : "";
       });
+      // Set date to today
+      f.elements.namedItem("date").value = new Date().toISOString().slice(0, 10);
       f.elements.namedItem("date").focus();
     });
     $("#expenseForm")?.elements?.namedItem("vendor")?.addEventListener("input", applyRulesToForm);
@@ -882,7 +885,7 @@
       return arr.slice().sort((a,b)=>{
         let va=a[k]??"", vb=b[k]??"";
         if(k==="amount"){ va=Number(va||0); vb=Number(vb||0); return (va-vb)*dir; }
-        if(k==="date"){ return collator.compare(va, vb)*dir; }
+        if(k==="date"){ return collator.compare(va, vb)*dir * -1; } // Dates should default desc
         return collator.compare(String(va), String(vb))*dir;
       });
     }
@@ -908,6 +911,7 @@
       const fragment = document.createDocumentFragment();
       rows.forEach((r,i)=>{
         const tr=document.createElement("tr");
+        const originalIndex = records.indexOf(r); // Get index from original array for editing/deleting
         tr.innerHTML=`
           <td>${r.date||""}</td>
           <td>${escapeHtml(r.property||"")}</td>
@@ -915,8 +919,8 @@
           <td>${escapeHtml(r.category||"")}</td>
           <td class="num ${amountClass(Number(r.amount||0))}">${fmtMoney(r.amount,r.currency)}</td>
           <td>${r.validated==="true"?'<span class="meta" style="display:flex; align-items:center; gap: 4px;"><i data-lucide="check" style="width: 1em; height: 1em; color: var(--ok);"></i> OK</span>':'<span class="meta" style="display:flex; align-items:center; gap: 4px;"><i data-lucide="alert-triangle" style="width: 1em; height: 1em; color: var(--warn);"></i> Needs fix</span>'}</td>
-          <td><button class="btn-s" data-action="edit" data-id="${records.indexOf(r)}" title="Edit"><i data-lucide="edit-3"></i></button>
-              <button class="btn-s" data-action="delete" data-id="${records.indexOf(r)}" title="Delete"><i data-lucide="trash-2"></i></button></td>`;
+          <td><button class="btn-s" data-action="edit" data-id="${originalIndex}" title="Edit"><i data-lucide="edit-3"></i></button>
+              <button class="btn-s" data-action="delete" data-id="${originalIndex}" title="Delete"><i data-lucide="trash-2"></i></button></td>`;
         fragment.appendChild(tr);
       });
       tbody.appendChild(fragment);
@@ -1024,6 +1028,10 @@
       container.appendChild(card);
       if(window.lucide) window.lucide.createIcons({ nodes: [card] });
       try{
+        // FIX: Check if Tesseract is loaded, which might fail due to integrity hash
+        if (typeof Tesseract === 'undefined') {
+          throw new Error("Tesseract.js failed to load. Check integrity hash.");
+        }
         const progressBar=$("#bar-"+id); const textEl=$("#txt-"+id);
         const res=await Tesseract.recognize(file,"eng",{logger:(m)=>{
           if(m.status==="recognizing text"){ const p=Math.max(0,Math.min(1,m.progress||0)); progressBar.style.width=(p*100).toFixed(0)+"%"; }
@@ -1045,7 +1053,7 @@
         }catch{} });
       }catch(err){ 
         console.error("OCR Error:", err);
-        $("#txt-"+id).textContent="OCR failed. See console for details."; 
+        $("#txt-"+id).textContent=`OCR failed: ${err.message}`; 
         $("#txt-"+id).style.color = "var(--bad)";
       }
     }
@@ -1087,13 +1095,13 @@
       toast("Parsed into form", { timeout: 1400 });
     }
     
-    // CHANGE: Added Gemini API parsing function from your parser.js
     /**
      * @param {string} text - The raw text to parse.
      * @param {string} apiKey - The Google Gemini API key.
      * @returns {Promise<Object>} A promise that resolves to a partial expense object.
      */
     async function geminiParse(text, apiKey) {
+      // FIX: Use the newer, correct model name
       const model = "gemini-2.5-flash-preview-09-2025";
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       
@@ -1127,7 +1135,6 @@ ${text.slice(0, 4000)}
         generationConfig: { 
           temperature: 0.1, 
           topP: 0.1,
-          // CHANGE: Request JSON output
           responseMimeType: "application/json",
         },
       };
@@ -1563,6 +1570,7 @@ ${text.slice(0, 4000)}
             resolve(resp.access_token);
           }
         };
+        // Always prompt for consent if forcing, otherwise let Google decide
         tokenClient.requestAccessToken({ prompt: forcePrompt ? 'consent' : '' });
       });
 
@@ -1603,12 +1611,28 @@ ${text.slice(0, 4000)}
     }
 
     // ===== Init =====
-    renderTable(); updateStats(); refreshCategoryDatalist(); renderDashboard();
+    // Set default date on form
+    const dateInput = $("#expenseForm")?.elements?.namedItem("date");
+    if(dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().slice(0, 10);
+    }
+
+    persistAndRender(); // This chain already calls renderTable, updateStats, etc.
     
     if (window.lucide) {
       window.lucide.createIcons();
     } else {
-      console.warn("Lucide library not loaded.");
+      console.warn("Lucide library not loaded. Retrying in 1s.");
+      // This is a fallback in case lucide loads after the initial script run
+      setTimeout(() => {
+        if (window.lucide) {
+          console.log("Lucide loaded on retry.");
+          window.lucide.createIcons();
+          applyTheme(settings.theme||"auto"); // Re-apply theme to fix icons
+        } else {
+          console.error("Lucide still not loaded. Icons will be missing.");
+        }
+      }, 1000);
     }
     applyTheme(settings.theme||"auto");
 
@@ -1616,5 +1640,3 @@ ${text.slice(0, 4000)}
   </script>
 </body>
 </html>
-
-

@@ -1,25 +1,44 @@
-# Cascade Expense Capture — v6.3
+# Cascade Expense Capture v6.5 — Proxy-first + Provenance
 
-**New**
-- **Smart Parse (AI)**: heuristic + rules + Gemini to extract Date/Vendor/Amount and choose the best **Category** (from a controlled taxonomy).
-- **Sheet Setup**: one-click **Setup Sheet** button (Settings) to create headers, freeze row 1, auto-size, add **Category data validation**, and numeric/date formats.
-- **Auto AI on Add** (toggle) and **AI Suggest** button on the Form.
-- **Quick Guides toggle** in Settings (show/hide everywhere).
+## Option B (recommended): Apps Script Web App Proxy
+No Cloud Console. The front-end posts to your **Apps Script Web App** which reads/writes Sheets and Drive.
 
-**Workflow**
-1) Capture → Start OCR → (optional) **Smart Parse** → **Send to Form**.  
-2) Form → **AI Suggest** (if needed) → **Add** → auto-append to Google Sheets.  
-3) Batch → validate/dedupe/export → optional Drive dataset upload.  
-4) Weekly Drive backup runs automatically when due.
+### Deploy (one-click CLASP)
+1. Install Node 18+. In this folder run:
 
-**Setup Sheet (what it does)**
-- Creates `SheetName` (if missing) and `Meta` sheet with category list.
-- Writes header row (26 columns exactly, aligned with the app’s schema).
-- Freezes row 1, auto-resizes, sets formats, and adds Category validation (dropdown from taxonomy).
+```bash
+# First time
+npm i -g @google/clasp
+npx clasp login --no-localhost
 
-**Apps Script (optional)**
-- `apps_script/Code.gs` adds a custom **Cascade Tools** menu with “Normalize New Rows” and “Recompute Categories” helpers if you want extra spreadsheet-side controls.
+# Create new Apps Script project as Web App
+cd proxy_clasp
+npx clasp create --type webapp --title "Cascade Expense Proxy" --rootDir .
+# This prints a new scriptId; it's also saved to .clasp.json
 
-**Security**
-- All data lives in your browser until you export or upload (Drive/Sheets).
+# Push code and deploy
+npx clasp push
+npx clasp deploy -d "v1"
+# Copy the Web App URL from the deployment output.
+```
 
+2. In **index.html** → Settings:
+   - Toggle **Use Proxy Web App** ON (default).
+   - Paste the **Proxy URL** from the deployment.
+   - Paste your **Spreadsheet ID** and optional **Drive Folder ID**.
+   - Click **Setup Sheet** to lay down headers + validation.
+   - Use **Run Diagnostics**/**Ping Proxy** to verify.
+
+> You can also paste the code directly in **Extensions → Apps Script** and click **Deploy → Web app**.
+
+## Field Provenance
+The Form shows colored badges next to **Date/Vendor/Category/Amount**:
+- **H** = Heuristic (from OCR text)
+- **R** = Rule matched
+- **AI** = AI categorization via proxy
+
+## Files
+- `index.html` – full app (proxy-first).
+- `apps_script/WebApp.gs` – Web App backend (same as in proxy_clasp).
+- `apps_script/Code.gs` – optional spreadsheet menu helpers.
+- `proxy_clasp/` – CLASP-ready project (`appsscript.json`, `WebApp.gs`).

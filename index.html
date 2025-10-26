@@ -3,285 +3,112 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Cascade Expense Capture — Earthen Luxe</title>
+  <title>Cascade Expense Capture — v6.5 (Proxy)</title>
 
-  <!-- Google Identity Services (OAuth popup flow) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-
-  <!-- External Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js" crossorigin="anonymous"></script>
-  <!-- PDF.js for PDF OCR (render pages to canvas first) -->
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js" crossorigin="anonymous"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
 
   <style>
-    :root{
-      --coal:#0A0908; --slate:#22333B; --ivory:#EAE0D5; --sable:#C6AC8E; --earth:#5E503F;
-      --bg:var(--ivory); --surface:#ffffff; --surface-tint:rgba(255,255,255,.70); --surface-2:rgba(255,255,255,.85);
+    :root{ --coal:#0A0908; --slate:#22333B; --ivory:#EAE0D5; --sable:#C6AC8E; --earth:#5E503F;
+      --bg:var(--ivory); --surface:#fff; --surface-2:rgba(255,255,255,.9); --surface-tint:rgba(255,255,255,.82);
       --ink:#111; --muted:#3b4043; --border:rgba(34,51,59,.18); --accent:var(--slate); --accent-2:var(--earth);
-      --ok:#2e7d32; --warn:#c48900; --bad:#b91c1c; --radius:16px; --ring: rgba(34,51,59,.22);
+      --ok:#2e7d32; --warn:#c48900; --bad:#b91c1c; --ring:rgba(34,51,59,.22);
       --glass-bg:linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.45));
       --glass-bd: color-mix(in oklab, var(--border), var(--accent-2) 24%);
-      --toast-bg:#111; --toast-fg:#fff;
+      --chipH:#a0d8a0; --chipR:#8ecae6; --chipAI:#ffd166;
     }
-    @media (prefers-color-scheme: dark) {
-      html[data-theme="auto"]{
-        --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.90); --surface-tint:rgba(23,27,30,.80);
-        --ink:#e9eef0; --muted:#aab3b8; --border:rgba(255,255,255,.09); --accent:#9cc6dd; --accent-2:#d7bfa2;
-        --ring: rgba(156,198,221,.35); --glass-bg:linear-gradient(180deg, rgba(23,27,30,.70), rgba(23,27,30,.55));
-        --glass-bd: color-mix(in oklab, var(--border), var(--accent) 30%);
-        --toast-bg:#1f2529; --toast-fg:#e9eef0;
+    @media (prefers-color-scheme: dark){
+      html[data-theme="auto"]{ --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.9); --surface-tint:rgba(23,27,30,.82);
+        --ink:#e9eef0; --muted:#aab3b8; --border:rgba(255,255,255,.09); --accent:#9cc6dd; --accent-2:#d7bfa2; --ring:rgba(156,198,221,.35);
+        --chipH:#245b2c; --chipR:#1b3b46; --chipAI:#4d3d11;
       }
     }
-    html[data-theme="dark"]{
-      --bg:#0f1315; --surface:#171b1e; --surface-2:rgba(23,27,30,.90); --surface-tint:rgba(23,27,30,.80);
-      --ink:#e9eef0; --muted:#aab3b8; --border:rgba(255,255,255,.09); --accent:#9cc6dd; --accent-2:#d7bfa2;
-      --ring: rgba(156,198,221,.35); --glass-bg:linear-gradient(180deg, rgba(23,27,30,.70), rgba(23,27,30,.55));
-      --glass-bd: color-mix(in oklab, var(--border), var(--accent) 30%);
-      --toast-bg:#1f2529; --toast-fg:#e9eef0;
-    }
-    html[data-theme="light"]{
-      --bg:var(--ivory); --surface:#ffffff; --surface-2:rgba(255,255,255,.90); --surface-tint:rgba(255,255,255,.80);
-      --ink:#111; --muted:#3b4043; --border:rgba(34,51,59,.18); --accent:var(--slate); --accent-2:var(--earth);
-      --ring: rgba(34,51,59,.22); --glass-bg:linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,.45));
-      --glass-bd: color-mix(in oklab, var(--border), var(--accent-2) 24%);
-      --toast-bg:#111; --toast-fg:#fff;
-    }
-
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      padding-bottom:80px;
-      background:
-        radial-gradient(1200px 600px at 10% 0%, rgba(198,172,142,.08), transparent 60%),
-        radial-gradient(800px 800px at 100% 100%, rgba(94,80,63,.05), transparent 60%),
-        linear-gradient(180deg, var(--bg), color-mix(in oklab, var(--bg), var(--sable) 12%));
-      color:var(--ink);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-      font-size: clamp(15px, 0.9vw + 0.6rem, 18px);
-      line-height:1.55;
-    }
-    body::before{
-      content:"Cascade Hideaway • Internal Use Only";
-      position:fixed; inset:0; pointer-events:none; z-index:0; display:block; text-align:center; top:30vh;
-      font-weight:800; letter-spacing:.1rem; font-size:clamp(36px, 6vw, 84px); color:var(--accent); opacity:.045; transform:rotate(-18deg) scale(1.2);
-    }
-    .wrap{max-width:1200px;margin:0 auto;padding:16px;position:relative;z-index:1}
-
-    header{position:sticky;top:0;z-index:40;background:linear-gradient(180deg, color-mix(in oklab, var(--bg), #fff 12%) 92%, transparent); backdrop-filter:blur(8px)}
-    .brand{font-size:clamp(18px, 1.2vw + .6rem, 24px);font-weight:900;letter-spacing:.2px;color:var(--accent); display:flex; align-items:center; gap:8px;}
-    .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
-    .top-actions{display:flex;gap:8px;align-items:center}
-
-    .tabs{display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);overflow:auto;justify-content:center}
-    .tab{padding:9px 12px;border-radius:12px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--accent);font-weight:800;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;}
-    .tab[aria-selected="true"]{background:var(--surface);border-color:var(--border);color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.04)}
-    .tab:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
-    .hidden{display:none!important}
-    body.guides-hidden .guide{ display:none !important; }
-
-    .lucide{width:1em;height:1em;stroke-width:2.5px;}
-    .btn .lucide,.btn-s .lucide,.tab .lucide{width:.9em;height:.9em}
-    .brand .lucide{width:1.1em;height:1.1em}
-    .mobile-nav .lucide{width:24px;height:24px}
-    .fab .lucide{width:28px;height:28px}
-
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 2px 14px rgba(0,0,0,.10);transition:transform .15s ease, box-shadow .15s ease;}
-    .card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.12)}
-    #panel-form .card, .glass{background:var(--glass-bg);backdrop-filter:blur(14px);border:1px solid var(--glass-bd);box-shadow:0 20px 50px rgba(0,0,0,.15)}
-    #panel-form .card:hover{transform:none;box-shadow:0 20px 50px rgba(0,0,0,.15)}
-
-    .card-h{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:900;color:var(--accent);font-size:clamp(14px,.6vw + .6rem,18px);display:flex;align-items:center;gap:8px;}
-    .card-h-actions{display:flex;gap:8px;align-items:center;margin-left:auto}
-    .card-b{padding:14px 16px}
-    .center-mobile{text-align:left}
-    @media(max-width:768px){ .center-mobile{ text-align:center } }
-
-    .guide{ background:var(--glass-bg); border:1px solid var(--glass-bd); border-radius:14px; padding:12px; color:var(--muted); display:grid; gap:8px; grid-template-columns: auto 1fr; align-items:flex-start; box-shadow:0 18px 40px rgba(0,0,0,.12)}
-    .guide i{ stroke-width:1.5px }
-    .guide strong{ color:var(--ink) }
-    .guide .steps{ margin:0; padding-left:16px }
-    .guide .tip{ background: color-mix(in oklab, var(--surface), #000 3%); border:1px dashed var(--border); padding:8px 10px; border-radius:10px }
-
-    .input,.select,.textarea{width:100%;background:rgba(255,255,255,.92);border:1px solid var(--border);border-radius:12px;color:var(--ink);padding:10px 12px;outline:none;transition:box-shadow .15s ease, border-color .15s ease}
-    html[data-theme="dark"] .input, html[data-theme="dark"] .select, html[data-theme="dark"] .textarea,
-    html[data-theme="auto"] .input, html[data-theme="auto"] .select, html[data-theme="auto"] .textarea { background: color-mix(in oklab, var(--surface), #fff 6%); }
-    .textarea{min-height:120px;resize:vertical}
-    .input:focus,.select:focus,.textarea:focus{box-shadow:0 0 0 3px var(--ring)}
-    .label{display:block;font-size:12px;color:var(--muted);margin:4px 0 6px}
-
-    .btn,.btn-s{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--border);cursor:pointer;user-select:none;font-weight:700;transition:filter .12s ease, transform .06s ease}
-    .btn{background:var(--accent);color:#fff;border-color:rgba(10,9,8,.2)}
-    .btn:hover{filter:brightness(1.05)}
-    .btn:active{transform:translateY(1px)}
-    .btn-s{background:#fff;color:var(--ink)}
-    html[data-theme="dark"] .btn-s{background:color-mix(in oklab, var(--surface), #fff 6%)}
-    .btn-s:active{transform:translateY(1px);filter:brightness(.95)}
-    .btn:disabled,.btn-s:disabled{opacity:.6;cursor:not-allowed;transform:none;filter:none}
-
-    table{width:100%;border-collapse:separate;border-spacing:0}
-    th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left}
-    thead th{position:sticky;top:0;background:var(--surface);user-select:none;cursor:default}
-    thead th[data-sort]{cursor:pointer}
-    thead th[data-sort] .arrow{opacity:.35;margin-left:6px;transition:opacity .15s ease, transform .15s ease;}
-    thead th[data-sort].asc .arrow{transform:rotate(180deg);opacity:.85}
-    thead th[data-sort].desc .arrow{opacity:.85}
-
-    .meta{color:var(--muted);font-size:12px}
-    .fine{font-size:12px;color:var(--muted)}
-    .h{font-weight:900;letter-spacing:.2px}
-    .h-1{font-size:clamp(20px, 1.4vw + .7rem, 28px)}
-    .h-2{font-size:clamp(16px, .8vw + .6rem, 20px); color:var(--earth)}
-
-    footer{padding:28px 16px;color:var(--muted); text-align:center}
-
-    .kpis{display:grid;gap:12px}
-    @media(min-width:700px){.kpis{grid-template-columns:repeat(4,1fr)}}
-    .kpi{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
-    .kpi h4{margin:0 0 6px 0;font-size:12px;color:var(--muted);font-weight:600}
-    .kpi .v{font-size:22px;font-weight:800}
-
-    .bar{height:10px;background:#efe7d6;border-radius:999px;overflow:hidden;border:1px solid var(--border)}
-    html[data-theme="dark"] .bar{background:#253039}
-    .bar > span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .3s ease}
-
-    .num{font-weight:800}
-    .num--green{color:var(--ok)}
-    .num--yellow{color:var(--warn)}
-    .num--red{color:var(--bad)}
-
-    .grid{display:grid;gap:18px}
-    @media(min-width:960px){ .grid-3{ grid-template-columns:1fr 2fr; } }
-
-    .modal{position:fixed;inset:0;background:rgba(10,9,8,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000}
-    .modal[aria-hidden="false"]{display:flex}
-    .modal-card{max-width:900px;width:100%;background:linear-gradient(180deg, var(--surface-2), var(--surface-tint));backdrop-filter:blur(14px); border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.25)}
-    .modal-card:focus{outline:none}
-
-    .rule-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
-    .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);padding:2px 8px;border-radius:999px;background:#fff}
-    html[data-theme="dark"] .chip{background:color-mix(in oklab, var(--surface), #fff 6%)}
-
-    .ac-wrap{position:relative}
-    .ac-menu{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.12);max-height:240px;overflow:auto;z-index:10}
-    html[data-theme="dark"] .ac-menu{background:color-mix(in oklab, var(--surface), #fff 6%)}
-    .ac-menu.hidden{display:none}
-    .ac-item{display:block;width:100%;text-align:left;padding:8px 12px;border:0;background:transparent;cursor:pointer}
-    .ac-item:hover,.ac-item[aria-selected="true"]{background:#fffaf0}
-    html[data-theme="dark"] .ac-item:hover, html[data-theme="dark"] .ac-item[aria-selected="true"]{ background: color-mix(in oklab, var(--surface), #fff 10%) }
-
-    #toastArea{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:1200}
-    .toast{display:flex;gap:12px;align-items:center;background:var(--toast-bg);color:var(--toast-fg);padding:10px 14px;border-radius:12px;box-shadow:0 10px 20px rgba(0,0,0,.25)}
-    .toast .action{color:#ffd66b;border:1px solid rgba(255,214,107,.35);background:transparent;border-radius:10px;padding:6px 10px;font-weight:700;cursor:pointer}
-    .toast .close{margin-left:4px;opacity:.7;cursor:pointer}
-
-    .empty-state{ text-align:center; padding:40px 20px; display:flex; flex-direction:column; align-items:center; gap:12px; opacity:.8 }
-    .empty-state .lucide{ width:48px; height:48px; stroke-width:1.5px; color:var(--accent-2) }
-    .empty-state-h{ font-weight:700; font-size:1.1em; color:var(--accent) }
-    .empty-state-p{ max-width:300px; margin:0 auto }
-
-    .mobile-nav{ position:fixed; bottom:0; left:0; right:0; height:65px; background:var(--surface-2); backdrop-filter:blur(10px); border-top:1px solid var(--border); display:none; align-items:stretch; z-index:100 }
-    .mobile-tab{ display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1 1 0; gap:4px; background:transparent; border:0; color:var(--muted); cursor:pointer; font-size:10px; padding:8px 4px; transition:color .15s ease }
+    body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 600px at 10% 0%, rgba(198,172,142,.08), transparent 60%),
+                  radial-gradient(800px 800px at 100% 100%, rgba(94,80,63,.05), transparent 60%),
+                  linear-gradient(180deg, var(--bg), color-mix(in oklab, var(--bg), var(--sable) 12%));
+      color:var(--ink); line-height:1.55; }
+    .wrap{ max-width:1200px; margin:0 auto; padding:16px }
+    .topbar{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg, color-mix(in oklab, var(--bg), #fff 12%) 92%, transparent); position:sticky; top:0; z-index:40; backdrop-filter:blur(8px) }
+    .brand{ font-weight:900; color:var(--accent); display:flex; gap:8px; align-items:center }
+    .tabs{ display:flex; gap:8px; padding:10px 16px; border-bottom:1px solid var(--border); overflow:auto; justify-content:center }
+    .tab{ padding:9px 12px; border-radius:12px; border:1px solid transparent; cursor:pointer; background:transparent; color:var(--accent); font-weight:800; white-space:nowrap; display:inline-flex; align-items:center; gap:8px; }
+    .tab[aria-selected="true"]{ background:var(--surface); color:var(--ink); border-color:var(--border) }
+    .card{ background:var(--glass-bg); backdrop-filter:blur(14px); border:1px solid var(--glass-bd); border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,.15) }
+    .card-h{ padding:14px 16px; border-bottom:1px solid var(--border); font-weight:900; color:var(--accent); display:flex; align-items:center; gap:8px }
+    .card-b{ padding:14px 16px }
+    .guide{ background:var(--glass-bg); border:1px solid var(--glass-bd); border-radius:14px; padding:12px; color:var(--muted); display:grid; gap:8px; grid-template-columns: auto 1fr; align-items:flex-start; box-shadow:0 18px 40px rgba(0,0,0,.12) }
+    .btn,.btn-s{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid var(--border); cursor:pointer; font-weight:700 }
+    .btn{ background:var(--accent); color:#fff } .btn-s{ background:color-mix(in oklab, var(--surface), #fff 6%) }
+    .input,.textarea{ width:100%; background:color-mix(in oklab, var(--surface), #fff 6%); border:1px solid var(--border); border-radius:12px; color:var(--ink); padding:10px 12px; outline:none }
+    .label{ display:block; font-size:12px; color:var(--muted); margin:4px 0 6px }
+    .chip{ display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid var(--border); border-radius:999px; background:#fff; font-size:12px }
+    .prov{ font-weight:800 }
+    .prov[data-kind="H"]{ background:var(--chipH) } .prov[data-kind="R"]{ background:var(--chipR) } .prov[data-kind="AI"]{ background:var(--chipAI) }
+    .meta{ color:var(--muted); font-size:12px }
+    .hidden{ display:none !important }
+    .center-mobile{text-align:left} @media(max-width:768px){ .center-mobile{text-align:center} .tabs{display:none} }
+    .mobile-nav{ position:fixed; bottom:0; left:0; right:0; height:65px; background:var(--surface-2); backdrop-filter:blur(10px); border-top:1px solid var(--border); display:flex; z-index:100 }
+    .mobile-tab{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--muted); gap:4px; border:0; background:transparent; }
     .mobile-tab[aria-selected="true"]{ color:var(--accent) }
-    .fab{ position:fixed; bottom:80px; right:16px; width:60px; height:60px; border-radius:50%; background:var(--accent); color:#fff; display:none; align-items:center; justify-content:center; border:2px solid #fff; box-shadow:0 8px 24px rgba(0,0,0,.2); cursor:pointer; z-index:101 }
-    html[data-theme="dark"] .fab{ border-color:var(--surface) }
-
-    @media(max-width:768px){
-      .tabs{display:none}
-      .mobile-nav,.fab{display:flex}
-      body{padding-bottom:80px}
-      .topbar{ justify-content:center }
-      .brand{ justify-content:center }
-      #panel-form .card-h,
-      #panel-batch .card-h { flex-direction:column; align-items:center; gap:12px }
-      #panel-batch .card-h-actions{flex-wrap:wrap; gap:8px; justify-content:center}
-      .rule-row{ grid-template-columns:1fr; border:1px solid var(--border); padding:10px; border-radius:var(--radius) }
-      .rule-row > div{ display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-start }
-      .grid-3{ grid-template-columns:1fr }
-      .topbar .brand .lucide{ display:none }
-    }
+    .fab{ position:fixed; bottom:80px; right:16px; width:60px; height:60px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; border:2px solid #fff; box-shadow:0 8px 24px rgba(0,0,0,.2); cursor:pointer; z-index:101 }
   </style>
 </head>
 <body>
-  <header>
-    <div class="topbar wrap center-mobile">
-      <div class="brand"><i data-lucide="leaf"></i> Cascade Expense Capture</div>
-      <div class="top-actions">
-        <button id="themeToggle" class="btn-s" title="Toggle theme"><i data-lucide="sun-moon"></i> <span>Theme</span></button>
-        <span id="appStatus" class="meta" aria-live="polite"></span>
-      </div>
+  <div class="topbar wrap">
+    <div class="brand"><i data-lucide="leaf"></i> Cascade Expense Capture</div>
+    <div style="display:flex; gap:8px; align-items:center">
+      <button id="themeToggle" class="btn-s"><i data-lucide="sun-moon"></i> Theme</button>
+      <span id="appStatus" class="meta"></span>
     </div>
-    <div class="tabs wrap center-mobile" role="tablist" aria-label="Sections">
-      <button class="tab" id="tab-dashboard" data-tab="dashboard" aria-selected="true" role="tab"><i data-lucide="layout-grid"></i> Dashboard</button>
-      <button class="tab" id="tab-form" data-tab="form" aria-selected="false" role="tab"><i data-lucide="file-plus-2"></i> Form</button>
-      <button class="tab" id="tab-capture" data-tab="capture" aria-selected="false" role="tab"><i data-lucide="camera"></i> Capture</button>
-      <button class="tab" id="tab-batch" data-tab="batch" aria-selected="false" role="tab"><i data-lucide="package"></i> Batch</button>
-      <button class="tab" id="tab-settings" data-tab="settings" aria-selected="false" role="tab"><i data-lucide="settings"></i> Settings</button>
-    </div>
-  </header>
+  </div>
 
-  <main class="wrap" id="main">
-    <!-- Dashboard -->
-    <section id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard" class="center-mobile">
-      <div class="guide glass">
+  <div class="tabs wrap center-mobile" role="tablist">
+    <button class="tab" data-tab="dashboard" aria-selected="true"><i data-lucide="layout-grid"></i> Dashboard</button>
+    <button class="tab" data-tab="form"><i data-lucide="file-plus-2"></i> Form</button>
+    <button class="tab" data-tab="capture"><i data-lucide="camera"></i> Capture</button>
+    <button class="tab" data-tab="batch"><i data-lucide="package"></i> Batch</button>
+    <button class="tab" data-tab="settings"><i data-lucide="settings"></i> Settings</button>
+  </div>
+
+  <main class="wrap">
+    <!-- DASHBOARD -->
+    <section id="panel-dashboard">
+      <div class="guide">
         <i data-lucide="info"></i>
         <div>
           <strong>Dashboard</strong>
-          <ol class="steps meta">
-            <li><b>KPIs</b> update as you add items.</li>
-            <li><b>Category Breakdown</b> visualizes spend by category.</li>
-            <li><b>Recent Activity</b> lists the last 6 entries.</li>
+          <ol class="meta">
+            <li>KPIs update as you add items.</li>
+            <li>Breakdown shows spend by category.</li>
+            <li>Recent activity shows latest 6 records.</li>
           </ol>
-          <div class="tip meta"><b>Swipe</b> left/right on mobile to switch tabs. Use the floating <b>+</b> to open the Form.</div>
         </div>
       </div>
-
-      <div class="kpis" id="kpiGrid" style="margin-top:12px">
-        <div class="kpi"><h4>Total Expenses</h4><div class="v num" id="kpiTotal">—</div><div class="meta" id="kpiCount">0 items</div></div>
-        <div class="kpi"><h4>Latest Date</h4><div class="v" id="kpiLatest">—</div><div class="meta">Most recent record</div></div>
-        <div class="kpi"><h4>Avg Amount</h4><div class="v num" id="kpiAvg">—</div><div class="meta">Across all items</div></div>
-        <div class="kpi"><h4>Top Category</h4><div class="v" id="kpiTopCat">—</div><div class="meta">By total value</div></div>
-      </div>
-
-      <div class="grid" style="margin-top:16px">
-        <div class="card">
-          <div class="card-h center-mobile"><i data-lucide="tag"></i> Category Breakdown</div>
-          <div class="card-b" id="catBreakdown"><div class="meta">No data yet.</div></div>
-        </div>
-        <div class="card">
-          <div class="card-h center-mobile">
-            <i data-lucide="clock"></i> <span>Recent Activity</span>
-            <button id="openRulesBtn" class="btn-s card-h-actions"><i data-lucide="list-filter"></i> Manage Rules</button>
-          </div>
-          <div class="card-b" id="recentList"><div class="meta">No records yet.</div></div>
-        </div>
-      </div>
+      <div class="card" style="margin-top:12px"><div class="card-h"><i data-lucide="clock"></i> Recent Activity</div><div class="card-b" id="recentList"><span class="meta">No records yet.</span></div></div>
     </section>
 
-    <!-- Form -->
-    <section id="panel-form" role="tabpanel" aria-labelledby="tab-form" class="hidden">
-      <div class="guide glass">
+    <!-- FORM -->
+    <section id="panel-form" class="hidden">
+      <div class="guide">
         <i data-lucide="file-pen-line"></i>
         <div>
           <strong>Form</strong>
-          <ol class="steps meta">
-            <li><b>Priority fields:</b> Date, Category, Amount, Vendor, Description.</li>
-            <li><b>Property</b> is fixed to <b>Cascade Hideaway_BRIA</b> for consistency.</li>
-            <li>Click <b>Validate</b> to check; click <b>Add</b> to save and auto-append to <b>Sheets</b> (live ops).</li>
-            <li><b>More fields</b> reveals optional columns (invoice #, notes, etc.).</li>
+          <ol class="meta">
+            <li>Priority: Date, Category, Amount, Vendor, Description.</li>
+            <li>Property fixed to <b>Cascade Hideaway_BRIA</b>.</li>
+            <li>Add → validate & append to Sheet (proxy handles writing).</li>
           </ol>
-          <div class="tip meta"><b>Auto upload:</b> When you press <b>Add</b>, we append to <b>Google Sheets</b>. A weekly <b>Drive</b> backup (JSON+CSV) runs automatically.</div>
         </div>
       </div>
 
-      <div class="card glass">
-        <div class="card-h center-mobile">
-          <i data-lucide="file-pen-line"></i> <span>Quick Entry</span>
-          <div class="card-h-actions">
-            <span id="rulesBadge" class="chip meta hidden">Rules applied</span>
+      <div class="card" style="margin-top:12px">
+        <div class="card-h"><i data-lucide="file-pen-line"></i> Quick Entry
+          <div style="margin-left:auto; display:flex; gap:8px">
             <button id="aiSuggestBtn" class="btn-s"><i data-lucide="wand-2"></i> AI Suggest</button>
             <button id="validateBtn" class="btn-s"><i data-lucide="check-circle"></i> Validate</button>
             <button id="addToListBtn" class="btn"><i data-lucide="plus"></i> Add</button>
@@ -290,1584 +117,290 @@
         <div class="card-b">
           <form id="expenseForm" autocomplete="off" novalidate style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px,1fr))">
             <input type="hidden" name="property" value="Cascade Hideaway_BRIA"/>
-
-            <label><span class="label">Date *</span><input name="date" type="date" class="input" required></label>
-            <label><span class="label">Vendor</span><input name="vendor" class="input" placeholder="Merchant"></label>
-            <label class="ac-wrap"><span class="label">Category *</span>
-              <input name="category" class="input" list="categoryList" placeholder="Utilities · Subscriptions · Services" aria-autocomplete="list" aria-expanded="false" required>
-              <datalist id="categoryList"></datalist>
-              <div id="catMenu" class="ac-menu hidden" role="listbox" aria-label="Categories"></div>
-            </label>
-            <label><span class="label">Amount *</span><input name="amount" type="number" step="0.01" class="input" required></label>
-
-            <label class="full" style="grid-column:1/-1"><span class="label">Description</span><input name="description" class="input" placeholder="Short description"></label>
-            <label class="full" style="grid-column:1/-1"><span class="label">Notes</span><textarea name="notes" class="textarea" placeholder="Optional notes"></textarea></label>
-
-            <details id="moreFields" class="full" style="grid-column:1/-1">
-              <summary class="btn-s" style="display:inline-flex"><i data-lucide="chevron-down"></i> More fields</summary>
-              <div style="margin-top:10px; display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-                <label><span class="label">Subcategory</span><input name="subcategory" class="input" placeholder="Optional"></label>
-                <label><span class="label">Currency</span><input name="currency" class="input" value="PHP"></label>
-                <label><span class="label">Payment Method</span><input name="payment_method" class="input" placeholder="e.g., Lloyd CC"></label>
-                <label><span class="label">Invoice #</span><input name="invoice_number" class="input"></label>
-                <label><span class="label">Reference ID</span><input name="reference_id" class="input"></label>
-                <label><span class="label">Tax Amount</span><input name="tax_amount" type="number" step="0.01" class="input" value="0"></label>
-                <label><span class="label">Tip Amount</span><input name="tip_amount" type="number" step="0.01" class="input" value="0"></label>
-                <label><span class="label">Location</span><input name="location" class="input"></label>
-
-                <!-- Hidden / system fields -->
-                <input type="hidden" name="source_type"/>
-                <input type="hidden" name="source_filename"/>
-                <input type="hidden" name="attachment_drive_file_id"/>
-                <input type="hidden" name="record_drive_file_id"/>
-                <input type="hidden" name="uploaded_at"/>
-                <input type="hidden" name="sheet_appended_at"/>
-                <input type="hidden" name="created_at"/>
-                <input type="hidden" name="processed_at"/>
-                <input type="hidden" name="validated"/>
-                <input type="hidden" name="validation_errors"/>
-              </div>
-            </details>
+            <label><span class="label">Date * <span class="chip prov" id="prov-date" data-kind="" title="provenance"></span></span><input name="date" type="date" class="input" required></label>
+            <label><span class="label">Vendor <span class="chip prov" id="prov-vendor" data-kind=""></span></span><input name="vendor" class="input"></label>
+            <label><span class="label">Category * <span class="chip prov" id="prov-category" data-kind=""></span></span><input name="category" class="input" list="categoryList" required><datalist id="categoryList"></datalist></label>
+            <label><span class="label">Amount * <span class="chip prov" id="prov-amount" data-kind=""></span></span><input name="amount" type="number" step="0.01" class="input" required></label>
+            <label style="grid-column:1/-1"><span class="label">Description</span><input name="description" class="input" placeholder="Short description"></label>
+            <label style="grid-column:1/-1"><span class="label">Notes</span><textarea name="notes" class="textarea"></textarea></label>
+            <!-- Hidden -->
+            <input type="hidden" name="attachment_drive_file_id"/><input type="hidden" name="record_drive_file_id"/><input type="hidden" name="sheet_appended_at"/>
           </form>
-          <div id="formErrors" class="meta" style="color:#b30000;margin-top:6px"></div>
-
-          <div class="guide glass" style="margin-top:12px">
-            <i data-lucide="help-circle"></i>
-            <div>
-              <strong>Buttons & fields</strong>
-              <ul class="steps meta">
-                <li><b>AI Suggest</b> uses rules + LLM to fill Vendor/Category/Amount/Date from the text in Description/Vendor (if available).</li>
-                <li><b>Validate</b> checks required fields and amounts.</li>
-                <li><b>Add</b> saves locally and <b>appends to Sheets</b> (live ops).</li>
-                <li><b>More fields</b> maps exactly to table columns so nothing is lost.</li>
-              </ul>
-            </div>
-          </div>
         </div>
       </div>
     </section>
 
-    <!-- Capture -->
-    <section id="panel-capture" role="tabpanel" aria-labelledby="tab-capture" class="hidden">
-      <div class="guide glass">
+    <!-- CAPTURE -->
+    <section id="panel-capture" class="hidden">
+      <div class="guide">
         <i data-lucide="camera"></i>
-        <div>
-          <strong>Capture</strong>
-          <ol class="steps meta">
-            <li><b>Upload</b> images or PDFs.</li>
-            <li>Click <b>Start OCR</b> on each file to extract text (progress shows).</li>
-            <li>Use <b>Smart Parse</b> for AI extraction & category suggestions, then <b>Send to Form</b>.</li>
-            <li><b>Upload Attachment</b> pushes the source file to Drive and links it.</li>
+        <div><strong>Capture</strong>
+          <ol class="meta">
+            <li>Upload image/PDF → Start OCR → Smart Parse → Send to Form.</li>
+            <li>Upload Attachment sends the raw file to Drive (via proxy).</li>
           </ol>
-          <div class="tip meta">PDF OCR uses PDF.js → Tesseract. Smart Parse uses Gemini if enabled.</div>
         </div>
       </div>
 
-      <div class="grid grid-3">
-        <div class="card glass">
-          <div class="card-h center-mobile"><i data-lucide="inbox"></i> Ingest</div>
-          <div class="card-b">
-            <label class="label">Upload images / PDF</label>
-            <input id="fileInput" type="file" accept=".pdf,image/*" multiple class="input"/>
-            <div class="meta" style="margin-top:8px">Tip: Add files first, then run OCR per-file using “Start OCR”.</div>
-          </div>
-        </div>
-        <div class="card glass">
-          <div class="card-h center-mobile"><i data-lucide="sparkles"></i> OCR & Quick Parse <span class="meta" style="margin-left:auto">Drop files anywhere to add</span></div>
-          <div class="card-b" id="ingestPreview">Nothing ingested yet.</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Batch -->
-    <section id="panel-batch" role="tabpanel" aria-labelledby="tab-batch" class="hidden">
-      <div class="guide glass">
-        <i data-lucide="package"></i>
-        <div>
-          <strong>Batch</strong>
-          <ol class="steps meta">
-            <li><b>Filters</b> narrow the list (text, category, date, amount).</li>
-            <li><b>Validate All</b>, <b>Deduplicate</b>, then <b>Append All to Sheet</b> or <b>Upload to Drive</b> (dataset export).</li>
-            <li>Status chips show <b>OK / Needs fix</b>, <b>Drive uploaded</b>, <b>Sheet appended</b>, and <b>Attachment linked</b>.</li>
-          </ol>
-          <div class="tip meta"><b>Backups:</b> Weekly Drive backups run automatically. Use “Run Backup Now” in Settings to force a snapshot.</div>
-        </div>
-      </div>
-
-      <div class="card glass">
-        <div class="card-h center-mobile">
-          <i data-lucide="package-check"></i> <span>Preview & Batch</span>
-          <div class="card-h-actions">
-            <label class="meta" style="display:flex;gap:6px;align-items:center">
-              <input id="rulesOverwriteToggle" type="checkbox"> Allow overwrite
-            </label>
-            <button id="applyRulesAllBtn" class="btn-s"><i data-lucide="list-filter"></i> Apply Rules to All</button>
-            <button id="validateAllBtn" class="btn-s"><i data-lucide="test-tube-2"></i> Validate All</button>
-            <button id="dedupeBtn" class="btn-s"><i data-lucide="copy-x"></i> Deduplicate</button>
-            <button id="clearAllBtn" class="btn-s"><i data-lucide="trash-2"></i> Clear</button>
-          </div>
-        </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-h"><i data-lucide="inbox"></i> Ingest</div>
         <div class="card-b">
-          <div id="batchFilters" style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:10px">
-            <input id="fltText" class="input" placeholder="Search text… (vendor/desc)"/>
-            <input id="fltCategory" class="input" list="categoryList" placeholder="Category"/>
-            <input id="fltDateFrom" type="date" class="input" placeholder="From"/>
-            <input id="fltDateTo" type="date" class="input" placeholder="To"/>
-            <input id="fltAmtMin" type="number" step="0.01" class="input" placeholder="₱ Min"/>
-            <input id="fltAmtMax" type="number" step="0.01" class="input" placeholder="₱ Max"/>
-            <button id="fltClear" class="btn-s">Clear filters</button>
-          </div>
-
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px" class="center-mobile">
-            <div class="meta"><span id="recordCount">0</span> items <span id="countAll" class="meta"></span> · Total <span id="recordTotal" class="num">₱0.00</span></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-              <button id="uploadDriveBtn" class="btn-s" title="Upload entire dataset (JSON+CSV)"><i data-lucide="upload-cloud"></i> Upload to Drive</button>
-              <button id="uploadSheetAllBtn" class="btn-s" title="Append All to Sheet"><i data-lucide="table-2"></i> Append All to Sheet</button>
-              <button id="exportJsonBtn" class="btn-s"><i data-lucide="file-json"></i> Export JSON</button>
-              <button id="exportCsvBtn" class="btn-s"><i data-lucide="file-text"></i> Export CSV</button>
-            </div>
-          </div>
-          <div style="max-height:60vh;overflow:auto;border:1px solid var(--border);border-radius:12px">
-            <table>
-              <thead>
-                <tr>
-                  <th data-sort="date">Date <span class="arrow">▲</span></th>
-                  <th data-sort="vendor">Vendor <span class="arrow">▲</span></th>
-                  <th data-sort="category">Category <span class="arrow">▲</span></th>
-                  <th data-sort="amount">Amount <span class="arrow">▲</span></th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="previewTable"></tbody>
-            </table>
-          </div>
+          <input id="fileInput" type="file" accept=".pdf,image/*" multiple class="input"/>
+          <div id="ingestPreview" class="meta" style="margin-top:8px">Drop files or use the picker.</div>
         </div>
       </div>
     </section>
 
-    <!-- Settings -->
-    <section id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="hidden">
-      <div class="guide glass">
+    <!-- BATCH -->
+    <section id="panel-batch" class="hidden">
+      <div class="card"><div class="card-h"><i data-lucide="package"></i> Batch</div><div class="card-b"><div id="previewTable" class="meta">No items yet.</div></div></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="panel-settings" class="hidden">
+      <div class="guide">
         <i data-lucide="settings-2"></i>
         <div>
           <strong>Settings</strong>
-          <ol class="steps meta">
-            <li>Paste <b>Google Client ID</b>, then click <b>Sign in to Google</b>.</li>
-            <li>Provide <b>Spreadsheet ID</b> + <b>Sheet Name</b> for live operations (Sheets append on Add).</li>
-            <li>Set <b>Drive Folder ID</b> for weekly backups and attachments.</li>
-            <li>Enable <b>Tesseract</b> for client OCR; optionally enable <b>Gemini</b> for smarter parsing.</li>
+          <ol class="meta">
+            <li><b>Proxy mode</b> ON by default — paste your Apps Script Web App URL.</li>
+            <li>Spreadsheet ID & (optional) Drive folder ID.</li>
+            <li>Run <b>Setup Sheet</b>. Use <b>Diagnostics</b> to verify.</li>
           </ol>
-          <div class="tip meta"><b>Automatic mode:</b> We auto-append to <b>Sheets</b> on Add and run a weekly <b>Drive</b> backup (JSON+CSV). You can trigger a backup anytime via <b>Run Backup Now</b>.</div>
         </div>
       </div>
 
-      <div class="card glass">
-        <div class="card-h center-mobile"><i data-lucide="settings-2"></i> Settings</div>
-        <div class="card-b">
-          <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
-            <label><span class="label">Default Drive Folder ID</span><input id="driveFolderId" class="input" placeholder="1ZVwc58gkaNWW8rw2tbbCUJRIQWhkPEnz"></label>
-            <label><span class="label">Google Client ID *</span><input id="googleClientId" class="input" placeholder="Your-OAuth-Client-ID.apps.googleusercontent.com"></label>
-
-            <div style="display:flex;gap:8px;align-items:end;justify-content:center">
-              <button id="googleSignIn" class="btn"><i data-lucide="log-in"></i> Sign in to Google</button>
-              <span id="googleUser" class="meta">Not signed in</span>
-            </div>
-
-            <label><span class="label">Spreadsheet ID</span><input id="sheetId" class="input" placeholder="1vA...YourSheetId"></label>
-            <label><span class="label">Sheet Name</span><input id="sheetName" class="input" value="Sheet1"></label>
-
-            <label><span class="label">Gemini API Key (optional)</span><input id="geminiKey" class="input" placeholder="AIzaSy... (enables AI parsing)"></label>
-            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleTesseract" type="checkbox"> <span>Use Tesseract (client OCR)</span></label>
-            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleLLM" type="checkbox"> <span>Allow LLM network (Gemini)</span></label>
-            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleAISuggest" type="checkbox" checked> <span>Auto AI categorize on Add</span></label>
-
-            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleAutoUpload" type="checkbox" checked> <span>Append to Sheets on Add (recommended)</span></label>
-            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleWeeklyBackup" type="checkbox" checked> <span>Weekly Drive backup (JSON+CSV)</span></label>
-<label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleProxy" type="checkbox"> <span>Use Proxy Web App (Apps Script)</span></label>
-<label><span class="label">Proxy URL</span><input id="proxyUrl" class="input" placeholder="https://script.google.com/macros/s/AKfycb.../exec"></label>
-            <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleGuides" type="checkbox" checked> <span>Show Quick Guides</span></label>
-
-            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button id="runDiagnostics" class="btn-s"><i data-lucide="stethoscope"></i> Run Diagnostics</button><button id="pingProxy" class="btn-s"><i data-lucide="link-2"></i> Ping Proxy</button>
-              <button id="saveSettings" class="btn"><i data-lucide="save"></i> Save Settings</button>
-              <button id="setupSheet" class="btn-s"><i data-lucide="table-properties"></i> Setup Sheet</button>
-              <button id="runBackupNow" class="btn-s"><i data-lucide="clock-8"></i> Run Backup Now</button>
-              <button id="adminLogout" class="btn-s"><i data-lucide="log-out"></i> Admin Sign out</button>
-            </div>
-            <div id="diagOutput" class="meta" style="grid-column:1/-1; border:1px dashed var(--border); padding:10px; border-radius:12px;"></div><div class="meta center-mobile" style="grid-column:1/-1">
-              <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> <strong>Security:</strong> All data stays in your browser's <code>localStorage</code>. No data leaves your device unless you export or upload.
-            </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-h"><i data-lucide="settings"></i> Settings</div>
+        <div class="card-b" style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px,1fr))">
+          <label style="display:flex;gap:8px;align-items:center;justify-content:center"><input id="toggleProxy" type="checkbox" checked> <span>Use Proxy Web App (Apps Script)</span></label>
+          <label><span class="label">Proxy URL</span><input id="proxyUrl" class="input" placeholder="https://script.google.com/macros/s/AKfycb.../exec"></label>
+          <label><span class="label">Spreadsheet ID</span><input id="sheetId" class="input" placeholder="1y46k3G..."></label>
+          <label><span class="label">Sheet Name</span><input id="sheetName" class="input" value="Sheet1"></label>
+          <label><span class="label">Drive Folder ID (optional)</span><input id="driveFolderId" class="input" placeholder="1ABCDEF..."></label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; grid-column:1/-1; justify-content:center">
+            <button id="saveSettings" class="btn"><i data-lucide="save"></i> Save</button>
+            <button id="setupSheet" class="btn-s"><i data-lucide="table-properties"></i> Setup Sheet</button>
+            <button id="runDiagnostics" class="btn-s"><i data-lucide="stethoscope"></i> Run Diagnostics</button>
+            <button id="pingProxy" class="btn-s"><i data-lucide="link-2"></i> Ping Proxy</button>
           </div>
+          <div id="diagOutput" class="meta" style="grid-column:1/-1; border:1px dashed var(--border); padding:10px; border-radius:12px"></div>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="wrap">
-    <div class="fine">
-      <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> This internal tool is exclusively for Cascade Hideaway.
-    </div>
-  </footer>
-
-  <!-- Rules Modal -->
-  <div id="rulesModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
-    <div class="modal-card" tabindex="-1">
-      <div class="card-h center-mobile">
-        <i data-lucide="list-filter"></i> <span>Auto-categorization Rules</span>
-        <div class="card-h-actions">
-          <button id="rulesClose" class="btn-s"><i data-lucide="x"></i> Close</button>
-        </div>
-      </div>
-      <div class="card-b">
-        <div class="meta" style="margin-bottom:8px">First enabled match wins. Pattern is case-insensitive substring or a <code>/regex/i</code>.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;justify-content:center">
-          <button id="addRuleBtn" class="btn-s"><i data-lucide="plus"></i> Add Rule</button>
-          <button id="exportRulesBtn" class="btn-s"><i data-lucide="upload"></i> Export JSON</button>
-          <label class="btn-s" for="importRulesFile" style="cursor:pointer"><i data-lucide="download"></i> Import JSON</label>
-          <input id="importRulesFile" type="file" accept="application/json" style="display:none"/>
-          <label class="meta" style="display:flex;gap:6px;align-items:center;margin-left:auto">
-            <input id="rulesAllowOverwrite" type="checkbox"> Allow overwrite
-          </label>
-        </div>
-        <div id="rulesList"></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="toastArea" aria-live="polite" aria-atomic="true"></div>
-
   <nav class="mobile-nav">
-    <button class="mobile-tab" id="mobile-tab-dashboard" data-tab="dashboard" aria-selected="true">
-      <i data-lucide="layout-grid"></i><span>Dashboard</span>
-    </button>
-    <button class="mobile-tab" id="mobile-tab-capture" data-tab="capture" aria-selected="false">
-      <i data-lucide="camera"></i><span>Capture</span>
-    </button>
-    <button class="mobile-tab" id="mobile-tab-batch" data-tab="batch" aria-selected="false">
-      <i data-lucide="package"></i><span>Batch</span>
-    </button>
-    <button class="mobile-tab" id="mobile-tab-settings" data-tab="settings" aria-selected="false">
-      <i data-lucide="settings"></i><span>Settings</span>
-    </button>
+    <button class="mobile-tab" data-tab="dashboard" aria-selected="true"><i data-lucide="layout-grid"></i><span>Dashboard</span></button>
+    <button class="mobile-tab" data-tab="capture"><i data-lucide="camera"></i><span>Capture</span></button>
+    <button class="mobile-tab" data-tab="batch"><i data-lucide="package"></i><span>Batch</span></button>
+    <button class="mobile-tab" data-tab="settings"><i data-lucide="settings"></i><span>Settings</span></button>
   </nav>
-  <button class="fab" id="fab-add" aria-label="Add new expense">
-    <i data-lucide="plus"></i>
-  </button>
+  <button class="fab" id="fab-add"><i data-lucide="plus"></i></button>
 
   <script>
-  (()=>{ 'use strict';
+  ;(async()=>{ 'use strict'; // async IIFE prevents "await is only valid..." parsing errors
 
     const $ = (s,root=document)=>root.querySelector(s);
     const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
-    const fmtMoney = (n,ccy="PHP") => new Intl.NumberFormat(undefined,{style:"currency",currency:ccy||"PHP"}).format(Number(n||0));
-    const escapeHtml = (s) => (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-    const clamp01 = (x)=>Math.max(0,Math.min(1,Number(x||0)));
-
-    const storage = {
-      get(k,f){ try{ return JSON.parse(localStorage.getItem(k)) ?? f; }catch{return f} },
-      set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} },
-      del(k){ try{ localStorage.removeItem(k); }catch{} }
-    };
-
-    // Category taxonomy (used for Sheet validation + AI prompt)
+    const toast = (m)=>{ const s=$("#appStatus"); if(!s) return; s.textContent=m; setTimeout(()=>s.textContent="",2400); };
+    const storage = { get(k,f){ try{return JSON.parse(localStorage.getItem(k))??f}catch{return f} }, set(k,v){ try{localStorage.setItem(k,JSON.stringify(v))}catch{} } };
     const CATEGORY_TAXONOMY = ["Utilities","Subscriptions","Services","Maintenance","Repairs","Supplies","Cleaning","Internet","Electricity","Water","Gas","Waste","Landscaping","Security","Insurance","Taxes","Fees","Professional Services","Software","Travel","Meals","Office","Shipping","Medical","Equipment","Other"];
+    let records = storage.get("cx:records", []);
+    let settings = storage.get("cx:settings", { useProxy:true, proxyUrl:"", spreadsheetId:"", sheetName:"Sheet1", folderId:"" });
+    function applyTheme(){ if (window.lucide) window.lucide.createIcons(); } applyTheme();
 
-    let records = storage.get("cx:records", []).map(r=>({property:"Cascade Hideaway_BRIA", ...r}));
-    let settings = storage.get("cx:settings", {
-      folderId:"",googleClientId:"",geminiKey:"",useTesseract:false,allowLLM:false,lastTab:"dashboard",theme:"auto",useProxy:false,proxyUrl:"",
-      autoUpload:true, spreadsheetId:"", sheetName:"Sheet1", weeklyBackup:true, lastBackupAt: null, showGuides:true, autoAISuggest:true
-    });
-    if (settings.showGuides === false) document.body.classList.add('guides-hidden');
+    // Tabs
+    function switchTab(id){ $$(".tab, .mobile-tab").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab===id))); ["dashboard","form","capture","batch","settings"].forEach(t=>$("#panel-"+t)?.classList.toggle("hidden", t!==id)); }
+    $$(".tab, .mobile-tab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab))); switchTab("capture");
+    $("#fab-add")?.addEventListener("click",()=>switchTab("form"));
 
-    let isAdmin = storage.get("cx:isAdmin", false);
-    let rules = storage.get("cx:rules", []);
-    let rulesAllowOverwrite = storage.get("cx:rulesAllowOverwrite", false);
-    let oauth = { accessToken: null, expiresAt: 0, tokenClient: null };
+    // Category datalist
+    const dl=$("#categoryList"); if(dl) dl.innerHTML = CATEGORY_TAXONOMY.map(c=>`<option value="${c}"></option>`).join("");
 
-    function applyTheme(mode){
-      document.documentElement.setAttribute("data-theme", mode||"auto");
-      const btn = $("#themeToggle");
-      if(btn) {
-        const icon = btn.querySelector("i");
-        const span = btn.querySelector("span");
-        let iconName = "sun-moon";
-        if (mode === "dark") iconName = "moon";
-        if (mode === "light") iconName = "sun";
-        if (icon) icon.setAttribute("data-lucide", iconName);
-        if (span) span.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
-      }
-      if (window.lucide) window.lucide.createIcons({ nodes: [btn] });
-    }
-    applyTheme(settings.theme||"auto");
-    $("#themeToggle")?.addEventListener("click", () => {
-      const order=["auto","light","dark"];
-      const next=order[(order.indexOf(settings.theme||"auto")+1)%order.length];
-      settings.theme=next; storage.set("cx:settings", settings); applyTheme(next);
-      toast(`Theme: ${next}`, {timeout:1200});
-    });
+    // Provenance helpers
+    const provForm = { date:"", vendor:"", category:"", amount:"" };
+    function setProv(field, kind){ provForm[field]=kind||""; const chip=$("#prov-"+field); if(chip){ chip.dataset.kind = kind||""; chip.textContent = kind||""; chip.title = kind? ({"H":"Heuristic","R":"Rule","AI":"AI"}[kind]||kind) : ""; chip.style.display = kind? "inline-flex":"none"; } }
+    setProv("date",""); setProv("vendor",""); setProv("category",""); setProv("amount","");
 
-    let statusTimer=null;
-    function toast(msg, opts={}){
-      const status=$("#appStatus");
-      if(status){ status.textContent=msg; clearTimeout(statusTimer); statusTimer=setTimeout(()=>status.textContent="", (opts.timeout || 2000) - 200); }
-      const area=$("#toastArea"); if(!area) return;
-      const t=document.createElement("div"); t.className="toast"; t.role="status";
-      const body=document.createElement("div"); body.textContent=msg; t.appendChild(body);
-      if(opts.action && opts.actionLabel){
-        const btn=document.createElement("button"); btn.className="action"; btn.textContent=opts.actionLabel;
-        btn.addEventListener("click",()=>{ try{opts.action();}finally{area.removeChild(t);} });
-        t.appendChild(btn);
-      }
-      const close=document.createElement("span"); close.className="close"; close.title="Dismiss";
-      close.innerHTML = '<i data-lucide="x" style="width: 16px; height: 16px;"></i>';
-      close.addEventListener("click",()=> area.removeChild(t));
-      t.appendChild(close);
-      area.appendChild(t);
-      if (window.lucide) window.lucide.createIcons({ nodes: [close] }); 
-      const timeout = opts.timeout ?? 4000;
-      if(timeout>0){ setTimeout(()=>{ if(t.isConnected) area.removeChild(t); }, timeout); }
-    }
-
-    function switchTab(id){
-      if(id==="settings" && !isAdmin){
-        const pwd = prompt("Enter admin password:");
-        if(pwd!=="cascadeadmin888"){ toast("Access denied"); return; }
-        isAdmin = true; storage.set("cx:isAdmin", true);
-      }
-      $$(".tab, .mobile-tab").forEach(b=>{
-        const a=b.dataset.tab===id; b.setAttribute("aria-selected", a?"true":"false");
-      });
-      ["dashboard","form","capture","batch","settings"].forEach(t=>{ const p=$("#panel-"+t); if(p) p.classList.toggle("hidden", t!==id); });
-      settings.lastTab=id; storage.set("cx:settings",settings);
-      if(id==="dashboard") renderDashboard();
-      if(id==="batch") renderTable();
-    }
-    $$(".tab").forEach(b=> b.addEventListener("click",()=>switchTab(b.dataset.tab)));
-    $$(".mobile-tab").forEach(b=> b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
-    $("#fab-add")?.addEventListener("click", ()=> switchTab("form"));
-
-    // Swipe navigation (mobile)
-    (function enableSwipe(){
-      let startX=null, startY=null, t0=0;
-      const threshold = 50; const restraint=80; const allowedTime=500;
-      window.addEventListener("touchstart",(e)=>{
-        const t=e.changedTouches[0]; startX=t.pageX; startY=t.pageY; t0=Date.now();
-      }, {passive:true});
-      window.addEventListener("touchend",(e)=>{
-        if(startX==null) return;
-        const t=e.changedTouches[0]; const dx=t.pageX-startX; const dy=t.pageY-startY; const dt=Date.now()-t0;
-        if(Math.abs(dx)>=threshold && Math.abs(dy)<=restraint && dt<=allowedTime){
-          const order=["dashboard","capture","batch","settings"];
-          const cur=settings.lastTab||"dashboard";
-          const idx=Math.max(0,order.indexOf(cur));
-          if(dx<0 && idx<order.length-1) switchTab(order[idx+1]); // swipe left → next
-          if(dx>0 && idx>0) switchTab(order[idx-1]); // swipe right → prev
-        }
-        startX=null; startY=null;
-      }, {passive:true});
-    })();
-
-    const zExport = (window.zod && (window.zod.z || window.zod)) || null;
-    const z = zExport && zExport.object ? (window.zod.z || window.zod) : null;
-    const schema = z ? z.object({
-      date: z.string().min(1,"Date required"),
-      property: z.string().trim().min(1,"Property required"),
-      vendor: z.string().trim().optional(),
-      description: z.string().trim().optional(),
-      category: z.string().trim().min(1,"Category required"),
-      subcategory: z.string().trim().optional(),
-      amount: z.preprocess(v=>Number(v), z.number().finite().positive("Amount must be > 0")),
-      currency: z.string().trim().min(1,"Currency required").max(8).default("PHP"),
-      payment_method: z.string().trim().optional(),
-      invoice_number: z.string().trim().optional(),
-      reference_id: z.string().trim().optional(),
-      tax_amount: z.preprocess(v=>Number(v??0), z.number().nonnegative()),
-      tip_amount: z.preprocess(v=>Number(v??0), z.number().nonnegative()),
-      location: z.string().trim().optional(),
-      notes: z.string().trim().optional(),
-      source_type: z.string().trim().optional(),
-      source_filename: z.string().trim().optional(),
-      attachment_drive_file_id: z.string().trim().optional(),
-      record_drive_file_id: z.string().trim().optional(),
-      uploaded_at: z.string().trim().optional(),
-      sheet_appended_at: z.string().trim().optional(),
-      created_at: z.string().trim().optional(),
-      processed_at: z.string().trim().optional(),
-      validated: z.string().trim().optional(),
-      validation_errors: z.string().trim().optional(),
-    }) : null;
-
-    function validateRecord(rec){
-      if(schema){ const r = schema.safeParse(rec); return r.success ? {ok:true,data:r.data} : {ok:false,errors:r.error.errors.map(e=>e.message)}; }
-      const errs=[];
-      if(!rec.date) errs.push("Date required");
-      if(!rec.property?.trim()) errs.push("Property required");
-      if(!rec.category?.trim()) errs.push("Category required");
-      const amt=Number(rec.amount);
-      if(!(amt>0)) errs.push("Amount must be > 0");
-      if(!rec.currency?.trim()) errs.push("Currency required");
-      if(Number(rec.tax_amount)<0) errs.push("Tax must be ≥ 0");
-      if(Number(rec.tip_amount)<0) errs.push("Tip must be ≥ 0");
-      return {ok:errs.length===0,errors:errs,data:{...rec,amount:amt}};
-    }
-
-    function saveRules(){ storage.set("cx:rules", rules); }
-    function isRegex(p){ return /^\/.*\/i?$/.test(p) || p.startsWith("^") || p.endsWith("$"); }
-    function ruleMatches(text, pattern){
-      if(!pattern) return false;
-      if(isRegex(pattern)){
-        const body = pattern.replace(/^\/|\/i?$/g,"");
-        try{ return new RegExp(body,"i").test(text); }catch{ return false; }
-      }
-      return text.toLowerCase().includes(String(pattern).toLowerCase());
-    }
-    function applyRules(rec, allowOverwrite){
-      const hay = [rec.vendor||"", rec.description||""].join(" ");
-      for(const rule of rules){
-        if(!rule?.enabled) continue;
-        if(ruleMatches(hay, String(rule.pattern||""))){
-          const out = {...rec};
-          const f = rule.fields||{};
-          const maybeSet=(k,v)=>{ if(v==null || v==="") return; if(out[k]==null || out[k]==="" || allowOverwrite) out[k]=v; };
-          maybeSet("category", f.category);
-          maybeSet("subcategory", f.subcategory);
-          maybeSet("vendor", f.vendor);
-          if(f.notes){ out.notes = (out.notes? out.notes + " · " : "") + f.notes; }
-          return {rec:out, matched:rule};
-        }
-      }
-      return {rec, matched:null};
-    }
-    function applyRulesToForm(){ const allow = rulesAllowOverwrite || $("#rulesAllowOverwrite")?.checked; const before=formToRec(); const {rec, matched}=applyRules(before, allow); if(matched){ fillForm(rec); const badge=$("#rulesBadge"); if(badge){ badge.classList.remove("hidden"); badge.textContent = "Rule applied: " + String(matched.pattern||""); } } }
-    function applyRulesToAll(){
-      const allow = $("#rulesOverwriteToggle")?.checked || rulesAllowOverwrite;
-      const prev = JSON.parse(JSON.stringify(records));
-      let changed=0, used=0;
-      records = records.map(r=>{
-        const before = JSON.stringify(r);
-        const {rec, matched}=applyRules(r, allow);
-        if(matched) used++;
-        if(JSON.stringify(rec)!==before){ changed++; return rec; }
-        return r;
-      });
-      persistAndRender();
-      toast(`Applied rules to ${records.length} item(s) · changed ${changed} · matched ${used}`, { actionLabel:"Undo",action:()=>{ records = prev; persistAndRender(); } });
-    }
-
-    function formToRec(){
-      const f=$("#expenseForm"); const fd=new FormData(f); const rec=Object.fromEntries(fd.entries());
-      rec.property = "Cascade Hideaway_BRIA";
-      rec.amount=Number(rec.amount||0); rec.tax_amount=Number(rec.tax_amount||0); rec.tip_amount=Number(rec.tip_amount||0);
-      rec.validated=String(false); rec.validation_errors="";
-      if(!rec.created_at) rec.created_at=new Date().toISOString(); if(!rec.currency) rec.currency="PHP";
-      return rec;
-    }
-    function fillForm(r){ const f=$("#expenseForm"); for(const [k,v] of Object.entries(r)){ const el=f.elements.namedItem(k); if(!el) continue; el.value=(v??""); } }
-    function validateCurrentForm(show){ const rec=formToRec(); const v=validateRecord(rec); if(v.ok){ $("#formErrors").textContent=""; toast("Form is valid",{timeout:1200}); return true; } else { if(show) $("#formErrors").textContent=v.errors.join(" · "); return false; } }
-
-    $("#validateBtn")?.addEventListener("click",()=>validateCurrentForm(true));
-    $("#aiSuggestBtn")?.addEventListener("click", async ()=>{
-      const f=$("#expenseForm");
-      const seed={
-        vendor: f.elements.namedItem("vendor").value,
-        description: f.elements.namedItem("description").value,
-        amount: Number(f.elements.namedItem("amount").value||0),
-        date: f.elements.namedItem("date").value
-      };
-      const sug = await smartSuggest(seed);
-      if(sug.vendor) f.elements.namedItem("vendor").value = sug.vendor;
-      if(sug.category) f.elements.namedItem("category").value = sug.category;
-      if(sug.amount) f.elements.namedItem("amount").value = sug.amount;
-      if(sug.date) f.elements.namedItem("date").value = sug.date;
-      applyRulesToForm();
-      toast("AI suggestions applied", { timeout: 1400 });
-    });
-
-    $("#addToListBtn")?.addEventListener("click", async ()=>{
-      if(settings.autoAISuggest && settings.allowLLM && settings.geminiKey){
-        await $("#aiSuggestBtn")?.click();
-      }
-      if(!validateCurrentForm(true)) return;
-      const rec=formToRec(); rec.processed_at=new Date().toISOString();
-      const v=validateRecord(rec); rec.validated=String(v.ok); rec.validation_errors=v.ok?"":(v.errors||[]).join("; ");
-
-      // Always push to local list
-      records.push(rec); persistAndRender(); switchTab("batch");
-
-      // AUTOMATIC MODE: Append to Sheets on Add (live ops)
-      if(settings.autoUpload){
-        try{
-          if(!settings.spreadsheetId?.trim()){ throw new Error("Set Spreadsheet ID in Settings"); }
-          const token = await ensureGoogleToken();
-          await ensureSheetStructure({token});
-          await appendRecordToSheet(rec, { accessToken: token, spreadsheetId: settings.spreadsheetId.trim(), sheetName: settings.sheetName?.trim() || "Sheet1" });
-          rec.sheet_appended_at = new Date().toISOString();
-          persistAndRender();
-          toast("Added & appended to Sheet ✓", { timeout: 2000 });
-        }catch(e){
-          console.warn("Auto-append failed:", e?.message||e);
-          toast("Added (Sheet append skipped — check Settings/Sign-in)", { timeout: 2600 });
-        }
-      }else{
-        toast("Added to list", { timeout: 1400 });
-      }
-
-      // Reset form
-      const f=$("#expenseForm");
-      ["date","amount","description","notes","vendor","invoice_number","reference_id","tax_amount","tip_amount","location"].forEach(name=>{
-        const el=f.elements.namedItem(name);
-        if(el) el.value=(name==="tax_amount"||name==="tip_amount")?"0":"";
-      });
-      f.elements.namedItem("category").value = "";
-      f.elements.namedItem("date").value = new Date().toISOString().slice(0,10);
-      f.elements.namedItem("date").focus();
-    });
-    $("#expenseForm")?.elements?.namedItem("vendor")?.addEventListener("input", applyRulesToForm);
-    $("#expenseForm")?.elements?.namedItem("description")?.addEventListener("input", applyRulesToForm);
-
-    function amountClass(a){ if(a>3000) return "num--red"; if(a>=500) return "num--yellow"; return "num--green"; }
-    let tableSort = {key:"date", dir:"desc"};
-    $$("#panel-batch thead th[data-sort]").forEach(th=>{
-      th.addEventListener("click", ()=>{
-        const key=th.dataset.sort;
-        if(tableSort.key===key){ tableSort.dir = tableSort.dir==="asc"?"desc":"asc"; }
-        else { tableSort.key=key; tableSort.dir="asc"; }
-        $$("#panel-batch thead th[data-sort]").forEach(x=>x.classList.remove("asc","desc"));
-        th.classList.add(tableSort.dir);
-        renderTable();
-      });
-    });
-
-    const filterEls = { text: $("#fltText"), category: $("#fltCategory"), dateFrom: $("#fltDateFrom"),dateTo: $("#fltDateTo"),amtMin: $("#fltAmtMin"),amtMax: $("#fltAmtMax") };
-    Object.values(filterEls).forEach(el=> el?.addEventListener("input", ()=>renderTable()));
-    $("#fltClear")?.addEventListener("click", ()=>{ Object.values(filterEls).forEach(el=>{ if(el) el.value=""; }); renderTable(); });
-
-    function filteredRecords(){
-      const t=(filterEls.text?.value||"").trim().toLowerCase();
-      const cat=(filterEls.category?.value||"").trim().toLowerCase();
-      const df=filterEls.dateFrom?.value || "";
-      const dt=filterEls.dateTo?.value || "";
-      const amin=parseFloat(filterEls.amtMin?.value||"");
-      const amax=parseFloat(filterEls.amtMax?.value||"");
-      return records.filter(r=>{
-        if(t){
-          const hay=[r.vendor||"", r.description||"", r.notes||""].join(" ").toLowerCase();
-          if(!hay.includes(t)) return false;
-        }
-        if(cat && (r.category||"").toLowerCase().indexOf(cat)===-1) return false;
-        if(df && (!r.date || r.date < df)) return false;
-        if(dt && (!r.date || r.date > dt)) return false;
-        const a=Number(r.amount||0);
-        if(!Number.isNaN(amin) && a < amin) return false;
-        if(!Number.isNaN(amax) && a > amax) return false;
-        return true;
-      });
-    }
-    function sortRecs(arr){
-      const dir = tableSort.dir==="asc"?1:-1;
-      const k = tableSort.key;
-      const collator = new Intl.Collator(undefined,{numeric:true,sensitivity:"base"});
-      return arr.slice().sort((a,b)=>{
-        let va=a[k]??"", vb=b[k]??"";
-        if(k==="amount"){ va=Number(va||0); vb=Number(vb||0); return (va-vb)*dir; }
-        if(k==="date"){ return collator.compare(va, vb)*dir * -1; }
-        return collator.compare(String(va), String(vb))*dir;
-      });
-    }
-
-    function renderTable(){
-      refreshCategoryDatalist();
-      const tbody=$("#previewTable"); if(!tbody) return; tbody.innerHTML="";
-      const rows = sortRecs(filteredRecords());
-      const sum=rows.reduce((a,r)=>a+Number(r.amount||0),0);
-      const ccy=(records[0]?.currency||"PHP");
-      $("#recordCount").textContent=String(rows.length);
-      $("#countAll").textContent = rows.length !== records.length ? ` of ${records.length}` : "";
-      const totalEl=$("#recordTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className="num "+amountClass(sum);
-
-      if(!rows.length){ 
-        tbody.innerHTML=`<tr><td colspan="6"><div class="empty-state"><i data-lucide="archive"></i><div class="empty-state-h">No Records Found</div><p class="empty-state-p meta">Try adding an expense from the 'Form' tab.</p></div></td></tr>`;
-        if(window.lucide) window.lucide.createIcons({ nodes: [tbody] });
-        return; 
-      }
-
-      const fragment = document.createDocumentFragment();
-      rows.forEach((r)=>{
-        const tr=document.createElement("tr");
-        const uploaded = !!r.record_drive_file_id;
-        const attached = !!r.attachment_drive_file_id;
-        const sheeted = !!r.sheet_appended_at;
-        tr.innerHTML=`
-          <td>${r.date||""}</td>
-          <td>${escapeHtml(r.vendor||"")}</td>
-          <td>${escapeHtml(r.category||"")}</td>
-          <td class="num ${amountClass(Number(r.amount||0))}">${fmtMoney(r.amount,r.currency)}</td>
-          <td>
-            <span class="meta" style="display:inline-flex; align-items:center; gap: 8px;">
-              ${r.validated==="true"
-                ? '<span style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="check" style="width:1em;height:1em;color:var(--ok)"></i>OK</span>'
-                : '<span style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="alert-triangle" style="width:1em;height:1em;color:var(--warn)"></i>Needs fix</span>'
-              }
-              ${uploaded ? '<span title="Drive uploaded"><i data-lucide="cloud-check"></i></span>' : '<span title="Local only"><i data-lucide="cloud-off"></i></span>'}
-              ${sheeted ? '<span title="Appended to Sheet"><i data-lucide="table-2"></i></span>' : ''}
-              ${attached ? '<span title="Attachment linked"><i data-lucide="paperclip"></i></span>' : ''}
-            </span>
-          </td>
-          <td>
-            <button class="btn-s" data-action="edit" title="Edit"><i data-lucide="edit-3"></i></button>
-            <button class="btn-s" data-action="delete" title="Delete"><i data-lucide="trash-2"></i></button>
-          </td>`;
-        tr.querySelectorAll('button[data-action]').forEach(b=>{ b.dataset.id = String(records.indexOf(r)); });
-        fragment.appendChild(tr);
-      });
-      tbody.appendChild(fragment);
-      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', tbody) });
-    }
-    $("#previewTable")?.addEventListener("click", (e)=>{
-      const b=e.target.closest("button[data-action]"); if(!b) return;
-      const idx=Number(b.dataset.id); const action=b.dataset.action;
-      if(action==="delete"){
-        const removed=records.splice(idx,1)[0]; persistAndRender();
-        toast("Deleted 1 item", { actionLabel:"Undo", action:()=>{ records.splice(idx,0,removed); persistAndRender(); } });
-      }
-      if(action==="edit"){ const r=records[idx]; fillForm(r); switchTab("form"); toast("Loaded into form",{timeout:1200}); }
-    });
-
-    function validateAll(){
-      let changed=0;
-      records = records.map(r=>{
-        const v=validateRecord(r);
-        if(String(v.ok)!==r.validated || (v.errors||[]).join("; ")!==(r.validation_errors||"")) changed++;
-        return {...r, validated:String(v.ok), validation_errors:v.ok?"":(v.errors||[]).join("; ")};
-      });
-      persistAndRender();
-      toast(`Validated ${records.length} item(s)` + (changed ? `, updated ${changed}` : ""), {timeout:1600});
-    }
-    function dedupe(){
-      const seen=new Set(); const out=[];
-      for(const r of records){
-        const key=[r.date||"", (r.vendor||"").trim().toLowerCase(), "cascade hideaway_bria", Number(r.amount||0)].join("|");
-        if(seen.has(key)) continue; seen.add(key); out.push(r);
-      }
-      const removed=records.length-out.length; records=out; persistAndRender();
-      toast(removed?`Removed ${removed} duplicate(s)`:"No duplicates",{timeout:1600});
-    }
-    $("#validateAllBtn")?.addEventListener("click", validateAll);
-    $("#dedupeBtn")?.addEventListener("click", dedupe);
-    $("#clearAllBtn")?.addEventListener("click", ()=>{ if(confirm("Clear all records?")){ const prev = records.slice(); records=[]; persistAndRender(); toast("Cleared all",{actionLabel:"Undo", action:()=>{ records=prev; persistAndRender(); }}); }});
-    $("#applyRulesAllBtn")?.addEventListener("click", applyRulesToAll);
-    $("#rulesOverwriteToggle")?.addEventListener("change", (e)=>{ rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite); });
-    $("#rulesOverwriteToggle").checked = !!rulesAllowOverwrite;
-
-    function csvBlob(data){
-      const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","sheet_appended_at","created_at","processed_at"];
-      const NL = "\r\n";
-      const csv=[cols.join(",")].concat(data.map(r=>cols.map(c=>csvCell(r[c])).join(","))).join(NL);
-      return new Blob([new Uint8Array([0xEF,0xBB,0xBF]), csv], {type:"text/csv;charset=utf-8"});
-    }
-    function csvCell(v){ const s=(v??"").toString().replace(/"/g,'""'); return /[",\r\n]/.test(s)?`"${s}"`:s; }
-    function download(name,blob){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},0); }
-    $("#exportJsonBtn")?.addEventListener("click", ()=>download("expenses.json", new Blob([JSON.stringify(records,null,2)], {type:"application/json;charset=utf-8"})));
-    $("#exportCsvBtn")?.addEventListener("click", ()=>download("expenses.csv", csvBlob(records)));
-
-    
-    // ----- Proxy (Apps Script Web App) -----
+    // Proxy client
     async function callProxy(action, payload={}){
       const url = (settings.proxyUrl||"").trim();
-      if(!url) throw new Error("Proxy URL not set");
-      const body = JSON.stringify({
-        action,
-        sheetId: (settings.spreadsheetId||"").trim(),
-        sheetName: (settings.sheetName||"Sheet1").trim() || "Sheet1",
-        folderId: (settings.folderId||"").trim(),
-        taxonomy: CATEGORY_TAXONOMY,
-        payload
-      });
-      const resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body });
-      const text = await resp.text();
-      let data = {};
-      try { data = JSON.parse(text); } catch { data = { ok:false, status: resp.status, text }; }
-      if(!resp.ok || data.ok === false){ const msg = data?.message || data?.error || text || `Proxy HTTP ${resp.status}`; throw new Error(msg); }
+      if(!url) throw new Error("Proxy URL not set in Settings");
+      const resp = await fetch(url, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ action, sheetId:(settings.spreadsheetId||"").trim(), sheetName:(settings.sheetName||"Sheet1").trim()||"Sheet1", folderId:(settings.folderId||"").trim(), taxonomy:CATEGORY_TAXONOMY, payload }) });
+      const text = await resp.text(); let data={};
+      try{ data=JSON.parse(text) }catch{ data={ ok:false, status:resp.status, text } }
+      if(!resp.ok || data.ok===false) throw new Error(data?.message||data?.error||text||("HTTP "+resp.status));
       return data;
     }
 
-    // UI — Diagnostics
-    async function runDiagnostics(){
-      const out = [];
-      const push = (status, msg) => out.push(`<div style="display:flex; gap:8px; align-items:center"><i data-lucide="${status?'check-circle':'x-circle'}"></i><span>${msg}</span></div>`);
-      try {
-        if(settings.useProxy){
-          if(!settings.proxyUrl?.trim()){ push(false, "Proxy URL missing"); }
-          else {
-            try{ await callProxy("ping", {}); push(true, "Proxy reachable"); }
-            catch(e){ push(false, "Proxy unreachable: " + e.message); }
-          }
-        } else {
-          if(!settings.googleClientId?.trim()){ push(false,"Google Client ID missing"); } else { push(true,"Google Client ID set"); }
-          try { await ensureGoogleToken(); push(true,"OAuth token acquired"); }
-          catch(e){ push(false, "OAuth failed: " + (e?.message||e)); }
-          if(settings.spreadsheetId?.trim()){
-            try{
-              const token = await ensureGoogleToken();
-              const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(settings.spreadsheetId)}?fields=sheets(properties(sheetId,title))`;
-              const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-              const text = await r.text();
-              if(!r.ok){
-                if(text.includes("has not been used in project") || r.status === 403){
-                  push(false, "403: Sheets API disabled for your Cloud project. Enable Sheets + Drive APIs.");
-                } else {
-                  push(false, `Sheets meta failed (${r.status})`);
-                }
-              } else {
-                push(true, "Spreadsheet reachable");
-              }
-            }catch(e){ push(false, "Sheets meta fetch error: "+(e?.message||e)); }
-          }else{
-            push(false, "Spreadsheet ID missing");
-          }
-        }
-      } finally {
-        const el = document.getElementById("diagOutput");
-        el.innerHTML = out.join("");
-        if (window.lucide) window.lucide.createIcons({ nodes: [el] });
-      }
-    }
+    async function setupSheet(){ try{ await callProxy("setupSheet",{}); toast("Sheet setup ✓"); }catch(e){ toast("Setup failed: "+e.message); } }
+    $("#setupSheet")?.addEventListener("click", setupSheet);
 
+    // Settings hydrate / save
+    function hydrate(){ $("#toggleProxy").checked = settings.useProxy!==false; $("#proxyUrl").value=settings.proxyUrl||""; $("#sheetId").value=settings.spreadsheetId||""; $("#sheetName").value=settings.sheetName||"Sheet1"; $("#driveFolderId").value=settings.folderId||""; }
+    hydrate();
+    $("#saveSettings")?.addEventListener("click", ()=>{ settings.useProxy=$("#toggleProxy").checked; settings.proxyUrl=$("#proxyUrl").value.trim(); settings.spreadsheetId=$("#sheetId").value.trim(); settings.sheetName=$("#sheetName").value.trim()||"Sheet1"; settings.folderId=$("#driveFolderId").value.trim(); storage.set("cx:settings", settings); toast("Saved ✓"); });
 
-    // Google auth (Drive + Sheets)
-    function initGoogleAuth() {
-      if(!settings.googleClientId?.trim()) { toast("Google Client ID not set in Settings"); return false; }
-      if(typeof google === 'undefined' || !google.accounts?.oauth2) { toast("Google auth library not loaded yet. Try again."); return false; }
-      if(!oauth.tokenClient) {
-        try {
-          oauth.tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: settings.googleClientId,
-            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
-            callback: (response) => {
-              if (response.error) {
-                console.error('OAuth Error:', response);
-                toast(`Auth failed: ${response.error}`);
-                oauth.accessToken = null;
-                $("#googleUser").textContent = 'Auth failed';
-              } else {
-                oauth.accessToken = response.access_token;
-                oauth.expiresAt = Date.now() + (response.expires_in * 1000) - 60000;
-                $("#googleUser").textContent = 'Authorized ✓';
-                toast("Google authorized (Drive + Sheets)", {timeout:2000});
-                maybeAutoRunWeeklyBackup(true);
-              }
-            },
-          });
-        } catch(e) {
-          console.error('Failed to init token client:', e);
-          toast("Failed to initialize Google auth");
-          return false;
-        }
+    // Diagnostics
+    $("#runDiagnostics")?.addEventListener("click", async()=>{
+      const out=[]; const OK=(b,m)=>out.push(`<div style="display:flex;gap:8px;align-items:center"><i data-lucide="${b?"check-circle":"x-circle"}"></i><span>${m}</span></div>`);
+      if(!settings.proxyUrl?.trim()) OK(false,"Proxy URL missing"); else{
+        try{ await callProxy("ping",{}); OK(true,"Proxy reachable"); }catch(e){ OK(false,"Proxy ping failed: "+e.message); }
       }
-      return true;
-    }
-    async function ensureGoogleToken() {
-      const now = Date.now();
-      if (oauth.accessToken && now < oauth.expiresAt) {
-        return oauth.accessToken;
-      }
-      if(!initGoogleAuth()) {
-        throw new Error('Google auth not initialized');
-      }
-      return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => { reject(new Error('Auth timeout')); }, 60000);
-        const originalCallback = oauth.tokenClient.callback;
-        oauth.tokenClient.callback = (response) => {
-          clearTimeout(timeout);
-          originalCallback(response);
-          if (response.error) { reject(new Error(response.error)); } else { resolve(response.access_token); }
-          oauth.tokenClient.callback = originalCallback;
-        };
-        try { oauth.tokenClient.requestAccessToken({prompt: 'consent'}); } catch(e) { clearTimeout(timeout); reject(e); }
-      });
-    }
-
-    function recordsToCsvString(records) {
-      const cols = ['date','vendor','description','category','subcategory','amount','currency','payment_method','invoice_number','reference_id','tax_amount','tip_amount','location','notes','source_type','source_filename','attachment_drive_file_id','record_drive_file_id','uploaded_at','sheet_appended_at','created_at','processed_at','validated'];
-      const escape = (v) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
-      const rows = [cols.join(',')];
-      for (const r of records) { rows.push(cols.map((c) => escape(r[c])).join(',')); }
-      return rows.join('\n');
-    }
-    function makeMultipart(metadata, fileBlob) {
-      const boundary = '-------314159265358979323846';
-      const delimiter = `\r\n--${boundary}\r\n`;
-      const close = `\r\n--${boundary}--`;
-      const multipartBody = new Blob(
-        [
-          delimiter,'Content-Type: application/json; charset=UTF-8\r\n\r\n',JSON.stringify(metadata),
-          delimiter,(fileBlob.type ? `Content-Type: ${fileBlob.type}\r\n\r\n` : 'Content-Type: application/json\r\n\r\n'),fileBlob,close,
-        ],
-        { type: `multipart/related; boundary=${boundary}` }
-      );
-      return { body: multipartBody, boundary };
-    }
-    
-    async function uploadDatasetToDrive(records, opts) {
-      if (settings.useProxy && settings.proxyUrl?.trim()){
-        const res = await callProxy("uploadDataset", { records });
-        return { mainFileId: res.fileId, mainFileName: res.fileName };
-      }
-      const { accessToken, folderId } = opts;
-      const jsonStr = JSON.stringify(records, null, 2);
-      const csvStr = recordsToCsvString(records);
-      const timestamp = new Date().toISOString().replace(/:/g,'-').slice(0,19);
-      const uploaded = [];
-      for (const file of [
-        { name: `expenses_${timestamp}.json`, mime: 'application/json', content: new Blob([jsonStr], { type: 'application/json' }) },
-        { name: `expenses_${timestamp}.csv`, mime: 'text/csv', content: new Blob([csvStr], { type: 'text/csv;charset=utf-8' }) },
-      ]) {
-        const meta = { name: file.name, mimeType: file.mime, ...(folderId ? { parents: [folderId] } : {}) };
-        const { body } = makeMultipart(meta, file.content);
-        const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-          method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body,
-        });
-        if (!resp.ok) {
-          const errBody = await resp.text(); console.error("Drive upload failed:", errBody);
-          throw new Error('Drive upload failed: ' + resp.status);
-        }
-        const data = await resp.json();
-        uploaded.push({ id: data.id, name: data.name });
-      }
-      return { mainFileId: uploaded[0].id, mainFileName: uploaded[0].name };
-    }
-
-    async function uploadAttachmentToDrive(file, opts){
-      if (settings.useProxy && settings.proxyUrl?.trim()){
-        const base64 = await new Promise((resolve,reject)=>{
-          const fr=new FileReader(); fr.onerror=()=>reject(new Error("read failed"));
-          fr.onload=()=>resolve(btoa(String.fromCharCode(...new Uint8Array(fr.result)))); fr.readAsArrayBuffer(file);
-        });
-        const res = await callProxy("uploadAttachment", { name: file.name, mime: file.type||'application/octet-stream', base64 });
-        return { id: res.fileId, name: res.fileName };
-      }
-      const { accessToken, folderId } = opts;
-      const meta = { name: file.name, mimeType: file.type || 'application/octet-stream', ...(folderId ? { parents: [folderId] } : {}) };
-      const { body } = makeMultipart(meta, file);
-      const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-        method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body,
-      });
-      if(!resp.ok){ const err=await resp.text(); console.error(err); throw new Error('Attachment upload failed'); }
-      const data = await resp.json();
-      return { id: data.id, name: data.name };
-    }
-
-    async function appendRecordToSheet(rec, opts){
-      if (settings.useProxy && settings.proxyUrl?.trim()){
-        await callProxy("appendRecord", { rec });
-        return { ok: true };
-      }
-      const { accessToken, spreadsheetId, sheetName } = opts;
-      if(!spreadsheetId) throw new Error("Spreadsheet ID missing");
-      const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","sheet_appended_at","created_at","processed_at"];
-      const values = [ cols.map(k => (rec[k] ?? "")) ];
-      const range = encodeURIComponent(`${sheetName||'Sheet1'}!A1`);
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
-      const body = JSON.stringify({ range: `${sheetName||'Sheet1'}!A1`, majorDimension: "ROWS", values });
-      const resp = await fetch(url, { method:"POST", headers:{ Authorization:`Bearer ${accessToken}`, "Content-Type":"application/json" }, body });
-      if(!resp.ok){ const err=await resp.text(); console.error(err); throw new Error('Sheet append failed'); }
-      return await resp.json();
-    }
-async function uploadAllToDrive() {
-      if (!records.length) { toast("No records to upload"); return; }
-      const folderId = settings.folderId?.trim() || null;
-      toast("Starting Drive upload...", { timeout: 2000 });
-      try {
-        const token = await ensureGoogleToken();
-        const result = await uploadDatasetToDrive(records, { accessToken: token, folderId });
-        settings.lastBackupAt = new Date().toISOString();
-        storage.set("cx:settings", settings);
-        toast(`Success! Uploaded: ${result.mainFileName}`, { timeout: 4000 });
-      } catch (e) {
-        console.error("Drive upload failed:", e);
-        toast(`Drive upload failed: ${e.message}`);
-        oauth.accessToken = null;
-        $("#googleUser").textContent = 'Auth failed';
-      }
-    }
-    async function appendAllToSheet(){
-      if (!records.length) { toast("No records to append"); return; }
-      if(!settings.spreadsheetId?.trim()){ toast("Set Spreadsheet ID in Settings"); return; }
-      const token = await ensureGoogleToken();
-      await ensureSheetStructure({token});
-      let ok=0;
-      for(const rec of records){
-        try{ await appendRecordToSheet(rec, { accessToken: token, spreadsheetId: settings.spreadsheetId.trim(), sheetName: settings.sheetName?.trim()||"Sheet1" }); rec.sheet_appended_at = rec.sheet_appended_at || new Date().toISOString(); ok++; }
-        catch(e){ console.warn("Append failed for one record:", e); }
-      }
-      persistAndRender();
-      toast(`Appended ${ok}/${records.length} to Sheet`, { timeout: 2500 });
-    }
-    $("#uploadDriveBtn")?.addEventListener("click", uploadAllToDrive);
-    $("#uploadSheetAllBtn")?.addEventListener("click", appendAllToSheet);
-    $("#googleSignIn")?.addEventListener("click", async () => {
-      try { await ensureGoogleToken(); } catch(e) { console.error('Sign in failed:', e); }
+      if(!settings.spreadsheetId?.trim()) OK(false,"Spreadsheet ID missing"); else OK(true,"Spreadsheet ID set");
+      $("#diagOutput").innerHTML = out.join("");
+      applyTheme();
     });
+    $("#pingProxy")?.addEventListener("click", async()=>{ try{ await callProxy("ping",{}); toast("Proxy OK"); }catch(e){ toast("Proxy failed: "+e.message) } });
 
-    // Weekly automatic backup scheduler
-    function maybeAutoRunWeeklyBackup(afterAuth=false){
-      if(!settings.weeklyBackup) return;
-      if(!records.length) return;
-      const last = settings.lastBackupAt ? new Date(settings.lastBackupAt).getTime() : 0;
-      const week = 7*24*60*60*1000;
-      const due = Date.now() - last >= week;
-      if(!due) return;
-      const run = async ()=>{
-        try{
-          const token = await ensureGoogleToken();
-          await uploadAllToDrive(); // sets lastBackupAt
-        }catch(e){
-          console.warn("Auto-backup skipped:", e?.message||e);
-        }
-      };
-      if(afterAuth){ run(); }
-      else { toast("Weekly backup due", { actionLabel: "Run now", action: run, timeout: 8000 }); }
+    // Form helpers
+    const form=$("#expenseForm");
+    function formToRec(){ const fd=new FormData(form); const r=Object.fromEntries(fd.entries()); r.amount=Number(r.amount||0); r.property="Cascade Hideaway_BRIA"; return r; }
+    function fillForm(r, prov){ for(const [k,v] of Object.entries(r)){ const el=form.elements.namedItem(k); if(el) el.value=v??""; } if(prov){ for(const [f,k] of Object.entries(prov)) setProv(f,k); } }
+
+    // AI Suggest placeholder (uses heuristics+routing via proxy only for categorization if needed)
+    async function smartSuggest(seed){ // returns {fields, prov}
+      const prov={}; const out={ ...seed };
+      // Heuristics
+      const H = heuristicExtract(seed.description || seed.vendor || "");
+      Object.assign(out, H); Object.entries(H).forEach(([k,v])=>{ if(v) prov[k]="H"; });
+      // Rules (simple keyword list)
+      const r = applyRules(out);
+      Object.entries(r.changed||{}).forEach(([k,v])=>{ out[k]=v; prov[k]="R"; });
+      // AI categorization (optional, via proxy - reuse taxonomy prompt in Apps Script if you like)
+      try{
+        const ai = await callProxy("aiCategorize", { record: out }); // optional endpoint; if not implemented just ignore
+        if(ai?.category){ out.category = ai.category; prov.category = prov.category || "AI"; }
+      }catch{ /* ignore if not implemented */ }
+      return { fields: out, prov };
     }
 
-    // ----- SMART SUGGEST (Rules + Heuristics + Gemini) -----
-    async function smartSuggest(seed){
-      // 1) Heuristics
-      const base = heuristicExtract(seed.description || seed.vendor || "");
-      // 2) Rules
-      const { rec: ruled } = applyRules({...seed, ...base}, true);
-      // 3) LLM (optional)
-      if(settings.allowLLM && settings.geminiKey){
-        try{
-          const ai = await geminiParse((seed.description||"") + "\n" + (seed.vendor||""), settings.geminiKey);
-          const cat = await geminiCategorize({ ...ruled, ...ai });
-          return { ...base, ...ruled, ...ai, category: cat?.category || ai.category || ruled.category || base.category };
-        }catch(e){ console.warn("AI suggest failed", e); }
-      }
-      return { ...base, ...ruled };
+    function applyRules(rec){
+      const text=[rec.vendor||"",rec.description||""].join(" ").toLowerCase();
+      const rules=[ // simple built-ins; extend via Apps Script if needed
+        {p:/electric|kwh|meralco|power|energy/i, cat:"Electricity"},
+        {p:/water|maynilad|manila water/i, cat:"Water"},
+        {p:/internet|wifi|fiber|converge|pldt/i, cat:"Internet"},
+        {p:/subscription|saas|netflix|spotify|adobe/i, cat:"Subscriptions"},
+      ];
+      const changed={};
+      for(const r of rules){ if(r.p.test(text) && !rec.category){ changed.category=r.cat; break; } }
+      return { changed };
     }
 
-    function heuristicExtract(text){
-      const s = (text||"").replace(/\s+/g," ").trim();
-      const amount = pickAmount(s);
-      const date = pickDate(s);
-      const vendor = pickVendor(s);
-      const category = pickCategoryByKeywords(s);
+    function heuristicExtract(t){
+      t=(t||"").replace(/\s+/g," ").trim();
+      const amount = (()=>{ const pri=t.match(/Total[:\s]+(?:PHP|₱)?\s?([\d,]+(?:\.\d{2})?)/i); if(pri) return Number(pri[1].replace(/,/g,"")); const any=t.match(/(?:PHP|₱)\s?([\d,]+(?:\.\d{2})?)/i)||t.match(/\b([\d,]{3,}(?:\.\d{2})?)\b/); return any?Number(any[1].replace(/,/g,"")):0; })();
+      const date = (()=>{ const iso=t.match(/\b(20\d{2}[-/]\d{1,2}[-/]\d{1,2})\b/); if(iso){ const n=iso[1].replace(/[./]/g,"-"); const p=n.split("-").map(x=>x.padStart(2,"0")); return p[0].length===4?`${p[0]}-${p[1]}-${p[2]}`:`${p[2]}-${p[0]}-${p[1]}`; } const m="january|february|march|april|may|june|july|august|september|october|november|december".split("|"); const pat=new RegExp(`\\b(${m.join("|")})\\s+(\\d{1,2}),?\\s*(\\d{4})\\b`,"i"); const r=t.match(pat); if(r){ const mm=("0"+(m.indexOf(r[1].toLowerCase())+1)).slice(-2); const dd=("0"+r[2]).slice(-2); return `${r[3]}-${mm}-${dd}` } return new Date().toISOString().slice(0,10); })();
+      const vendor = (()=>{ const s=t.replace(/https?:\/\/\S+/g," ").trim(); const line=s.split(/[|·•\-–—]\s*/)[0]; const m=line.match(/[A-Z][A-Za-z0-9 &'().-]{3,}/); return m?m[0].slice(0,48).trim():""; })();
+      const category = (()=>{ const map=[[/(electric|kwh|power|energy|electricity)/i,"Electricity"],[/water|maynilad|manila water/i,"Water"],[/internet|wifi|fiber|converge|pldt/i,"Internet"],[/subscription|saas|netflix|spotify|adobe/i,"Subscriptions"]]; for(const [re,cat] of map){ if(re.test(t)) return cat; } return ""; })();
       return { amount, date, vendor, category };
     }
-    function pickAmount(t){
-      const pri = t.match(/Total(?:\s+before\s+tax)?[:\s]+(?:PHP|₱)?\s?([\d,]+(?:\.\d{2})?)/i);
-      if(pri) return Number(pri[1].replace(/,/g,""));
-      const any = t.match(/(?:PHP|₱)\s?([\d,]+(?:\.\d{2})?)/i) || t.match(/\b([\d,]{3,}(?:\.\d{2})?)\b/);
-      return any ? Number(any[1].replace(/,/g,"")) : 0;
-    }
-    function pickDate(t){
-      const iso = t.match(/\b(20\d{2}[-/]\d{1,2}[-/]\d{1,2})\b/);
-      if(iso) return toISO(iso[1]);
-      const months="january|february|march|april|may|june|july|august|september|october|november|december".split("|");
-      const pat = new RegExp(`\\b(${months.join("|")})\\s+(\\d{1,2}),?\\s*(\\d{4})\\b`, "i");
-      const m=t.match(pat);
-      if(m){ const mm=("0"+(months.indexOf(m[1].toLowerCase())+1)).slice(-2); const dd=("0"+m[2]).slice(-2); return `${m[3]}-${mm}-${dd}`; }
-      return new Date().toISOString().slice(0,10);
-    }
-    function pickVendor(t){
-      const urlStripped = t.replace(/https?:\/\/\S+/g, " ").trim();
-      const line = urlStripped.split(/[|·•\-–—]\s*/)[0]; // first meaningful chunk
-      const m = line.match(/[A-Z][A-Za-z0-9 &'().-]{3,}/);
-      return m ? m[0].slice(0,48).trim() : "";
-    }
-    function pickCategoryByKeywords(t){
-      const map=[
-        [/electric|kwh|meralco|power|energy|electricity/i,"Electricity"],
-        [/water|manila water|maynilad|h2o/i,"Water"],
-        [/internet|wifi|broadband|fiber|converge|pldt/i,"Internet"],
-        [/domain|hosting|saas|subscription|netflix|spotify|adobe/i,"Subscriptions"],
-        [/repair|fix|technician|maintenance|service call/i,"Repairs"],
-        [/clean|detergent|soap|janitor/i,"Cleaning"],
-        [/shipping|delivery|courier|logistics/i,"Shipping"],
-        [/insurance|premium|coverage/i,"Insurance"],
-        [/tax|withholding|bir|vat/i,"Taxes"],
-        [/visa|flight|hotel|uber|grab|travel/i,"Travel"],
-        [/meal|food|restaurant|coffee|snack/i,"Meals"],
-        [/paper|ink|office|stationery/i,"Office"],
-        [/gloves|screws|suppl(y|ies)|tape/i,"Supplies"],
-      ];
-      for(const [re,cat] of map){ if(re.test(t)) return cat; }
-      return "";
-    }
 
-    async function geminiParse(text, apiKey) {
-      const model = "gemini-2.0-flash-exp";
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const prompt = `Extract expense fields. Only valid JSON. Choose fields if present; avoid hallucinations.
-Return:
-{"date":"YYYY-MM-DD","vendor":"...","description":"...","category":"(one of: ${CATEGORY_TAXONOMY.join(", ")})","amount":1234.56,"currency":"PHP"}
+    // Capture
+    $("#fileInput")?.addEventListener("change", (e)=>{ handleFiles(e.target.files); e.target.value=""; });
+    document.addEventListener("dragover", (e)=>e.preventDefault());
+    document.addEventListener("drop", (e)=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
 
-Text:
-${(text||'').slice(0, 6000)}`;
-      const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, topP: 0.1, responseMimeType: "application/json" } };
-      const resp = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!resp.ok) { const errBody = await resp.text(); console.error("Gemini API Error:", resp.status, errBody); throw new Error(`API failed: ${resp.status}`); }
-      const data = await resp.json();
-      const textOut = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-      try { const parsed = JSON.parse(textOut); if(parsed.amount) parsed.amount = Number(parsed.amount); return parsed; } 
-      catch (e) { console.error("Failed to parse Gemini JSON:", textOut, e); return {}; }
-    }
-    async function geminiCategorize(rec) {
-      if(!settings.geminiKey) return {};
-      const model = "gemini-2.0-flash-exp";
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${settings.geminiKey}`;
-      const prompt = `Pick best category (only one) from: ${CATEGORY_TAXONOMY.join(", ")}.
-Context:
-Date: ${rec.date} Vendor: ${rec.vendor} Desc: ${rec.description} Amount: ${rec.amount}
-Return ONLY: {"category":"..."}`;
-      const payload = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.05, responseMimeType: "application/json" } };
-      const resp = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!resp.ok) return {};
-      const data = await resp.json();
-      try { return JSON.parse(data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}'); } catch { return {}; }
-    }
-
-    function toISO(s){
-      try {
-        const n=s.replace(/[./]/g,"-"); const parts=n.split("-").map(x=>x.padStart(2,"0"));
-        if(parts[0].length===4) return [parts[0],parts[1],parts[2]].join("-");
-        if(parts[2].length===4) return [parts[2],parts[0],parts[1]].join("-");
-        if(parts[2].length===2) {const year = Number(parts[2]) > 50 ? "19" + parts[2] : "20" + parts[2];return [year, parts[0], parts[1]].join("-");}
-        return "";
-      } catch { return ""; }
-    }
-
-    // Rules modal bindings (unchanged)
-    function renderRules(){
-      const list=$("#rulesList"); if(!list) return;
-      list.innerHTML="";
-      if(!rules.length){
-        list.innerHTML = `<div class="meta">No rules yet.</div>`;
-        return;
-      }
-      rules.forEach((r,i)=>{
-        const row=document.createElement("div"); row.className="rule-row";
-        row.innerHTML = `
-          <div><span class="label">Pattern</span><input class="input" value="${escapeHtml(r.pattern||"")}" data-k="pattern"></div>
-          <div><span class="label">Category</span><input class="input" value="${escapeHtml(r.fields?.category||"")}" data-k="category"></div>
-          <div><span class="label">Notes</span><input class="input" value="${escapeHtml(r.fields?.notes||"")}" data-k="notes"></div>
-          <div style="display:flex; gap:6px">
-            <label class="meta" style="display:flex;gap:6px;align-items:center"><input type="checkbox" ${r.enabled!==false?"checked":""} data-k="enabled"> Enabled</label>
-            <button class="btn-s" data-act="del">Del</button>
-          </div>
-        `;
-        row.addEventListener("input",(e)=>{
-          const el=e.target;
-          if(el.dataset.k==="pattern"){ rules[i].pattern = el.value; }
-          if(el.dataset.k==="category"){ rules[i].fields = {...(rules[i].fields||{}), category: el.value}; }
-          if(el.dataset.k==="notes"){ rules[i].fields = {...(rules[i].fields||{}), notes: el.value}; }
-          saveRules();
-        });
-        row.querySelector('[data-k="enabled"]')?.addEventListener("change",(e)=>{ rules[i].enabled = e.target.checked; saveRules(); });
-        row.querySelector('[data-act="del"]')?.addEventListener("click",()=>{ rules.splice(i,1); saveRules(); renderRules(); });
-        list.appendChild(row);
-      });
-    }
-    $("#openRulesBtn")?.addEventListener("click", (e)=>{ renderRules(); toggleModal("#rulesModal", true, e.currentTarget); });
-    $("#rulesClose")?.addEventListener("click", ()=>toggleModal("#rulesModal", false));
-    $("#addRuleBtn")?.addEventListener("click", ()=>{ rules.push({ pattern:"", enabled:true, fields: {} }); saveRules(); renderRules(); });
-    $("#exportRulesBtn")?.addEventListener("click", ()=>download("rules.json", new Blob([JSON.stringify(rules,null,2)], {type:"application/json;charset=utf-8"})));
-    $("#importRulesFile")?.addEventListener("change", async (e)=>{
-      const f=e.target.files?.[0]; if(!f) return;
-      try{ const text=await f.text(); const obj=JSON.parse(text); if(Array.isArray(obj)){ rules=obj; saveRules(); renderRules(); toast("Rules imported"); } else { toast("Invalid rules file"); } }catch{ toast("Failed to import rules"); }
-      e.target.value="";
-    });
-    $("#rulesAllowOverwrite").checked = !!rulesAllowOverwrite;
-    $("#rulesAllowOverwrite").addEventListener("change", (e)=>{rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite);});
-
-    function toggleModal(sel, show, invoker){
-      const m=$(sel); if(!m) return;
-      if(show){ m.setAttribute("aria-hidden","false"); (invoker||document.activeElement); focusTrap(m); }
-      else{ m.setAttribute("aria-hidden","true"); invoker && invoker.focus?.(); }
-    }
-    function focusTrap(modal){
-      const card = modal.querySelector(".modal-card"); if(!card) return;
-      const focusables = ()=>$$('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])', card).filter(el=>!el.disabled && el.offsetParent!==null);
-      card.focus({preventScroll:true});
-      const trap = (e)=>{ if(e.key!=="Tab") return; const f = focusables(); if(!f.length){ e.preventDefault(); return; } const first=f[0], last=f[f.length-1]; if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); } else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); } };
-      const onClick=(e)=>{ if(e.target===modal) { toggleModal("#"+modal.id, false); cleanup(); } };
-      const onEsc=(e)=>{ if(e.key==="Escape") { toggleModal("#"+modal.id, false); cleanup(); } };
-      const cleanup=()=>{ modal.removeEventListener("keydown", trap); modal.removeEventListener("click", onClick); document.removeEventListener("keydown", onEsc); };
-      modal.addEventListener("keydown", trap); modal.addEventListener("click", onClick); document.addEventListener("keydown", onEsc);
-    }
-
-    function allCategoryOptions(){
-      const set=new Set(CATEGORY_TAXONOMY);
-      records.forEach(r=>{ const c=(r.category||"").trim(); if(c) set.add(c); });
-      rules.forEach(r=>{ const c=(r?.fields?.category||"").trim(); if(c) set.add(c); });
-      return Array.from(set).sort((a,b)=>a.localeCompare(b));
-    }
-    function refreshCategoryDatalist(){
-      const dl=$("#categoryList"); if(!dl) return;
-      const opts = allCategoryOptions().map(c=>`<option value="${escapeHtml(c)}"></option>`).join("");
-      dl.innerHTML = opts;
-      buildCategoryMenu();
-    }
-    function buildCategoryMenu(){
-      const menu = $("#catMenu"); if(!menu) return;
-      const items = allCategoryOptions().map(c=>`<button class="ac-item" type="button" data-val="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join("");
-      menu.innerHTML = items || "";
-      const input = $("#expenseForm")?.elements?.namedItem("category");
-      menu.addEventListener("click",(e)=>{ const b=e.target.closest(".ac-item"); if(!b) return; input.value=b.dataset.val||""; closeCatMenu(); });
-      function open(){ menu.classList.remove("hidden"); input.setAttribute("aria-expanded","true"); }
-      function close(){ menu.classList.add("hidden"); input.setAttribute("aria-expanded","false"); }
-      function closeCatMenu(){ close(); }
-      input?.addEventListener("focus", open);
-      input?.addEventListener("blur", ()=>setTimeout(close, 150));
-      input?.addEventListener("input", ()=>{
-        const q=(input.value||"").toLowerCase();
-        $$(".ac-item", menu).forEach(btn=>{ const ok = btn.dataset.val.toLowerCase().includes(q); btn.style.display = ok ? "" : "none"; });
-        open();
-      });
-    }
-
-    function renderDashboard(){
-      const count=records.length; const sum=records.reduce((a,r)=>a+Number(r.amount||0),0); const ccy=records[0]?.currency||"PHP";
-      const latest=records.map(r=>r.date).filter(Boolean).sort().pop();
-      const avg=count? sum/count : 0;
-      const topCat=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1])[0];
-
-      const totalEl=$("#kpiTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className="v num "+(sum>3000?"num--red":sum>=500?"num--yellow":"num--green");
-      $("#kpiCount").textContent=`${count} item${count!==1?"s":""}`;
-      $("#kpiLatest").textContent=latest||"—";
-      const avgEl=$("#kpiAvg"); avgEl.textContent=count?fmtMoney(avg,ccy):"—"; avgEl.className="v num "+(avg>3E3?"num--red":avg>=500?"num--yellow":"num--green");
-      $("#kpiTopCat").textContent=topCat? topCat[0] : "—";
-
-      const cont=$("#catBreakdown"); cont.innerHTML="";
-      const catTotals=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1]);
-      if(!catTotals.length){ cont.innerHTML=`<div class="empty-state"><i data-lucide="pie-chart"></i><div class="empty-state-h">No Category Data</div><p class="empty-state-p meta">Add expenses and your category spending will appear here.</p></div>`; if(window.lucide) window.lucide.createIcons({ nodes: [cont] });}
-      else{
-        const max=Math.max(...catTotals.map(x=>x[1]));
-        catTotals.slice(0,8).forEach(([k,v])=>{
-          const row=document.createElement("div"); row.style.marginBottom="10px";
-          row.innerHTML=`<div style="display:flex;justify-content:space-between"><div>${escapeHtml(k)}</div><div class="meta">${fmtMoney(v,ccy)}</div></div><div class="bar"><span style="width:${max? (v/max*100).toFixed(1):0}%"></span></div>`;
-          cont.appendChild(row);
-        });
-      }
-
-      const recent=$("#recentList"); recent.innerHTML="";
-      if(!records.length){ recent.innerHTML=`<div class="empty-state"><i data-lucide="activity"></i><div class="empty-state-h">No Recent Activity</div><p class="empty-state-p meta">Your 6 most recent expenses will show up here.</p></div>`; if(window.lucide) window.lucide.createIcons({ nodes: [recent] });}
-      else{
-        const fragment=document.createDocumentFragment();
-        records.slice(-6).reverse().forEach(r=>{
-          const item=document.createElement("div"); item.style.padding="8px 0"; item.style.borderBottom="1px solid var(--border)";
-          item.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div><i data-lucide="tag" style="width:1em;height:1em;vertical-align:-2px;"></i> ${escapeHtml(r.vendor||r.description||r.category||"Item")}</div>
-              <div class="meta">${r.date||""}</div>
-            </div>
-            <div class="meta">${escapeHtml(r.category||"Uncategorized")} · ${fmtMoney(r.amount, r.currency||"PHP")}</div>`;
-          fragment.appendChild(item);
-        });
-        recent.appendChild(fragment);
-        if(window.lucide) window.lucide.createIcons({ nodes: [recent] });
-      }
-    }
-
-    // ----- SHEET SETUP -----
-    $("#setupSheet")?.addEventListener("click", async ()=>{
-      try{
-        const token = await ensureGoogleToken();
-        await ensureSheetStructure({token, force:true});
-        toast("Sheet structure set up ✓", { timeout: 2200 });
-      }catch(e){ toast("Setup failed: " + (e?.message||e)); }
-    });
-
-    
-    
-    async function ensureSheetStructure({token, force=false}){
-      if (settings.useProxy && settings.proxyUrl?.trim()){
-        await callProxy("setupSheet", {});
-        return;
-      }
-      const spreadsheetId = (settings.spreadsheetId||"").trim();
-      const sheetName = (settings.sheetName||"Sheet1").trim() || "Sheet1";
-      if(!spreadsheetId) throw new Error("Spreadsheet ID not set");
-
-      async function getMeta(){
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=sheets(properties(sheetId,title))`;
-        const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-        if(!r.ok){
-          const body = await r.text();
-          throw new Error(`Unable to read spreadsheet (${r.status}). Check ID & access. ${body.slice(0,180)}`);
-        }
-        const j = await r.json();
-        if(!j?.sheets) throw new Error("No sheets found in spreadsheet (missing permissions?)");
-        return (j.sheets||[]).map(s=>s.properties);
-      }
-
-      let sheets = await getMeta();
-      let main = sheets.find(s=>String(s.title||"").toLowerCase() === sheetName.toLowerCase());
-      let metaSheet = sheets.find(s=>s.title==="Meta");
-
-      const requests = [];
-      if(!main){ requests.push({ addSheet: { properties: { title: sheetName } } }); }
-      if(!metaSheet){ requests.push({ addSheet: { properties: { title: "Meta", hidden: false } } }); }
-
-      if(requests.length){
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`;
-        const resp = await fetch(url, { method:"POST", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ requests }) });
-        if(!resp.ok){
-          const body = await resp.text();
-          throw new Error(`Failed to create sheets (${resp.status}). ${body.slice(0,180)}`);
-        }
-        sheets = await getMeta();
-        main = sheets.find(s=>String(s.title||"").toLowerCase() === sheetName.toLowerCase()) || sheets[0];
-        metaSheet = sheets.find(s=>s.title==="Meta");
-      }
-
-      if(!main){ throw new Error(`Sheet "${sheetName}" not found (and could not be created). Check the name and permissions.`); }
-
-      const HEADERS = ["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","sheet_appended_at","created_at","processed_at"];
-      const hdrUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent((sheetName)+'!A1')}:update?valueInputOption=RAW`;
-      const hdrResp = await fetch(hdrUrl, { method:"PUT", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ range: sheetName+"!A1", majorDimension:"ROWS", values: [HEADERS] }) });
-      if(!hdrResp.ok){
-        const body = await hdrResp.text();
-        throw new Error(`Header write failed (${hdrResp.status}). ${body.slice(0,180)}`);
-      }
-
-      if(!metaSheet){ sheets = await getMeta(); metaSheet = sheets.find(s=>s.title==="Meta"); }
-      const catValues = CATEGORY_TAXONOMY.map(c=>[c]);
-      const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent('Meta!A1')}:update?valueInputOption=RAW`;
-      const metaResp = await fetch(metaUrl, { method:"PUT", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ range: 'Meta!A1', majorDimension:"ROWS", values: catValues }) });
-      if(!metaResp.ok){
-        const body = await metaResp.text();
-        throw new Error(`Meta write failed (${metaResp.status}). ${body.slice(0,180)}`);
-      }
-
-      const catRule = {
-        condition: { type: "ONE_OF_LIST", values: CATEGORY_TAXONOMY.map(v=>({ userEnteredValue: v })) },
-        strict: true, showCustomUi: true
-      };
-      const reqs2 = [
-        { updateSheetProperties: { properties: { sheetId: main.sheetId, gridProperties: { frozenRowCount: 1 } }, fields: "gridProperties.frozenRowCount" } },
-        { autoResizeDimensions: { dimensions: { sheetId: main.sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 26 } } },
-        { repeatCell: { range: { sheetId: main.sheetId, startRowIndex: 0, endRowIndex: 1 }, cell: { userEnteredFormat: { textFormat: { bold: true } } }, fields: "userEnteredFormat.textFormat.bold" } },
-        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "yyyy-mm-dd" } } }, fields: "userEnteredFormat.numberFormat" } },
-        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 6, endColumnIndex: 7 }, cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } }, fields: "userEnteredFormat.numberFormat" } },
-        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 11, endColumnIndex: 13 }, cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } }, fields: "userEnteredFormat.numberFormat" } },
-        { setDataValidation: { range: { sheetId: main.sheetId, startRowIndex: 1, startColumnIndex: 4, endColumnIndex: 5 }, rule: catRule } },
-      ];
-      const fmtUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`;
-      const fmtResp = await fetch(fmtUrl, { method:"POST", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ requests: reqs2 }) });
-      if(!fmtResp.ok){
-        const body = await fmtResp.text();
-        throw new Error(`Formatting failed (${fmtResp.status}). ${body.slice(0,180)}`);
-      }
-    }
-async function getMeta(){
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=sheets(properties(sheetId,title))`;
-        const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-        if(!r.ok){
-          const body = await r.text();
-          throw new Error(`Unable to read spreadsheet (${r.status}). Check ID & access. ${body.slice(0,180)}`);
-        }
-        const j = await r.json();
-        if(!j?.sheets) throw new Error("No sheets found in spreadsheet (missing permissions?)");
-        return (j.sheets||[]).map(s=>s.properties);
-      }
-
-      let sheets = await getMeta();
-      let main = sheets.find(s=>String(s.title||"").toLowerCase() === sheetName.toLowerCase());
-      let metaSheet = sheets.find(s=>s.title==="Meta");
-
-      const requests = [];
-      if(!main){ requests.push({ addSheet: { properties: { title: sheetName } } }); }
-      if(!metaSheet){ requests.push({ addSheet: { properties: { title: "Meta", hidden: false } } }); }
-
-      if(requests.length){
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`;
-        const resp = await fetch(url, { method:"POST", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ requests }) });
-        if(!resp.ok){
-          const body = await resp.text();
-          throw new Error(`Failed to create sheets (${resp.status}). ${body.slice(0,180)}`);
-        }
-        sheets = await getMeta();
-        main = sheets.find(s=>String(s.title||"").toLowerCase() === sheetName.toLowerCase()) || sheets[0];
-        metaSheet = sheets.find(s=>s.title==="Meta");
-      }
-
-      if(!main){ throw new Error(`Sheet "${sheetName}" not found (and could not be created). Check the name and permissions.`); }
-
-      // Headers write
-      const HEADERS = ["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","sheet_appended_at","created_at","processed_at"];
-      const hdrUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent((sheetName)+'!A1')}:update?valueInputOption=RAW`;
-      const hdrResp = await fetch(hdrUrl, { method:"PUT", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ range: sheetName+"!A1", majorDimension:"ROWS", values: [HEADERS] }) });
-      if(!hdrResp.ok){
-        const body = await hdrResp.text();
-        throw new Error(`Header write failed (${hdrResp.status}). ${body.slice(0,180)}`);
-      }
-
-      // Meta categories
-      if(!metaSheet){ sheets = await getMeta(); metaSheet = sheets.find(s=>s.title==="Meta"); }
-      const catValues = CATEGORY_TAXONOMY.map(c=>[c]);
-      const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent('Meta!A1')}:update?valueInputOption=RAW`;
-      const metaResp = await fetch(metaUrl, { method:"PUT", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ range: 'Meta!A1', majorDimension:"ROWS", values: catValues }) });
-      if(!metaResp.ok){
-        const body = await metaResp.text();
-        throw new Error(`Meta write failed (${metaResp.status}). ${body.slice(0,180)}`);
-      }
-
-      // Formatting & validation
-      const catRule = {
-        condition: { type: "ONE_OF_LIST", values: CATEGORY_TAXONOMY.map(v=>({ userEnteredValue: v })) },
-        strict: true, showCustomUi: true
-      };
-      const reqs2 = [
-        { updateSheetProperties: { properties: { sheetId: main.sheetId, gridProperties: { frozenRowCount: 1 } }, fields: "gridProperties.frozenRowCount" } },
-        { autoResizeDimensions: { dimensions: { sheetId: main.sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 26 } } },
-        { repeatCell: { range: { sheetId: main.sheetId, startRowIndex: 0, endRowIndex: 1 }, cell: { userEnteredFormat: { textFormat: { bold: true } } }, fields: "userEnteredFormat.textFormat.bold" } },
-        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { numberFormat: { type: "DATE", pattern: "yyyy-mm-dd" } } }, fields: "userEnteredFormat.numberFormat" } },
-        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 6, endColumnIndex: 7 }, cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } }, fields: "userEnteredFormat.numberFormat" } },
-        { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 11, endColumnIndex: 13 }, cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } }, fields: "userEnteredFormat.numberFormat" } },
-        { setDataValidation: { range: { sheetId: main.sheetId, startRowIndex: 1, startColumnIndex: 4, endColumnIndex: 5 }, rule: catRule } },
-      ];
-      const fmtUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`;
-      const fmtResp = await fetch(fmtUrl, { method:"POST", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ requests: reqs2 }) });
-      if(!fmtResp.ok){
-        const body = await fmtResp.text();
-        throw new Error(`Formatting failed (${fmtResp.status}). ${body.slice(0,180)}`);
-      }
-    }
-// ----- Ingest with manual Start OCR + Smart Parse -----
-    $("#fileInput")?.addEventListener("change", onFiles);
-    document.addEventListener("dragover", e=>e.preventDefault());
-    document.addEventListener("drop", e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
-    function onFiles(e){ handleFiles(e.target.files); e.target.value=""; }
-
-    async function handleFiles(fileList){
-      if(!fileList?.length) return; 
-      const files=Array.from(fileList);
-      const container=$("#ingestPreview"); if(!container) return;
-      if(container.textContent?.includes("Nothing ingested")) container.innerHTML="";
-      for(const f of files){
+    async function handleFiles(files){
+      const list = $("#ingestPreview"); if(list.textContent?.includes("Drop")) list.innerHTML="";
+      for(const f of Array.from(files)){
         const id=Math.random().toString(36).slice(2);
-        const isImg = f.type.startsWith("image/");
-        const isPdf = /\.pdf$/i.test(f.name) || f.type==="application/pdf";
-        const url=isImg ? URL.createObjectURL(f) : "";
-
-        const card=document.createElement("div"); card.className="card glass"; card.style.marginBottom="10px";
+        const isImg=f.type.startsWith("image/"); const isPdf=/\.pdf$/i.test(f.name) || f.type==="application/pdf";
+        const card=document.createElement("div"); card.className="card"; card.style.marginTop="10px";
         card.innerHTML = `
-        <div class="card-b">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div style="font-weight:700; display:flex; align-items:center; gap:8px;"><i data-lucide="${isImg?'image':'file'}"></i> ${escapeHtml(f.name)}</div>
-            <div class="meta">${isImg?'image': (isPdf ? 'pdf' : 'file')}</div>
-          </div>
-          <div style="display:flex; gap:12px; align-items:flex-start;">
-            ${isImg ? `<img alt="preview" src="${url}" style="width:90px;height:90px;object-fit:cover;border:1px solid var(--border);border-radius:8px"/>` : ''}
-            <div style="flex:1 1 auto;">
-              <div class="bar"><span id="bar-${id}" style="width:0%; transition: width 0.2s ease;"></span></div>
-              <div id="txt-${id}" class="meta" style="margin-top:8px; max-height: 120px; overflow:auto;">Ready. Press “Start OCR”.</div>
-              <div id="chips-${id}" class="meta" style="display:flex; gap:6px; margin-top:6px;"></div>
-              <div id="edit-${id}" class="hidden" style="margin-top:8px; display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
-                <label><span class="label">Date</span><input class="input" data-f="date"></label>
-                <label><span class="label">Vendor</span><input class="input" data-f="vendor"></label>
-                <label><span class="label">Category</span><input class="input" data-f="category" list="categoryList"></label>
-                <label><span class="label">Amount</span><input class="input" data-f="amount" type="number" step="0.01"></label>
-                <label style="grid-column:1/-1"><span class="label">Description</span><input class="input" data-f="description"></label>
-                <div style="grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap">
-                  <button id="ai-${id}" class="btn-s"><i data-lucide="wand-2"></i> Smart Parse</button>
-                  <button id="send-${id}" class="btn-s"><i data-lucide="file-pen-line"></i> Send to Form</button>
-                </div>
-              </div>
-              <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-                <button id="start-${id}" class="btn-s"><i data-lucide="scan-text"></i> Start OCR</button>
-                <button id="attach-${id}" class="btn-s"><i data-lucide="paperclip"></i> Upload Attachment</button>
+          <div class="card-b">
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:800;display:flex;gap:8px;align-items:center"><i data-lucide="${isImg?'image':'file'}"></i> ${f.name}</div><span class="meta">${isImg?'image':'pdf'}</span></div>
+            <div class="bar" style="height:8px;background:#eee;border:1px solid var(--border);border-radius:999px;overflow:hidden;margin-top:8px"><span id="bar-${id}" style="display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%"></span></div>
+            <div id="txt-${id}" class="meta" style="margin-top:8px; max-height:120px; overflow:auto">Ready. Press Start OCR.</div>
+            <div id="chips-${id}" class="meta" style="display:flex; gap:6px; margin-top:6px;"></div>
+            <div id="edit-${id}" class="hidden" style="margin-top:8px; display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+              <label><span class="label">Date <span class="chip prov" data-p="date"></span></span><input class="input" data-f="date"></label>
+              <label><span class="label">Vendor <span class="chip prov" data-p="vendor"></span></span><input class="input" data-f="vendor"></label>
+              <label><span class="label">Category <span class="chip prov" data-p="category"></span></span><input class="input" data-f="category" list="categoryList"></label>
+              <label><span class="label">Amount <span class="chip prov" data-p="amount"></span></span><input class="input" data-f="amount" type="number" step="0.01"></label>
+              <label style="grid-column:1/-1"><span class="label">Description</span><input class="input" data-f="description"></label>
+              <div style="grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap">
+                <button id="ai-${id}" class="btn-s"><i data-lucide="wand-2"></i> Smart Parse</button>
+                <button id="send-${id}" class="btn-s"><i data-lucide="file-pen-line"></i> Send to Form</button>
               </div>
             </div>
-          </div>
-        </div>`;
-        container.appendChild(card);
-        if(window.lucide) window.lucide.createIcons({ nodes: [card] });
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+              <button id="start-${id}" class="btn-s"><i data-lucide="scan-text"></i> Start OCR</button>
+              <button id="attach-${id}" class="btn-s"><i data-lucide="paperclip"></i> Upload Attachment</button>
+            </div>
+          </div>`;
+        list.appendChild(card); if(window.lucide) window.lucide.createIcons({ nodes: [card] });
+        const bar=$("#bar-"+id), textEl=$("#txt-"+id), chips=$("#chips-"+id), edit=$("#edit-"+id);
+        const prov={date:"",vendor:"",category:"",amount:""};
+        function setProvLocal(field, kind){ prov[field]=kind; const chip=edit.querySelector(`.prov[data-p="${field}"]`); if(chip){ chip.dataset.kind=kind; chip.textContent=kind; chip.title={"H":"Heuristic","R":"Rule","AI":"AI"}[kind]||kind; chip.style.display=kind?"inline-flex":"none"; } }
 
-        const progressBar=$("#bar-"+id); const textEl=$("#txt-"+id); const chips=$("#chips-"+id);
-        const attachBtn=$("#attach-"+id);
-        const startBtn=$("#start-"+id);
-        const editBox=$("#edit-"+id);
-        const sendBtn=$("#send-"+id);
-        const aiBtn=$("#ai-"+id);
-        let parsed=null, ocrText="";
-
-        attachBtn?.addEventListener("click", async ()=>{
-          try{
-            const token = await ensureGoogleToken();
-            const { id:fileId } = await uploadAttachmentToDrive(f, { accessToken: token, folderId: settings.folderId?.trim()||null });
-            const form=$("#expenseForm");
-            form.elements.namedItem("attachment_drive_file_id").value = fileId;
-            form.elements.namedItem("source_type").value = isImg?"image":(isPdf?"pdf":"file");
-            form.elements.namedItem("source_filename").value = f.name;
-            toast("Attachment uploaded & linked ✓", { timeout: 1800 });
-            attachBtn.disabled = true;
-          }catch(e){
-            toast("Attach failed — sign in first", { timeout: 2200 });
-          }
+        $("#attach-"+id)?.addEventListener("click", async()=>{
+          try{ const base64 = await fileToBase64(f); const res = await callProxy("uploadAttachment", { name:f.name, mime:f.type||"application/octet-stream", base64 }); form.elements.namedItem("attachment_drive_file_id").value = res.fileId; toast("Attachment uploaded ✓"); }catch(e){ toast("Attach failed: "+e.message); }
         });
 
-        startBtn?.addEventListener("click", async ()=>{
-          if(!settings.useTesseract){ toast("Enable Tesseract in Settings"); return; }
+        $("#start-"+id)?.addEventListener("click", async()=>{
           try{
-            if (typeof Tesseract === 'undefined') { throw new Error("Tesseract.js failed to load"); }
-            textEl.textContent = "Recognizing…";
+            if (typeof Tesseract === 'undefined') throw new Error("Tesseract not loaded");
+            textEl.textContent="Recognizing…";
             let text="", confidence=0;
-
             if(isImg){
-              const res=await Tesseract.recognize(f,"eng",{logger:(m)=>{ if(m.status==="recognizing text"){ const p=clamp01(m.progress||0); progressBar.style.width=(p*100).toFixed(0)+"%"; }}});
-              text=(res?.data?.text||"").trim(); confidence=(res?.data?.confidence ?? 0);
+              const r = await Tesseract.recognize(f,"eng",{logger:(m)=>{ if(m.status==="recognizing text"){ bar.style.width=((m.progress||0)*100).toFixed(0)+"%"; } }});
+              text=(r?.data?.text||"").trim(); confidence=(r?.data?.confidence||0);
             }else{
-              if(typeof pdfjsLib === "undefined"){ throw new Error("PDF.js not loaded"); }
-              const buf = await f.arrayBuffer();
-              pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-              const pdf = await pdfjsLib.getDocument({data:buf}).promise;
-              const pageCount = Math.min(pdf.numPages, 3);
-              let pieces=[], confs=[];
-              for(let p=1;p<=pageCount;p++){
-                const page = await pdf.getPage(p);
-                const viewport = page.getViewport({ scale: 2 });
-                const canvas = document.createElement("canvas");
-                const ctx = canvas.getContext("2d");
-                canvas.width = viewport.width; canvas.height = viewport.height;
-                await page.render({ canvasContext: ctx, viewport }).promise;
-                const res = await Tesseract.recognize(canvas, "eng", { logger:(m)=>{
-                  if(m.status==="recognizing text"){
-                    const progress = ((p-1) + clamp01(m.progress||0)) / pageCount;
-                    progressBar.style.width=(progress*100).toFixed(0)+"%";
-                  }
-                }});
-                pieces.push((res?.data?.text||"").trim());
-                confs.push(res?.data?.confidence ?? 0);
-              }
-              text = pieces.join("\n\n").trim();
-              confidence = confs.length ? Math.round(confs.reduce((a,b)=>a+b,0)/confs.length) : 0;
+              if(typeof pdfjsLib === "undefined") throw new Error("PDF.js not loaded");
+              const buf = await f.arrayBuffer(); pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+              const pdf = await pdfjsLib.getDocument({data:buf}).promise; const pieces=[]; const confs=[];
+              for(let p=1;p<=Math.min(pdf.numPages,3);p++){ const page=await pdf.getPage(p); const vp=page.getViewport({scale:2}); const c=document.createElement("canvas"); const ctx=c.getContext("2d"); c.width=vp.width; c.height=vp.height; await page.render({canvasContext:ctx,viewport:vp}).promise; const r=await Tesseract.recognize(c,"eng",{logger:(m)=>{ if(m.status==="recognizing text"){ const pr=((p-1)+(m.progress||0))/Math.min(pdf.numPages,3); bar.style.width=(pr*100).toFixed(0)+"%"; } }}); pieces.push((r?.data?.text||"").trim()); confs.push(r?.data?.confidence||0); }
+              text=pieces.join("\n\n"); confidence=Math.round(confs.reduce((a,b)=>a+b,0)/confs.length);
             }
-
-            ocrText = text;
             textEl.textContent = text ? (text.length>800?text.slice(0,800)+"…":text) : "(no text)";
             chips.innerHTML = `<span class="chip">Lang: ENG</span><span class="chip">Confidence: ${Math.round(confidence)}%</span><span class="chip">Size: ${(f.size/1024).toFixed(1)} KB</span>`;
-            parsed = heuristicExtract(text);
-            // show quick edit
-            editBox.classList.remove("hidden");
-            editBox.querySelector('[data-f="date"]').value = parsed.date||"";
-            editBox.querySelector('[data-f="vendor"]').value = parsed.vendor||"";
-            editBox.querySelector('[data-f="category"]').value = parsed.category||"";
-            editBox.querySelector('[data-f="amount"]').value = parsed.amount||"";
-            editBox.querySelector('[data-f="description"]').value = text.slice(0,180);
-          }catch(err){
-            console.error("OCR Error:", err);
-            textEl.textContent=`OCR failed: ${err.message}`;
-            textEl.style.color = "var(--bad)";
-          }
+            const heur = heuristicExtract(text); ["date","vendor","category","amount"].forEach(k=>setProvLocal(k, heur[k] ? "H": ""));
+            edit.classList.remove("hidden");
+            edit.querySelector('[data-f="date"]').value = heur.date||"";
+            edit.querySelector('[data-f="vendor"]').value = heur.vendor||"";
+            edit.querySelector('[data-f="category"]').value = heur.category||"";
+            edit.querySelector('[data-f="amount"]').value = heur.amount||"";
+            edit.querySelector('[data-f="description"]').value = text.slice(0,180);
+          }catch(e){ textEl.textContent="OCR failed: "+e.message; }
         });
 
-        aiBtn?.addEventListener("click", async ()=>{
-          if(!ocrText){ toast("Run OCR first"); return; }
-          if(!settings.allowLLM || !settings.geminiKey){ toast("Enable Gemini in Settings"); return; }
-          aiBtn.disabled = true;
+        $("#ai-"+id)?.addEventListener("click", async()=>{
           try{
-            const ai = await smartSuggest({ description: ocrText });
-            parsed = { ...(parsed||{}), ...ai };
-            editBox.querySelector('[data-f="date"]').value = parsed.date||"";
-            editBox.querySelector('[data-f="vendor"]').value = parsed.vendor||"";
-            editBox.querySelector('[data-f="category"]').value = parsed.category||"";
-            editBox.querySelector('[data-f="amount"]').value = parsed.amount||"";
-            editBox.querySelector('[data-f="description"]').value = parsed.description||ocrText.slice(0,180);
-            toast("Smart Parse complete ✓", { timeout: 1400 });
-          }catch(e){ toast("Smart Parse failed"); }
-          finally{ aiBtn.disabled = false; }
+            const seed = { description: edit.querySelector('[data-f="description"]').value, vendor: edit.querySelector('[data-f="vendor"]').value };
+            const { fields, prov: pv } = await smartSuggest(seed);
+            ["date","vendor","category","amount"].forEach(k=>{ if(fields[k]){ edit.querySelector(`[data-f="${k}"]`).value = fields[k]; if(pv[k]) setProvLocal(k, pv[k]); }});
+            toast("Smart Parse ✓");
+          }catch(e){ toast("Smart Parse failed: "+e.message); }
         });
 
-        sendBtn?.addEventListener("click", ()=>{
-          const r={...parsed};
-          r.date = editBox.querySelector('[data-f="date"]').value||r.date;
-          r.vendor = editBox.querySelector('[data-f="vendor"]').value||r.vendor;
-          r.category = editBox.querySelector('[data-f="category"]').value||r.category;
-          r.amount = Number(editBox.querySelector('[data-f="amount"]').value||r.amount||0);
-          r.description = editBox.querySelector('[data-f="description"]').value||r.description;
-          r.property = "Cascade Hideaway_BRIA";
-          const {rec: rec2} = applyRules(r, rulesAllowOverwrite);
-          fillForm(rec2);
-          switchTab("form");
-          toast("Loaded parsed data into form");
+        $("#send-"+id)?.addEventListener("click", ()=>{
+          const r={ date:edit.querySelector('[data-f="date"]').value, vendor:edit.querySelector('[data-f="vendor"]').value, category:edit.querySelector('[data-f="category"]').value, amount:Number(edit.querySelector('[data-f="amount"]').value||0), description:edit.querySelector('[data-f="description"]').value };
+          fillForm(r, prov); switchTab("form"); toast("Loaded into form");
         });
       }
-      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', container) });
-      toast(`${files.length} file(s) added`,{timeout:1400});
     }
+    function fileToBase64(file){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onerror=()=>rej(new Error("read failed")); fr.onload=()=>res(btoa(String.fromCharCode(...new Uint8Array(fr.result)))); fr.readAsArrayBuffer(file); }); }
 
-    // ----- Settings hydrate -----
-    $("#saveSettings")?.addEventListener("click", ()=>{
-      settings.folderId=$("#driveFolderId").value.trim();
-      settings.googleClientId=$("#googleClientId").value.trim();
-      settings.geminiKey=$("#geminiKey").value.trim();
-      settings.useTesseract=$("#toggleTesseract").checked;
-      settings.allowLLM=$("#toggleLLM").checked;
-      settings.autoAISuggest=$("#toggleAISuggest").checked;
-      settings.autoUpload=$("#toggleAutoUpload").checked;
-      settings.spreadsheetId=$("#sheetId").value.trim();
-      settings.sheetName=$("#sheetName").value.trim() || "Sheet1";
-      settings.weeklyBackup=$("#toggleWeeklyBackup").checked;
-settings.useProxy=$("#toggleProxy").checked;
-settings.proxyUrl=$("#proxyUrl").value.trim();
-      settings.showGuides=$("#toggleGuides").checked;
-      document.body.classList.toggle('guides-hidden', !settings.showGuides);
-document.body.classList.toggle('proxy-enabled', !!settings.useProxy);
-      storage.set("cx:settings",settings);
-      oauth.tokenClient = null; oauth.accessToken = null; $("#googleUser").textContent = 'Not signed in';
-      toast("Settings saved",{timeout:1200});
-    });
-    $("#runBackupNow")?.addEventListener("click", uploadAllToDrive);
-$("#runDiagnostics")?.addEventListener("click", runDiagnostics);
-$("#pingProxy")?.addEventListener("click", async()=>{ try{ const r=await callProxy("ping",{}); toast("Proxy OK"); }catch(e){ toast("Proxy ping failed: "+e.message); } });
-    $("#adminLogout")?.addEventListener("click", ()=>{ isAdmin=false; storage.set("cx:isAdmin", false); switchTab("dashboard"); toast("Admin signed out",{timeout:1200}); });
-
-    document.addEventListener("keydown",(e)=>{
-      const isInput = !!e.target.closest("input,textarea,select");
-      const onForm = $("#panel-form") && !$("#panel-form").classList.contains("hidden");
-      if((e.ctrlKey||e.metaKey) && e.key==="Enter" && onForm){ e.preventDefault(); $("#addToListBtn")?.click(); }
-      if(e.altKey && (e.key==="v"||e.key==="V")){ e.preventDefault(); $("#validateBtn")?.click(); }
-      if(e.altKey && (e.key==="f"||e.key==="F")){ e.preventDefault(); switchTab("form"); }
-      if(e.altKey && (e.key==="b"||e.key==="B")){ e.preventDefault(); switchTab("batch"); }
-      if((e.ctrlKey||e.metaKey) && (e.key==="k"||e.key==="K")){ e.preventDefault(); $("#expenseForm")?.elements?.namedItem("category")?.focus(); }
-      if(isInput) return;
+    // Add
+    $("#validateBtn")?.addEventListener("click", ()=>{ const r=formToRec(); if(!r.date||!r.category||!(r.amount>0)) toast("Fix required fields"); else toast("Valid ✓"); });
+    $("#aiSuggestBtn")?.addEventListener("click", async()=>{ const seed=formToRec(); const {fields,prov}=await smartSuggest(seed); fillForm(fields,prov); toast("AI suggestions applied"); });
+    $("#addToListBtn")?.addEventListener("click", async()=>{
+      const rec=formToRec(); if(!rec.date||!rec.category||!(rec.amount>0)){ toast("Fill required fields"); return; }
+      records.push(rec); storage.set("cx:records",records); toast("Added ✓");
+      try{ await callProxy("appendRecord", { rec }); form.elements.namedItem("sheet_appended_at").value = new Date().toISOString(); toast("Appended to Sheet ✓"); }catch(e){ toast("Append failed (proxy): "+e.message); }
+      // reset
+      ["vendor","description","notes"].forEach(n=>form.elements.namedItem(n).value=""); form.elements.namedItem("amount").value=""; setProv("date",""); setProv("vendor",""); setProv("category",""); setProv("amount","");
     });
 
-    function persistAndRender(){ storage.set("cx:records", records); renderTable(); refreshCategoryDatalist(); renderDashboard(); }
-    function hydrateSettingsUI(){
-      $("#driveFolderId").value = settings.folderId || "";
-      $("#googleClientId").value = settings.googleClientId || "";
-      $("#geminiKey").value = settings.geminiKey || "";
-      $("#toggleTesseract").checked = !!settings.useTesseract;
-      $("#toggleLLM").checked = !!settings.allowLLM;
-      $("#toggleAISuggest").checked = settings.autoAISuggest !== false;
-      $("#toggleAutoUpload").checked = settings.autoUpload !== false;
-      $("#toggleWeeklyBackup").checked = settings.weeklyBackup !== false;
-$("#toggleProxy").checked = !!settings.useProxy;
-$("#proxyUrl").value = settings.proxyUrl || "";
-      $("#toggleGuides").checked = settings.showGuides !== false;
-      $("#sheetId").value = settings.spreadsheetId || "";
-      $("#sheetName").value = settings.sheetName || "Sheet1";
-      document.body.classList.toggle('guides-hidden', !settings.showGuides);
-document.body.classList.toggle('proxy-enabled', !!settings.useProxy);
-    }
-    const dateInput = $("#expenseForm")?.elements?.namedItem("date");
-    if(dateInput && !dateInput.value) {dateInput.value = new Date().toISOString().slice(0, 10);}
-    hydrateSettingsUI();
-    switchTab(settings.lastTab || "dashboard");
-    persistAndRender();
-    maybeAutoRunWeeklyBackup(false);
-    if (window.lucide) {window.lucide.createIcons();} else {setTimeout(() => {if (window.lucide) {window.lucide.createIcons();}}, 1000);}
+    // Dashboard recent
+    function renderRecent(){ const el=$("#recentList"); if(!records.length){ el.innerHTML='<span class="meta">No records yet.</span>'; return; } el.innerHTML = records.slice(-6).reverse().map(r=>`<div style="padding:8px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><div>${(r.vendor||r.description||"Item")}</div><div class="meta">${r.date||""}</div></div><div class="meta">${r.category||"Uncategorized"} · ₱${Number(r.amount||0).toFixed(2)}</div></div>`).join(""); }
+    renderRecent();
+    $("#themeToggle")?.addEventListener("click", ()=>{ const m=document.documentElement.getAttribute("data-theme")||"auto"; const order=["auto","light","dark"]; const next=order[(order.indexOf(m)+1)%order.length]; document.documentElement.setAttribute("data-theme",next); toast("Theme: "+next); });
 
-    // Test helpers
-    window.__APP = {
-      getRecords: ()=>records.slice(),
-      clearRecords: ()=>{ records=[]; persistAndRender(); },
-      setSettings: (obj)=>{ settings={...settings,...obj}; storage.set("cx:settings",settings); hydrateSettingsUI(); },
-      fillFormAndAdd: (payload)=>{ fillForm(payload); $("#addToListBtn").click(); }
-    };
+    if(window.lucide) window.lucide.createIcons();
   })();
   </script>
 </body>

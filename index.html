@@ -5,32 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Cascade Expense Capture — Earthen Luxe</title>
 
-  <!-- 
-    CHANGE:
-    - Added the Google GSI client library. This is required for Google Sign-In
-    - to work so we can upload files to Google Drive.
-  -->
+  <!-- Google Identity Services for OAuth (Popup Flow - No Redirect URI needed) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <!-- 
-    FIX: Corrected 'xintegrity' back to 'integrity' on all script tags
-    so the libraries will load properly.
-  -->
-  <script 
-    src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js"
-    xintegrity="sha512-VSSYQpa/2YJMWs8EcwFfI18e+hfb15/Qp+RbV/2/J9j+74sS2/b1Tda/3VvS-OLcTfN9m2/1pQ0eK/ZnN6YGA=="
-    crossorigin="anonymous"
-  ></script>
-  <script 
-    src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"
-    xintegrity="sha512-gS2M0QcAGlOHsS0lqM/f1/bUa6OugmT5c/Vf7P1f/CSB/03B/iPgqEAhs26iYQvE1c1vN4Q/G1qT2iEa/tDq2A=="
-    crossorigin="anonymous"
-  ></script>
-  <script 
-    src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"
-    xintegrity="sha512-G+J0xdDOSbYf3DflTBER8eTyUmhDHYRs/FmJzIxVFJ2bBfFDj3WkwhU2k/c/jHh0gthv1o9RFhQx2/l2/wS/8A=="
-    crossorigin="anonymous"
-  ></script>
+  <!-- External Libraries (Removed broken integrity hashes for reliability) -->
+  <script src="https://cdn.jsdelivr.net/npm/zod@3.23.8/lib/index.umd.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" crossorigin="anonymous"></script>
 
   <style>
     :root{
@@ -62,7 +43,7 @@
     html,body{height:100%}
     body{
       margin:0;
-      padding-bottom: 80px; /* ADDED: Space for mobile nav */
+      padding-bottom: 80px;
       background:
         radial-gradient(1200px 600px at 10% 0%, rgba(198,172,142,.08), transparent 60%),
         radial-gradient(800px 800px at 100% 100%, rgba(94,80,63,.05), transparent 60%),
@@ -101,7 +82,7 @@
     .card:hover{transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.12);}
 
     #panel-form .card{background:linear-gradient(180deg, var(--surface-2), var(--surface-tint));backdrop-filter: blur(12px);border:1px solid color-mix(in oklab, var(--border), var(--accent-2) 30%);box-shadow:0 10px 30px rgba(0,0,0,.12)}
-    #panel-form .card:hover{transform: none; box-shadow: 0 10px 30px rgba(0,0,0,.12);} /* Disable for form card */
+    #panel-form .card:hover{transform: none; box-shadow: 0 10px 30px rgba(0,0,0,.12);}
 
     .card-h{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:900;color:var(--accent);font-size:clamp(14px, .6vw + .6rem, 18px); display: flex; align-items: center; gap: 8px;}
     .card-h-actions{display:flex;gap:8px;align-items:center;margin-left:auto}
@@ -213,7 +194,7 @@
       background: var(--surface-2);
       backdrop-filter: blur(10px);
       border-top: 1px solid var(--border);
-      display: none; /* Hidden by default */
+      display: none;
       align-items: stretch;
       z-index: 100;
     }
@@ -244,15 +225,15 @@
       border-radius: 50%;
       background: var(--accent);
       color: #fff;
-      display: none; /* Hidden by default */
+      display: none;
       align-items: center;
       justify-content: center;
       border: 2px solid #fff;
-      html[data-theme="dark"] & { border-color: var(--surface); }
       box-shadow: 0 8px 24px rgba(0,0,0,.2);
       cursor: pointer;
       z-index: 101;
     }
+    html[data-theme="dark"] .fab { border-color: var(--surface); }
 
     @media(max-width: 768px) {
       .tabs { display: none; }
@@ -288,7 +269,7 @@
   <header>
     <div class="topbar wrap">
       <div class="brand"><i data-lucide="leaf"></i> Cascade Expense Capture
-        <button id="quickGuideBtn" class="btn-s quick" title="Show Quick Guide" aria-controls="guideModal"><i data-lucide="help-circle"></i> Quick Guide</button>
+        <button id="quickGuideBtn" class="btn-s quick" title="Show Quick Guide"><i data-lucide="help-circle"></i> Quick Guide</button>
       </div>
       <div class="top-actions">
         <button id="themeToggle" class="btn-s" title="Toggle theme"><i data-lucide="sun-moon"></i> <span>Theme</span></button>
@@ -341,7 +322,7 @@
           </div>
         </div>
         <div class="card-b">
-          <form id="expenseForm" autocomplete="off" novisaveSettingscate>
+          <form id="expenseForm" autocomplete="off" novalidate>
             <label><span class="label">Date *</span><input name="date" type="date" class="input" required></label>
             <label><span class="label">Property *</span><input name="property" class="input" placeholder="e.g., Cascade Hideaway_BRIA"></label>
             <label class="ac-wrap"><span class="label">Category *</span>
@@ -437,10 +418,6 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <div class="meta"><span id="recordCount">0</span> items <span id="countAll" class="meta"></span> · Total <span id="recordTotal" class="num">₱0.00</span></div>
             <div style="display:flex;gap:8px">
-              <!-- 
-                CHANGE:
-                - Added an "Upload to Drive" button to trigger the new functionality.
-              -->
               <button id="uploadDriveBtn" class="btn-s"><i data-lucide="upload-cloud"></i> Upload to Drive</button>
               <button id="exportJsonBtn" class="btn-s"><i data-lucide="file-json"></i> Export JSON</button>
               <button id="exportCsvBtn" class="btn-s"><i data-lucide="file-text"></i> Export CSV</button>
@@ -472,10 +449,11 @@
         <div class="card-h"><i data-lucide="settings-2"></i> Settings</div>
         <div class="card-b">
           <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
-            <label><span class="label">Default Drive Folder ID *</span><input id="driveFolderId" class="input" placeholder="1ZVwc58gkaNWW8rw2tbbCUJRIQWhkPEnz"></label>
+            <label><span class="label">Default Drive Folder ID</span><input id="driveFolderId" class="input" placeholder="1ZVwc58gkaNWW8rw2tbbCUJRIQWhkPEnz"></label>
             <label><span class="label">Google Client ID *</span><input id="googleClientId" class="input" placeholder="Your-OAuth-Client-ID.apps.googleusercontent.com"></label>
             <div style="display:flex;gap:8px;align-items:end">
-              <button id="googleSignIn" class="btn"><i data-lucide="log-in"></i> Sign in</button><span id="googleUser" class="meta">Not signed in</span>
+              <button id="googleSignIn" class="btn"><i data-lucide="log-in"></i> Sign in to Google</button>
+              <span id="googleUser" class="meta">Not signed in</span>
             </div>
             <label><span class="label">Gemini API Key (optional)</span><input id="geminiKey" class="input" placeholder="AIzaSy... (enables AI parsing)"></label>
             <label style="display:flex;gap:8px;align-items:center"><input id="toggleTesseract" type="checkbox"> <span>Use Tesseract (client OCR)</span></label>
@@ -485,7 +463,7 @@
               <button id="adminLogout" class="btn-s"><i data-lucide="log-out"></i> Admin Sign out</button>
             </div>
             <div class="meta" style="grid-column:1/-1">
-              <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> <strong>Security notice:</strong> All data stays in your browser’s <code>localStorage</code>. No data leaves your device unless you export it or upload to your own Google Drive.
+              <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> <strong>Security:</strong> All data stays in your browser's <code>localStorage</code>. No data leaves your device unless you export or upload.
             </div>
           </div>
         </div>
@@ -494,16 +472,16 @@
   </main>
 
   <footer class="wrap">
-    <div class="fine" aria-label="Security notice">
-      <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> This internal tool is exclusively for Cascade Hideaway. Copying, redistribution, or tampering is prohibited.
+    <div class="fine">
+      <i data-lucide="lock" style="width: 1em; height: 1em; vertical-align: -2px;"></i> This internal tool is exclusively for Cascade Hideaway.
     </div>
   </footer>
 
   <!-- Rules Modal -->
-  <div id="rulesModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+  <div id="rulesModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="modal-card" tabindex="-1">
       <div class="card-h">
-        <i data-lucide="list-filter"></i> <span id="rulesTitle">Auto-categorization Rules</span>
+        <i data-lucide="list-filter"></i> <span>Auto-categorization Rules</span>
         <div class="card-h-actions">
           <button id="rulesClose" class="btn-s"><i data-lucide="x"></i> Close</button>
         </div>
@@ -525,51 +503,53 @@
   </div>
 
   <!-- Quick Guide Modal -->
-  <div id="guideModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+  <div id="guideModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="modal-card" tabindex="-1">
       <div class="card-h">
-        <i data-lucide="help-circle"></i> <span id="guideTitle">Quick Guide</span>
+        <i data-lucide="help-circle"></i> <span>Quick Guide</span>
         <button id="guideClose" class="btn-s card-h-actions"><i data-lucide="x"></i> Close</button>
       </div>
       <div class="card-b">
         <ol class="meta" style="margin:0; padding-left:18px">
-          <li>Go to <strong>Settings</strong> and enter your Google Client ID and Drive Folder ID. Click Save.</li>
-          <li>Click <strong>Sign in</strong> and authorize the app to access your Google Drive.</li>
-          <li>(Optional) Add your Gemini API Key in Settings and check "Allow LLM network" for AI-powered parsing.</li>
-          <li>Go to <strong>Form</strong> or <strong>Capture</strong> to add expenses.</li>
-          <li>Go to <strong>Batch</strong> to review, validate, and export.</li>
-          <li>Click <strong>Upload to Drive</strong> to send your `expenses.json` and `expenses.csv` files to your designated folder.</li>
+          <li>Go to <strong>Settings</strong> and enter your Google Client ID (from Google Cloud Console).</li>
+          <li>In Google Cloud Console, set <strong>Authorized JavaScript origins</strong> to <code>https://cascadereservations-del.github.io</code></li>
+          <li>Click <strong>Sign in to Google</strong> here - a popup will appear (no redirect needed!).</li>
+          <li>(Optional) Add Gemini API Key for AI-powered parsing.</li>
+          <li>Use <strong>Form</strong> or <strong>Capture</strong> to add expenses.</li>
+          <li>Review in <strong>Batch</strong>, then <strong>Upload to Drive</strong>.</li>
         </ol>
       </div>
     </div>
   </div>
 
-  <!-- Toast area -->
   <div id="toastArea" aria-live="polite" aria-atomic="true"></div>
 
-  <nav class="mobile-nav" role="navigation" aria-label="Main navigation">
-    <button class="mobile-tab" id="mobile-tab-dashboard" data-tab="dashboard" aria-selected="true" role="tab">
+  <nav class="mobile-nav">
+    <button class="mobile-tab" id="mobile-tab-dashboard" data-tab="dashboard" aria-selected="true">
       <i data-lucide="layout-grid"></i><span>Dashboard</span>
     </button>
-    <button class="mobile-tab" id="mobile-tab-capture" data-tab="capture" aria-selected="false" role="tab">
+    <button class="mobile-tab" id="mobile-tab-capture" data-tab="capture" aria-selected="false">
       <i data-lucide="camera"></i><span>Capture</span>
     </button>
-    <button class="mobile-tab" id="mobile-tab-batch" data-tab="batch" aria-selected="false" role="tab">
+    <button class="mobile-tab" id="mobile-tab-batch" data-tab="batch" aria-selected="false">
       <i data-lucide="package"></i><span>Batch</span>
     </button>
-    <button class="mobile-tab" id="mobile-tab-settings" data-tab="settings" aria-selected="false" role="tab">
+    <button class="mobile-tab" id="mobile-tab-settings" data-tab="settings" aria-selected="false">
       <i data-lucide="settings"></i><span>Settings</span>
     </button>
   </nav>
-  <button class="fab" id="fab-add" title="Add new expense" aria-label="Add new expense">
+  <button class="fab" id="fab-add" aria-label="Add new expense">
     <i data-lucide="plus"></i>
   </button>
 
   <script>
   (()=>{
+    'use strict';
+
     const $ = (s,root=document)=>root.querySelector(s);
     const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
     const fmtMoney = (n,ccy="PHP") => new Intl.NumberFormat(undefined,{style:"currency",currency:ccy||"PHP"}).format(Number(n||0));
+    const escapeHtml = (s) => (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
     const storage = {
       get(k,f){ try{ return JSON.parse(localStorage.getItem(k)) ?? f; }catch{return f} },
@@ -577,7 +557,6 @@
       del(k){ try{ localStorage.removeItem(k); }catch{} }
     };
 
-    // ===== Data =====
     let records = storage.get("cx:records", []).map(r=>({property:"", ...r}));
     let settings = storage.get("cx:settings", {
       folderId:"",googleClientId:"",geminiKey:"",useTesseract:false,allowLLM:false,lastTab:"dashboard",theme:"auto"
@@ -586,24 +565,15 @@
     let rules = storage.get("cx:rules", []);
     let rulesAllowOverwrite = storage.get("cx:rulesAllowOverwrite", false);
     
-    // CHANGE: Added state for Google OAuth
-    let oauth = { accessToken: null, expiresAt: 0 };
-    
-    // ===== Theme =====
-    applyTheme(settings.theme||"auto");
-    $("#themeToggle")?.addEventListener("click", () => {
-      const order=["auto","light","dark"];
-      const next=order[(order.indexOf(settings.theme||"auto")+1)%order.length];
-      settings.theme=next; storage.set("cx:settings", settings); applyTheme(next);
-      toast(`Theme: ${next}`, {timeout:1200});
-    });
+    let oauth = { accessToken: null, expiresAt: 0, tokenClient: null };
+
     function applyTheme(mode){
       document.documentElement.setAttribute("data-theme", mode||"auto");
       const btn = $("#themeToggle");
       if(btn) {
         const icon = btn.querySelector("i");
         const span = btn.querySelector("span");
-        let iconName = "sun-moon"; // auto
+        let iconName = "sun-moon";
         if (mode === "dark") iconName = "moon";
         if (mode === "light") iconName = "sun";
         if (icon) icon.setAttribute("data-lucide", iconName);
@@ -611,60 +581,24 @@
         if (icon && window.lucide) window.lucide.createIcons({ nodes: [icon] });
       }
     }
+    
+    applyTheme(settings.theme||"auto");
+    
+    $("#themeToggle")?.addEventListener("click", () => {
+      const order=["auto","light","dark"];
+      const next=order[(order.indexOf(settings.theme||"auto")+1)%order.length];
+      settings.theme=next; storage.set("cx:settings", settings); applyTheme(next);
+      toast(`Theme: ${next}`, {timeout:1200});
+    });
 
-    const batchEmptyState = `
-      <tr>
-        <td colspan="7">
-          <div class="empty-state">
-            <i data-lucide="archive"></i>
-            <div class="empty-state-h">No Records Found</div>
-            <p class="empty-state-p meta">Try adding an expense from the 'Form' tab or adjusting your filters.</p>
-            <button class="btn-s" id="emptyGoToForm">
-              <i data-lucide="file-plus-2"></i> Add First Expense
-            </button>
-          </div>
-        </td>
-      </tr>`;
-    const catEmptyState = `
-      <div class="empty-state">
-        <i data-lucide="pie-chart"></i>
-        <div class="empty-state-h">No Category Data</div>
-        <p class="empty-state-p meta">Add expenses and your category spending will appear here.</p>
-      </div>`;
-    const recentEmptyState = `
-      <div class="empty-state">
-        <i data-lucide="activity"></i>
-        <div class="empty-state-h">No Recent Activity</div>
-        <p class="empty-state-p meta">Your 6 most recent expenses will show up here.</p>
-      </div>`;
+    const batchEmptyState = `<tr><td colspan="7"><div class="empty-state"><i data-lucide="archive"></i><div class="empty-state-h">No Records Found</div><p class="empty-state-p meta">Try adding an expense from the 'Form' tab.</p><button class="btn-s" id="emptyGoToForm"><i data-lucide="file-plus-2"></i> Add First Expense</button></div></td></tr>`;
+    const catEmptyState = `<div class="empty-state"><i data-lucide="pie-chart"></i><div class="empty-state-h">No Category Data</div><p class="empty-state-p meta">Add expenses and your category spending will appear here.</p></div>`;
+    const recentEmptyState = `<div class="empty-state"><i data-lucide="activity"></i><div class="empty-state-h">No Recent Activity</div><p class="empty-state-p meta">Your 6 most recent expenses will show up here.</p></div>`;
 
-    // ===== Tabs =====
-    function switchTab(id){
-      if(id==="settings" && !isAdmin){
-        const pwd = prompt("Enter admin password to access Settings:");
-        if(pwd!=="cascadeadmin888"){ toast("Access denied"); return; }
-        isAdmin = true; storage.set("cx:isAdmin", true);
-      }
-      $$(".tab, .mobile-tab").forEach(b=>{
-        const a=b.dataset.tab===id; 
-        b.setAttribute("aria-selected", a?"true":"false");
-      });
-      ["dashboard","form","capture","batch","settings"].forEach(t=>{ const p=$("#panel-"+t); if(p) p.classList.toggle("hidden", t!==id); });
-      settings.lastTab=id; storage.set("cx:settings",settings);
-      if(id==="dashboard") renderDashboard();
-      if(id==="batch") { renderTable(); }
-    }
-    $$(".tab").forEach(b=> b.addEventListener("click",()=>switchTab(b.dataset.tab)));
-    $$(".mobile-tab").forEach(b=> b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
-    $("#fab-add")?.addEventListener("click", ()=> switchTab("form"));
-    switchTab(settings.lastTab || "dashboard");
-
-    // ===== Toasts (with Undo) =====
     let statusTimer=null;
     function toast(msg, opts={}){
       const status=$("#appStatus");
       if(status){ status.textContent=msg; clearTimeout(statusTimer); statusTimer=setTimeout(()=>status.textContent="", (opts.timeout || 2000) - 200); }
-
       const area=$("#toastArea"); if(!area) return;
       const t=document.createElement("div"); t.className="toast"; t.role="status";
       const body=document.createElement("div"); body.textContent=msg; t.appendChild(body);
@@ -683,21 +617,25 @@
       if(timeout>0){ setTimeout(()=>{ if(t.isConnected) area.removeChild(t); }, timeout); }
     }
 
-    // ===== Keyboard shortcuts =====
-    document.addEventListener("keydown",(e)=>{
-      const isInput = !!e.target.closest("input,textarea,select");
-      const onForm = $("#panel-form") && !$("#panel-form").classList.contains("hidden");
+    function switchTab(id){
+      if(id==="settings" && !isAdmin){
+        const pwd = prompt("Enter admin password:");
+        if(pwd!=="cascadeadmin888"){ toast("Access denied"); return; }
+        isAdmin = true; storage.set("cx:isAdmin", true);
+      }
+      $$(".tab, .mobile-tab").forEach(b=>{
+        const a=b.dataset.tab===id; b.setAttribute("aria-selected", a?"true":"false");
+      });
+      ["dashboard","form","capture","batch","settings"].forEach(t=>{ const p=$("#panel-"+t); if(p) p.classList.toggle("hidden", t!==id); });
+      settings.lastTab=id; storage.set("cx:settings",settings);
+      if(id==="dashboard") renderDashboard();
+      if(id==="batch") renderTable();
+    }
+    
+    $$(".tab").forEach(b=> b.addEventListener("click",()=>switchTab(b.dataset.tab)));
+    $$(".mobile-tab").forEach(b=> b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
+    $("#fab-add")?.addEventListener("click", ()=> switchTab("form"));
 
-      if((e.ctrlKey||e.metaKey) && e.key==="Enter" && onForm){ e.preventDefault(); $("#addToListBtn")?.click(); }
-      if(e.altKey && (e.key==="v"||e.key==="V")){ e.preventDefault(); $("#validateBtn")?.click(); }
-      if(e.key==="?" || (e.shiftKey && e.key==="/")){ if(!isInput) { e.preventDefault(); toggleModal("#guideModal", true, $("#quickGuideBtn")); } }
-      if(e.altKey && (e.key==="f"||e.key==="F")){ e.preventDefault(); switchTab("form"); }
-      if(e.altKey && (e.key==="b"||e.key==="B")){ e.preventDefault(); switchTab("batch"); }
-      if((e.ctrlKey||e.metaKey) && (e.key==="k"||e.key==="K")){ e.preventDefault(); $("#expenseForm")?.elements?.namedItem("category")?.focus(); }
-      if(isInput) return;
-    });
-
-    // ===== Zod & Validation =====
     const zExport = (window.zod && (window.zod.z || window.zod)) || null;
     const z = zExport && zExport.object ? (window.zod.z || window.zod) : null;
     const schema = z ? z.object({
@@ -724,16 +662,21 @@
       validated: z.string().trim().optional(),
       validation_errors: z.string().trim().optional(),
     }) : null;
+    
     function validateRecord(rec){
       if(schema){ const r = schema.safeParse(rec); return r.success ? {ok:true,data:r.data} : {ok:false,errors:r.error.errors.map(e=>e.message)}; }
-      // Fallback validation if Zod fails to load (e.g., due to corrected integrity hash)
-      const errs=[]; if(!rec.date) errs.push("Date required"); if(!rec.property?.trim()) errs.push("Property required"); if(!rec.category?.trim()) errs.push("Category required");
-      const amt=Number(rec.amount); if(!(amt>0)) errs.push("Amount must be > 0"); if(!rec.currency?.trim()) errs.push("Currency required");
-      if(Number(rec.tax_amount)<0) errs.push("Tax must be ≥ 0"); if(Number(rec.tip_amount)<0) errs.push("Tip must be ≥ 0");
+      const errs=[];
+      if(!rec.date) errs.push("Date required");
+      if(!rec.property?.trim()) errs.push("Property required");
+      if(!rec.category?.trim()) errs.push("Category required");
+      const amt=Number(rec.amount);
+      if(!(amt>0)) errs.push("Amount must be > 0");
+      if(!rec.currency?.trim()) errs.push("Currency required");
+      if(Number(rec.tax_amount)<0) errs.push("Tax must be ≥ 0");
+      if(Number(rec.tip_amount)<0) errs.push("Tip must be ≥ 0");
       return {ok:errs.length===0,errors:errs,data:{...rec,amount:amt}};
     }
 
-    // ===== Rules =====
     function saveRules(){ storage.set("cx:rules", rules); }
     function isRegex(p){ return /^\/.*\/i?$/.test(p) || p.startsWith("^") || p.endsWith("$"); }
     function ruleMatches(text, pattern){
@@ -788,12 +731,10 @@
       });
       persistAndRender();
       toast(`Applied rules to ${records.length} item(s) · changed ${changed} · matched ${used}`, {
-        actionLabel:"Undo",
-        action:()=>{ records = prev; persistAndRender(); }
+        actionLabel:"Undo",action:()=>{ records = prev; persistAndRender(); }
       });
     }
 
-    // ===== Form =====
     function formToRec(){
       const f=$("#expenseForm"); const fd=new FormData(f); const rec=Object.fromEntries(fd.entries());
       rec.amount=Number(rec.amount||0); rec.tax_amount=Number(rec.tax_amount||0); rec.tip_amount=Number(rec.tip_amount||0);
@@ -803,31 +744,30 @@
     }
     function fillForm(r){ const f=$("#expenseForm"); for(const [k,v] of Object.entries(r)){ const el=f.elements.namedItem(k); if(!el) continue; el.value=(v??""); } }
     function validateCurrentForm(show){ const rec=formToRec(); const v=validateRecord(rec); if(v.ok){ $("#formErrors").textContent=""; toast("Form is valid",{timeout:1200}); return true; } else { if(show) $("#formErrors").textContent=v.errors.join(" · "); return false; } }
+    
     $("#validateBtn")?.addEventListener("click",()=>validateCurrentForm(true));
     $("#addToListBtn")?.addEventListener("click",()=>{
       if(!validateCurrentForm(true)) return;
       const rec=formToRec(); rec.processed_at=new Date().toISOString();
       const v=validateRecord(rec); rec.validated=String(v.ok); rec.validation_errors=v.ok?"":(v.errors||[]).join("; ");
       records.push(rec); persistAndRender(); switchTab("batch");
-      toast("Added to list", {
-        actionLabel:"Undo",
-        action:()=>{ records.pop(); persistAndRender(); switchTab("form"); }
-      });
+      toast("Added to list", {actionLabel:"Undo",action:()=>{ records.pop(); persistAndRender(); switchTab("form"); }});
       const f=$("#expenseForm");
+      const keepProperty = f.elements.namedItem("property").value;
+      const keepCategory = f.elements.namedItem("category").value;
       ["date", "amount", "description", "notes", "vendor", "invoice_number", "reference_id"].forEach(name => {
         const el = f.elements.namedItem(name);
         if (el) el.value = (name === "tax_amount" || name === "tip_amount") ? "0" : "";
       });
-      // Set date to today
+      f.elements.namedItem("property").value = keepProperty;
+      f.elements.namedItem("category").value = keepCategory;
       f.elements.namedItem("date").value = new Date().toISOString().slice(0, 10);
       f.elements.namedItem("date").focus();
     });
     $("#expenseForm")?.elements?.namedItem("vendor")?.addEventListener("input", applyRulesToForm);
     $("#expenseForm")?.elements?.namedItem("description")?.addEventListener("input", applyRulesToForm);
 
-    // ===== Batch (sort & filter) =====
     function amountClass(a){ if(a>3000) return "num--red"; if(a>=500) return "num--yellow"; return "num--green"; }
-
     let tableSort = {key:"date", dir:"desc"};
     $$("#panel-batch thead th[data-sort]").forEach(th=>{
       th.addEventListener("click", ()=>{
@@ -841,13 +781,8 @@
     });
 
     const filterEls = {
-      text: $("#fltText"),
-      property: $("#fltProperty"),
-      category: $("#fltCategory"),
-      dateFrom: $("#fltDateFrom"),
-      dateTo: $("#fltDateTo"),
-      amtMin: $("#fltAmtMin"),
-      amtMax: $("#fltAmtMax"),
+      text: $("#fltText"),property: $("#fltProperty"),category: $("#fltCategory"),
+      dateFrom: $("#fltDateFrom"),dateTo: $("#fltDateTo"),amtMin: $("#fltAmtMin"),amtMax: $("#fltAmtMax"),
     };
     Object.values(filterEls).forEach(el=> el?.addEventListener("input", ()=>renderTable()));
     $("#fltClear")?.addEventListener("click", ()=>{
@@ -885,7 +820,7 @@
       return arr.slice().sort((a,b)=>{
         let va=a[k]??"", vb=b[k]??"";
         if(k==="amount"){ va=Number(va||0); vb=Number(vb||0); return (va-vb)*dir; }
-        if(k==="date"){ return collator.compare(va, vb)*dir * -1; } // Dates should default desc
+        if(k==="date"){ return collator.compare(va, vb)*dir * -1; }
         return collator.compare(String(va), String(vb))*dir;
       });
     }
@@ -900,7 +835,6 @@
       $("#recordCount").textContent=String(rows.length);
       $("#countAll").textContent = rows.length !== records.length ? ` of ${records.length}` : "";
       const totalEl=$("#recordTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className="num "+amountClass(sum);
-
       if(!rows.length){ 
         tbody.innerHTML=batchEmptyState; 
         const btn = tbody.querySelector("#emptyGoToForm");
@@ -911,7 +845,7 @@
       const fragment = document.createDocumentFragment();
       rows.forEach((r,i)=>{
         const tr=document.createElement("tr");
-        const originalIndex = records.indexOf(r); // Get index from original array for editing/deleting
+        const originalIndex = records.indexOf(r);
         tr.innerHTML=`
           <td>${r.date||""}</td>
           <td>${escapeHtml(r.property||"")}</td>
@@ -919,8 +853,10 @@
           <td>${escapeHtml(r.category||"")}</td>
           <td class="num ${amountClass(Number(r.amount||0))}">${fmtMoney(r.amount,r.currency)}</td>
           <td>${r.validated==="true"?'<span class="meta" style="display:flex; align-items:center; gap: 4px;"><i data-lucide="check" style="width: 1em; height: 1em; color: var(--ok);"></i> OK</span>':'<span class="meta" style="display:flex; align-items:center; gap: 4px;"><i data-lucide="alert-triangle" style="width: 1em; height: 1em; color: var(--warn);"></i> Needs fix</span>'}</td>
-          <td><button class="btn-s" data-action="edit" data-id="${originalIndex}" title="Edit"><i data-lucide="edit-3"></i></button>
-              <button class="btn-s" data-action="delete" data-id="${originalIndex}" title="Delete"><i data-lucide="trash-2"></i></button></td>`;
+          <td>
+            <button class="btn-s" data-action="edit" data-id="${originalIndex}" title="Edit"><i data-lucide="edit-3"></i></button>
+            <button class="btn-s" data-action="delete" data-id="${originalIndex}" title="Delete"><i data-lucide="trash-2"></i></button>
+          </td>`;
         fragment.appendChild(tr);
       });
       tbody.appendChild(fragment);
@@ -935,15 +871,6 @@
       }
       if(action==="edit"){ const r=records[idx]; fillForm(r); switchTab("form"); toast("Loaded into form",{timeout:1200}); }
     });
-
-    function updateStats(){
-      const filtered = filteredRecords();
-      $("#recordCount").textContent=String(filtered.length);
-      $("#countAll").textContent = filtered.length !== records.length ? ` of ${records.length}` : "";
-      const sum=filtered.reduce((a,r)=>a+Number(r.amount||0),0);
-      const ccy=records[0]?.currency||"PHP";
-      const totalEl=$("#recordTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className = "num " + amountClass(sum);
-    }
 
     function validateAll(){
       let changed=0;
@@ -966,16 +893,11 @@
     $("#validateAllBtn")?.addEventListener("click", validateAll);
     $("#dedupeBtn")?.addEventListener("click", dedupe);
     $("#clearAllBtn")?.addEventListener("click", ()=>{ if(confirm("Clear all records?")){ const prev = records.slice(); records=[]; persistAndRender(); toast("Cleared all",{actionLabel:"Undo", action:()=>{ records=prev; persistAndRender(); }}); }});
-    $("#exportJsonBtn")?.addEventListener("click", ()=>download("expenses.json", new Blob([JSON.stringify(records,null,2)], {type:"application/json;charset=utf-8"})));
-    $("#exportCsvBtn")?.addEventListener("click", ()=>download("expenses.csv", csvBlob(records)));
     $("#applyRulesAllBtn")?.addEventListener("click", applyRulesToAll);
     $("#rulesOverwriteToggle")?.addEventListener("change", (e)=>{
       rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite);
     });
     $("#rulesOverwriteToggle").checked = !!rulesAllowOverwrite;
-    
-    // CHANGE: Added wiring for the new Drive Upload button
-    $("#uploadDriveBtn")?.addEventListener("click", uploadAllToDrive);
 
     function csvBlob(data){
       const cols=["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","created_at","processed_at"];
@@ -985,486 +907,80 @@
     }
     function csvCell(v){ const s=(v??"").toString().replace(/"/g,'""'); return /[",\r\n]/.test(s)?`"${s}"`:s; }
     function download(name,blob){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},0); }
+    $("#exportJsonBtn")?.addEventListener("click", ()=>download("expenses.json", new Blob([JSON.stringify(records,null,2)], {type:"application/json;charset=utf-8"})));
+    $("#exportCsvBtn")?.addEventListener("click", ()=>download("expenses.csv", csvBlob(records)));
 
-    // ===== Capture + OCR + Gemini =====
-    $("#fileInput")?.addEventListener("change", onFiles);
-    document.addEventListener("dragover", e=>e.preventDefault());
-    document.addEventListener("drop", e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
-    $("#parsePasteBtn")?.addEventListener("click", parseFromPaste);
-    function onFiles(e){ handleFiles(e.target.files); e.target.value=""; }
-    
-    async function handleFiles(fileList){
-      if(!fileList?.length) return; const files=Array.from(fileList);
-      const container=$("#ingestPreview"); container.innerHTML="";
-      for(const f of files){
-        // We'll just process images for now. PDF processing is more complex.
-        if(settings.useTesseract && f.type.startsWith("image/")){ await processImageWithOCR(f, container); }
-        else{
-          const row=document.createElement("div"); row.className="meta"; row.style.padding="8px";
-          row.innerHTML=`<i data-lucide="file" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> ${escapeHtml(f.name)} <span class="meta">(${(f.size/1024).toFixed(1)} KB) (non-image, not processed)</span>`;
-          container.appendChild(row);
-        }
+    function initGoogleAuth() {
+      if(!settings.googleClientId?.trim()) {
+        toast("Google Client ID not set in Settings");
+        return false;
       }
-      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', container) });
-      toast(`${files.length} file(s) ingested`,{timeout:1400});
-    }
-    
-    async function processImageWithOCR(file, container){
-      const id=Math.random().toString(36).slice(2);
-      const card=document.createElement("div"); card.className="card"; card.style.marginBottom="10px";
-      card.innerHTML=`
-        <div class="card-b">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div style="font-weight:700; display: flex; align-items: center; gap: 8px;"><i data-lucide="image"></i> ${escapeHtml(file.name)}</div>
-            <div class="meta">image OCR</div>
-          </div>
-          <div class="bar"><span id="bar-${id}" style="width:0%; transition: width 0.2s ease;"></span></div>
-          <div id="txt-${id}" class="meta" style="margin-top:8px; max-height: 100px; overflow-y: auto;">Recognizing…</div>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="use-${id}" class="btn-s" disabled><i data-lucide="file-pen-line"></i> Parse into form</button>
-            <button id="copy-${id}" class="btn-s" disabled><i data-lucide="clipboard"></i> Copy text</button>
-          </div>
-        </div>`;
-      container.appendChild(card);
-      if(window.lucide) window.lucide.createIcons({ nodes: [card] });
-      try{
-        // FIX: Check if Tesseract is loaded, which might fail due to integrity hash
-        if (typeof Tesseract === 'undefined') {
-          throw new Error("Tesseract.js failed to load. Check integrity hash.");
-        }
-        const progressBar=$("#bar-"+id); const textEl=$("#txt-"+id);
-        const res=await Tesseract.recognize(file,"eng",{logger:(m)=>{
-          if(m.status==="recognizing text"){ const p=Math.max(0,Math.min(1,m.progress||0)); progressBar.style.width=(p*100).toFixed(0)+"%"; }
-        }});
-        const text=(res?.data?.text||"").trim(); textEl.textContent = text ? (text.length>500?text.slice(0,500)+"…":text) : "(no text)";
-        const useBtn=$("#use-"+id), copyBtn=$("#copy-"+id); useBtn.disabled=!text; copyBtn.disabled=!text;
-        
-        // CHANGE: Modified to use the new parseFromText function
-        useBtn.addEventListener("click",()=> parseFromText(text, 'ocr', file.name));
-        copyBtn.addEventListener("click", async()=>{ try{ 
-          // Use execCommand as a fallback for clipboard in iFrames
-          const ta = document.createElement("textarea");
-          ta.value = text;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          ta.remove();
-          toast("Copied OCR text",{timeout:1200}); 
-        }catch{} });
-      }catch(err){ 
-        console.error("OCR Error:", err);
-        $("#txt-"+id).textContent=`OCR failed: ${err.message}`; 
-        $("#txt-"+id).style.color = "var(--bad)";
+      if(typeof google === 'undefined' || !google.accounts?.oauth2) {
+        toast("Google auth library not loaded yet. Try again.");
+        return false;
       }
-    }
-    
-    // CHANGE: Modified to use the new parseFromText function
-    function parseFromPaste(){
-      const text=($("#pasteBox").value||"").trim(); if(!text){ toast("Nothing to parse",{timeout:1200}); return; }
-      parseFromText(text, 'paste', '');
-    }
-    
-    // CHANGE: This is the new combined parsing function
-    async function parseFromText(text, sourceType, sourceFilename) {
-      let rec = roughParse(text);
-      rec.source_type = sourceType;
-      rec.source_filename = sourceFilename;
-
-      if (settings.allowLLM && settings.geminiKey) {
-        toast("Parsing with AI... (may take a moment)", { timeout: 3000 });
+      if(!oauth.tokenClient) {
         try {
-          const llm = await geminiParse(text, settings.geminiKey);
-          // Merge, but keep key fields from rough parse if LLM misses them
-          rec = { 
-            ...rec, 
-            ...llm, 
-            amount: llm.amount || rec.amount,
-            date: llm.date || rec.date,
-            source_type: sourceType, 
-            source_filename: sourceFilename 
-          };
-        } catch (e) {
-          console.error("Gemini parse failed:", e);
-          toast("AI parse failed, using basic parser.", { timeout: 2000 });
+          oauth.tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: settings.googleClientId,
+            scope: 'https://www.googleapis.com/auth/drive.file',
+            callback: (response) => {
+              if (response.error) {
+                console.error('OAuth Error:', response);
+                toast(`Auth failed: ${response.error}`);
+                oauth.accessToken = null;
+                $("#googleUser").textContent = 'Auth failed';
+              } else {
+                oauth.accessToken = response.access_token;
+                oauth.expiresAt = Date.now() + (response.expires_in * 1000) - 60000;
+                $("#googleUser").textContent = 'Authorized ✓';
+                toast("Google Drive authorized", {timeout:2000});
+              }
+            },
+          });
+        } catch(e) {
+          console.error('Failed to init token client:', e);
+          toast("Failed to initialize Google auth");
+          return false;
         }
       }
-      
-      const { rec: rec2 } = applyRules(rec, rulesAllowOverwrite);
-      fillForm(rec2);
-      switchTab("form");
-      toast("Parsed into form", { timeout: 1400 });
+      return true;
     }
     
-    /**
-     * @param {string} text - The raw text to parse.
-     * @param {string} apiKey - The Google Gemini API key.
-     * @returns {Promise<Object>} A promise that resolves to a partial expense object.
-     */
-    async function geminiParse(text, apiKey) {
-      // FIX: Use the newer, correct model name
-      const model = "gemini-2.5-flash-preview-09-2025";
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      
-      const prompt = `
-You are an expert financial assistant. Extract expense details from the following text and return ONLY a valid JSON object.
-If a value isn't found, omit the key.
-Use this format:
-{
-  "date": "YYYY-MM-DD", 
-  "vendor": "Vendor Name", 
-  "description": "Short description", 
-  "category": "Expense Category", 
-  "amount": 1234.50, 
-  "currency": "PHP", 
-  "invoice_number": "INV123"
-}
-
-Context:
-- Today is ${new Date().toLocaleDateString('en-CA')}.
-- Default currency is PHP unless specified.
-- "date" MUST be in YYYY-MM-DD format.
-
-Text to parse:
-"""
-${text.slice(0, 4000)}
-"""
-`.trim();
-
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { 
-          temperature: 0.1, 
-          topP: 0.1,
-          responseMimeType: "application/json",
-        },
-      };
-
-      try {
-        const resp = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!resp.ok) {
-          const errBody = await resp.text();
-          console.error("Gemini API Error:", resp.status, errBody);
-          throw new Error(`API failed: ${resp.status}`);
-        }
-
-        const data = await resp.json();
-        const textOut = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        
-        try { 
-          const parsed = JSON.parse(textOut);
-          // Ensure amount is a number
-          if(parsed.amount) parsed.amount = Number(parsed.amount);
-          return parsed;
-        } catch (e) { 
-          console.error("Failed to parse Gemini JSON response:", textOut, e);
-          return {}; // Return empty object on JSON parse failure
-        }
-      } catch (e) {
-        console.error("Fetch to Gemini failed:", e);
-        return {}; // Return empty object on network failure
+    async function ensureDriveToken() {
+      const now = Date.now();
+      if (oauth.accessToken && now < oauth.expiresAt) {
+        return oauth.accessToken;
       }
-    }
-
-    function roughParse(text){
-      const amtMatch = text.match(/(?:PHP|₱)\s?([\d,]+(?:\.\d{2})?)/i) || text.match(/\b([\d,]+(?:\.\d{2})?)\b/);
-      const dateMatch = text.match(/\b(20\d{2}[-/]\d{1,2}[-/]\d{1,2})\b/) || text.match(/\b(\d{1,2}[-/]\d{1,2}[-/](?:20)?\d{2})\b/);
-      const vendorMatch = text.match(/(?:from|at|merchant|vendor)[:\s]+([^\n,]+)/i) || text.match(/^\s*([A-Za-z][A-Za-z0-9 &'.-]{2,})/m);
-      const amount = amtMatch ? Number(amtMatch[1].replace(/,/g,"")) : 0;
-      const dateISO = dateMatch ? toISO(dateMatch[1]) : (new Date().toISOString().slice(0,10));
-      const vendor = vendorMatch ? vendorMatch[1].trim() : "";
-      return {
-        date: dateISO, property:"", vendor, description:"", category:"", subcategory:"",
-        amount, currency:"PHP", payment_method:"", invoice_number:"", reference_id:"",
-        tax_amount:0, tip_amount:0, location:"", notes: text.length>140? text.slice(0,140)+"…" : text,
-        created_at:new Date().toISOString(), processed_at:"", validated:"false", validation_errors:"",
-        source_type:"", source_filename:"", attachment_drive_file_id:"",
-      };
-    }
-    function toISO(s){
-      try {
-        const n=s.replace(/[./]/g,"-"); const parts=n.split("-").map(x=>x.padStart(2,"0"));
-        if(parts[0].length===4) return [parts[0],parts[1],parts[2]].join("-"); // YYYY-MM-DD
-        if(parts[2].length===4) return [parts[2],parts[0],parts[1]].join("-"); // MM-DD-YYYY
-        if(parts[2].length===2) { // MM-DD-YY
-          const year = Number(parts[2]) > 50 ? "19" + parts[2] : "20" + parts[2];
-          return [year, parts[0], parts[1]].join("-");
+      if(!initGoogleAuth()) {
+        throw new Error('Google auth not initialized');
+      }
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Auth timeout'));
+        }, 60000);
+        const originalCallback = oauth.tokenClient.callback;
+        oauth.tokenClient.callback = (response) => {
+          clearTimeout(timeout);
+          originalCallback(response);
+          if (response.error) {
+            reject(new Error(response.error));
+          } else {
+            resolve(response.access_token);
+          }
+          oauth.tokenClient.callback = originalCallback;
+        };
+        try {
+          oauth.tokenClient.requestAccessToken({prompt: 'consent'});
+        } catch(e) {
+          clearTimeout(timeout);
+          reject(e);
         }
-        return "";
-      } catch { return ""; }
-    }
-    function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-
-    // ===== Rules UI + Modals (focus trap) =====
-    let lastInvoker=null;
-    function toggleModal(sel, show, invoker){
-      const m=$(sel); if(!m) return;
-      if(show){
-        lastInvoker = invoker || document.activeElement;
-        m.setAttribute("aria-hidden","false");
-        focusTrap(m);
-      }else{
-        m.setAttribute("aria-hidden","true");
-        lastInvoker && lastInvoker.focus?.();
-      }
-    }
-    function focusTrap(modal){
-      const card = modal.querySelector(".modal-card");
-      if(!card) return;
-      const focusables = ()=>$$('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])', card).filter(el=>!el.disabled && el.offsetParent!==null);
-      card.focus({preventScroll:true});
-      const trap = (e)=>{
-        if(e.key!=="Tab") return;
-        const f = focusables(); if(!f.length) { e.preventDefault(); return; }
-        const first=f[0], last=f[f.length-1];
-        if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
-        else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
-      };
-      const onClick=(e)=>{ if(e.target===modal) { toggleModal("#"+modal.id, false); cleanup(); } };
-      const onEsc=(e)=>{ if(e.key==="Escape") { toggleModal("#"+modal.id, false); cleanup(); } };
-      const cleanup = () => {
-        modal.removeEventListener("keydown", trap);
-        modal.removeEventListener("click", onClick);
-        document.removeEventListener("keydown", onEsc);
-      };
-      
-      modal.addEventListener("keydown", trap);
-      modal.addEventListener("click", onClick);
-      document.addEventListener("keydown", onEsc);
-    }
-
-    $("#openRulesBtn")?.addEventListener("click", (e)=>{ renderRules(); toggleModal("#rulesModal", true, e.currentTarget); });
-    $("#rulesClose")?.addEventListener("click", ()=>toggleModal("#rulesModal", false));
-    $("#quickGuideBtn")?.addEventListener("click", (e)=>toggleModal("#guideModal", true, e.currentTarget));
-    $("#guideClose")?.addEventListener("click", ()=>toggleModal("#guideModal", false));
-
-    $("#rulesAllowOverwrite").checked = !!rulesAllowOverwrite;
-    $("#rulesAllowOverwrite").addEventListener("change", (e)=>{
-      rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite);
-      const twin=$("#rulesOverwriteToggle"); if(twin){ twin.checked = rulesAllowOverwrite; }
-    });
-
-    $("#addRuleBtn")?.addEventListener("click", ()=>{
-      const r = { id: cryptoRandomId(), pattern:"", fields:{category:"", subcategory:"", property:"", vendor:"", notes:""}, enabled:true };
-      rules.push(r); saveRules(); renderRules();
-    });
-    $("#exportRulesBtn")?.addEventListener("click", ()=>{
-      download("rules.json", new Blob([JSON.stringify(rules,null,2)], {type:"application/json;charset=utf-8"}));
-    });
-    $("#importRulesFile")?.addEventListener("change", async (e)=>{
-      const f=e.target.files?.[0]; if(!f) return;
-      try{
-        const txt=await f.text(); const arr=JSON.parse(txt);
-        if(Array.isArray(arr)){ rules=arr; saveRules(); renderRules(); toast("Imported rules",{timeout:1400}); }
-        else toast("Invalid rules file");
-      }catch{ toast("Failed to import"); }
-      e.target.value="";
-    });
-
-    function cryptoRandomId(){ try{ return crypto.randomUUID(); }catch{ return Math.random().toString(36).slice(2); } }
-    function renderRules(){
-      const host=$("#rulesList"); if(!host) return; host.innerHTML="";
-      if(!rules.length){ 
-        host.innerHTML=`
-          <div class="empty-state">
-            <i data-lucide="list-filter"></i>
-            <div class="empty-state-h">No Rules Added</div>
-            <p class="empty-state-p meta">Click "Add Rule" to automatically categorize expenses based on vendor or description.</p>
-          </div>`;
-        if(window.lucide) window.lucide.createIcons({ nodes: [host] });
-        return; 
-      }
-      const fragment = document.createDocumentFragment();
-      rules.forEach((r,idx)=>{
-        const row=document.createElement("div"); row.className="rule-row";
-        row.innerHTML=`
-          <input class="input" placeholder="pattern (substring or /regex/i)" value="${escapeHtml(r.pattern||"")}" aria-label="pattern">
-          <input class="input" placeholder="category" value="${escapeHtml(r.fields?.category||"")}">
-          <input class="input" placeholder="subcategory" value="${escapeHtml(r.fields?.subcategory||"")}">
-          <input class="input" placeholder="property" value="${escapeHtml(r.fields?.property||"")}">
-          <div style="display:flex;gap:6px;justify-content:flex-end">
-            <label class="meta" title="enable/disable"><input type="checkbox" ${r.enabled?"checked":""}/> On</label>
-            <button class="btn-s" data-act="edit" title="Edit more fields"><i data-lucide="edit-3"></i></button>
-            <button class="btn-s" data-act="up" title="Move up" ${idx===0?'disabled':''}><i data-lucide="arrow-up"></i></button>
-            <button class="btn-s" data-act="down" title="Move down" ${idx===rules.length-1?'disabled':''}><i data-lucide="arrow-down"></i></button>
-            <button class="btn-s" data-act="del" title="Delete"><i data-lucide="trash-2"></i></button>
-          </div>`;
-        const [pat, cat, sub, prop] = row.querySelectorAll("input.input");
-        const en = row.querySelector('input[type="checkbox"]');
-        pat.addEventListener("input", ()=>{ r.pattern=pat.value; saveRules(); });
-        cat.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.category=cat.value; saveRules(); refreshCategoryDatalist(); });
-        sub.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.subcategory=sub.value; saveRules(); });
-        prop.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.property=prop.value; saveRules(); });
-        en.addEventListener("change", ()=>{ r.enabled=en.checked; saveRules(); });
-
-        row.querySelector('[data-act="edit"]').addEventListener("click", ()=>{
-          const vendor = prompt("Vendor alias (optional)", r.fields?.vendor||"") ?? "";
-          const notes = prompt("Notes (optional)", r.fields?.notes||"") ?? "";
-          r.fields = {...(r.fields||{}), vendor, notes};
-          saveRules(); toast("Rule fields updated",{timeout:1200});
-        });
-        row.querySelector('[data-act="up"]').addEventListener("click", ()=>{ if(idx>0){ const t=rules[idx-1]; rules[idx-1]=rules[idx]; rules[idx]=t; saveRules(); renderRules(); }});
-        row.querySelector('[data-act="down"]').addEventListener("click", ()=>{ if(idx<rules.length-1){ const t=rules[idx+1]; rules[idx+1]=rules[idx]; rules[idx]=t; saveRules(); renderRules(); }});
-        row.querySelector('[data-act="del"]').addEventListener("click", ()=>{ if(confirm("Delete this rule?")){ const prev=rules.slice(); rules.splice(idx,1); saveRules(); renderRules(); refreshCategoryDatalist(); toast("Rule deleted",{actionLabel:"Undo", action:()=>{ rules=prev; saveRules(); renderRules(); }}); }});
-        fragment.appendChild(row);
       });
-      host.appendChild(fragment);
-      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', host) });
     }
-
-    // ===== Settings =====
-    $("#adminLogout")?.addEventListener("click", ()=>{ storage.set("cx:isAdmin", false); isAdmin=false; toast("Admin signed out",{timeout:1200}); switchTab("dashboard"); });
-
-    $("#driveFolderId").value=settings.folderId||"";
-    $("#googleClientId").value=settings.googleClientId||"";
-    $("#geminiKey").value=settings.geminiKey||"";
-    $("#toggleTesseract").checked=!!settings.useTesseract;
-    $("#toggleLLM").checked=!!settings.allowLLM;
-    $("#saveSettings")?.addEventListener("click", ()=>{
-      settings.folderId=$("#driveFolderId").value.trim();
-      settings.googleClientId=$("#googleClientId").value.trim();
-      settings.geminiKey=$("#geminiKey").value.trim();
-      settings.useTesseract=$("#toggleTesseract").checked;
-      settings.allowLLM=$("#toggleLLM").checked;
-      storage.set("cx:settings",settings); toast("Settings saved",{timeout:1200});
-    });
     
-    // CHANGE: Added Google Sign-In wiring
-    $("#googleSignIn")?.addEventListener("click", () => ensureDriveToken(true));
-
-    // ===== Persist & dashboard =====
-    const DEFAULT_CATEGORIES = ["Utilities","Subscriptions","Services","Maintenance","Repairs","Supplies","Cleaning","Internet","Electricity","Water","Gas","Waste","Landscaping","Security","Insurance","Taxes","Fees","Professional Services","Software","Travel","Meals","Office","Other"];
-    function persistAndRender(){ storage.set("cx:records", records); renderTable(); updateStats(); refreshCategoryDatalist(); renderDashboard(); }
-    function allCategoryOptions(){
-      const set=new Set(DEFAULT_CATEGORIES);
-      records.forEach(r=>{ const c=(r.category||"").trim(); if(c) set.add(c); });
-      rules.forEach(r=>{ const c=(r?.fields?.category||"").trim(); if(c) set.add(c); });
-      return Array.from(set).sort((a,b)=>a.localeCompare(b));
-    }
-    function refreshPropertyDatalist(){
-      const dl=$("#propertyList"); if(!dl) return;
-      const set=new Set(records.map(r=>(r.property||"").trim()).filter(Boolean));
-      dl.innerHTML = Array.from(set).sort((a,b)=>a.localeCompare(b)).map(p=>`<option value="${escapeHtml(p)}"></option>`).join("");
-    }
-    function refreshCategoryDatalist(){
-      const dl=$("#categoryList"); if(!dl) return;
-      const opts = allCategoryOptions().map(c=>`<option value="${escapeHtml(c)}"></option>`).join("");
-      dl.innerHTML = opts;
-      buildCategoryMenu();
-    }
-    function renderDashboard(){
-      const count=records.length; const sum=records.reduce((a,r)=>a+Number(r.amount||0),0); const ccy=records[0]?.currency||"PHP";
-      const latest=records.map(r=>r.date).filter(Boolean).sort().pop();
-      const avg=count? sum/count : 0;
-      const topCat=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1])[0];
-
-      const totalEl=$("#kpiTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className="v num "+(sum>3000?"num--red":sum>=500?"num--yellow":"num--green");
-      $("#kpiCount").textContent=`${count} item${count!==1?"s":""}`;
-      $("#kpiLatest").textContent=latest||"—";
-      const avgEl=$("#kpiAvg"); avgEl.textContent=count?fmtMoney(avg,ccy):"—"; avgEl.className="v num "+(avg>3E3?"num--red":avg>=500?"num--yellow":"num--green");
-      $("#kpiTopCat").textContent=topCat? topCat[0] : "—";
-
-      const cont=$("#catBreakdown"); cont.innerHTML="";
-      const catTotals=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1]);
-      if(!catTotals.length){ 
-        cont.innerHTML=catEmptyState; 
-        if(window.lucide) window.lucide.createIcons({ nodes: [cont] });
-      }
-      else{
-        const max=Math.max(...catTotals.map(x=>x[1]));
-        catTotals.slice(0,8).forEach(([k,v])=>{
-          const row=document.createElement("div"); row.style.marginBottom="10px";
-          row.innerHTML=`<div style="display:flex;justify-content:space-between"><div>${escapeHtml(k)}</div><div class="meta">${fmtMoney(v,ccy)}</div></div>
-                         <div class="bar"><span style="width:${max? (v/max*100).toFixed(1):0}%"></span></div>`;
-          cont.appendChild(row);
-        });
-      }
-
-      const recent=$("#recentList"); recent.innerHTML="";
-      if(!records.length){ 
-        recent.innerHTML=recentEmptyState; 
-        if(window.lucide) window.lucide.createIcons({ nodes: [recent] });
-      }
-      else{
-        const fragment = document.createDocumentFragment();
-        records.slice(-6).reverse().forEach(r=>{
-          const item=document.createElement("div"); item.style.padding="8px 0"; item.style.borderBottom="1px solid var(--border)";
-          item.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center">
-            <div><i data-lucide="tag" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> <strong>${escapeHtml(r.category||"(category)")}</strong> · ${escapeHtml(r.property||"")}</div>
-            <div class="num ${amountClass(Number(r.amount||0))}">${fmtMoney(r.amount,r.currency)}</div>
-          </div>
-          <div class="meta" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-            <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="calendar" style="width: 1em; height: 1em;"></i> ${r.date||""}</span>
-            <span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="receipt" style="width: 1em; height: 1em;"></i> ${escapeHtml(r.vendor||"")}</span>
-          </div>
-          <div class="meta" style="padding-left: 20px;">${escapeHtml(r.description||"")}</div>`;
-          fragment.appendChild(item);
-        });
-        recent.appendChild(fragment);
-        if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', recent) });
-      }
-    }
-
-    // ===== Category Autocomplete =====
-    const catInput = $("#expenseForm")?.elements?.namedItem("category");
-    const catMenu = $("#catMenu");
-    function buildCategoryMenu(){
-      if(!catInput || !catMenu) return;
-      const items = allCategoryOptions();
-      catMenu.innerHTML = items.map((c,i)=>`<button type="button" class="ac-item" role="option" data-val="${escapeHtml(c)}" ${i===0?'aria-selected="true"':''}>${escapeHtml(c)}</button>`).join("");
-    }
-    function openCatMenu(){ buildCategoryMenu(); catMenu.classList.remove("hidden"); catInput.setAttribute("aria-expanded","true"); filterCatMenu(catInput.value); }
-    function closeCatMenu(){ catMenu.classList.add("hidden"); catInput.setAttribute("aria-expanded","false"); }
-    function filterCatMenu(q){
-      const ql=q.trim().toLowerCase();
-      const items=[...catMenu.querySelectorAll(".ac-item")];
-      let first=null;
-      items.forEach(btn=>{
-        const keep = !ql || btn.dataset.val.toLowerCase().includes(ql);
-        btn.style.display = keep ? "block" : "none";
-        if(keep && !first) first=btn;
-        btn.setAttribute("aria-selected","false");
-      });
-      if(first) first.setAttribute("aria-selected","true");
-    }
-    catInput?.addEventListener("focus", ()=>{ openCatMenu(); });
-    catInput?.addEventListener("click", ()=>{ openCatMenu(); });
-    catInput?.addEventListener("input", ()=>{ openCatMenu(); filterCatMenu(catInput.value); });
-    document.addEventListener("click",(e)=>{
-      if(!catMenu || !catInput) return;
-      if(e.target.closest("#catMenu")) return;
-      if(e.target===catInput) return;
-      closeCatMenu();
-    });
-    catMenu?.addEventListener("click",(e)=>{
-      const b=e.target.closest(".ac-item"); if(!b) return;
-      catInput.value = b.dataset.val || ""; closeCatMenu(); catInput.dispatchEvent(new Event("change",{bubbles:true}));
-    });
-    catInput?.addEventListener("keydown",(e)=>{
-      if(catMenu.classList.contains("hidden")) return;
-      const items=[...catMenu.querySelectorAll(".ac-item")].filter(i=>i.style.display!=="none");
-      let idx=items.findIndex(i=>i.getAttribute("aria-selected")==="true");
-      if(e.key==="ArrowDown"){ e.preventDefault(); idx=Math.min(items.length-1, idx+1); items.forEach(i=>i.setAttribute("aria-selected","false")); if(items[idx]) { items[idx].setAttribute("aria-selected","true"); items[idx].scrollIntoView({block:"nearest"}); } }
-      if(e.key==="ArrowUp"){ e.preventDefault(); idx=Math.max(0, idx-1); items.forEach(i=>i.setAttribute("aria-selected","false")); if(items[idx]) { items[idx].setAttribute("aria-selected","true"); items[idx].scrollIntoView({block:"nearest"}); } }
-      if(e.key==="Enter"){ e.preventDefault(); const sel=items[idx]; if(sel){ catInput.value=sel.dataset.val||""; closeCatMenu(); } }
-      if(e.key==="Escape"){ closeCatMenu(); }
-    });
-    
-    // ===== GOOGLE DRIVE & UPLOAD LOGIC =====
-    
-    /**
-     * Converts the records array to a CSV string.
-     * @param {Array<Object>} records - The array of expense records.
-     * @returns {string} The CSV data as a string.
-     */
     function recordsToCsvString(records) {
-      const cols = [
-        'date','vendor','description','category','subcategory','amount','currency','payment_method','invoice_number','reference_id','tax_amount','tip_amount','location','notes','source_type','source_filename','attachment_drive_file_id','created_at','processed_at','validated'
-      ];
+      const cols = ['date','vendor','description','category','subcategory','amount','currency','payment_method','invoice_number','reference_id','tax_amount','tip_amount','location','notes','source_type','source_filename','attachment_drive_file_id','created_at','processed_at','validated'];
       const escape = (v) => {
         const s = v == null ? '' : String(v);
         return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
@@ -1474,41 +990,22 @@ ${text.slice(0, 4000)}
       return rows.join('\n');
     }
     
-    /**
-     * Creates a multipart request body for Google Drive API.
-     */
     function makeMultipart(metadata, fileBlob) {
       const boundary = '-------314159265358979323846';
       const delimiter = `\r\n--${boundary}\r\n`;
       const close = `\r\n--${boundary}--`;
       const multipartBody = new Blob(
-        [
-          delimiter,
-          'Content-Type: application/json; charset=UTF-8\r\n\r\n',
-          JSON.stringify(metadata),
-          delimiter,
-          (fileBlob.type ? `Content-Type: ${fileBlob.type}\r\n\r\n` : 'Content-Type: application/json\r\n\r\n'),
-          fileBlob,
-          close,
-        ],
+        [delimiter,'Content-Type: application/json; charset=UTF-8\r\n\r\n',JSON.stringify(metadata),delimiter,(fileBlob.type ? `Content-Type: ${fileBlob.type}\r\n\r\n` : 'Content-Type: application/json\r\n\r\n'),fileBlob,close,],
         { type: `multipart/related; boundary=${boundary}` }
       );
       return { body: multipartBody, boundary };
     }
 
-    /**
-     * Uploads the full dataset as JSON and CSV to Google Drive.
-     * @param {Array<Object>} records - The array of expense records.
-     * @param {Object} opts - Options object.
-     * @param {string} opts.accessToken - The Google OAuth2 access token.
-     * @param {string|null} opts.folderId - The ID of the Drive folder to upload to.
-     */
     async function uploadDatasetToDrive(records, opts) {
       const { accessToken, folderId } = opts;
       const jsonStr = JSON.stringify(records, null, 2);
       const csvStr = recordsToCsvString(records);
       const timestamp = new Date().toISOString().replace(/:/g,'-').slice(0,19);
-
       const uploaded = [];
       for (const file of [
         { name: `expenses_${timestamp}.json`, mime: 'application/json', content: new Blob([jsonStr], { type: 'application/json' }) },
@@ -1531,73 +1028,14 @@ ${text.slice(0, 4000)}
       }
       return { mainFileId: uploaded[0].id, mainFileName: uploaded[0].name };
     }
-
-    /**
-     * Ensures a valid Google OAuth2 token is available.
-     * @param {boolean} [forcePrompt=false] - If true, forces the consent prompt.
-     * @returns {Promise<string>} A promise that resolves with the access token.
-     */
-    async function ensureDriveToken(forcePrompt = false) {
-      const now = Date.now();
-      if (oauth.accessToken && now < oauth.expiresAt - 60_000 && !forcePrompt) {
-        return oauth.accessToken;
-      }
-
-      const clientId = settings.googleClientId?.trim();
-      if (!clientId) {
-        toast("Error: Google Client ID not set in Settings.");
-        throw new Error('Google Client ID missing (Settings).');
-      }
-      
-      if (typeof google === 'undefined' || !google.accounts?.oauth2) {
-        toast("Error: Google auth library not loaded.");
-        throw new Error('Google auth library not loaded.');
-      }
-
-      const tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: 'https://www.googleapis.com/auth/drive.file', // Use .file scope to only access files created by this app
-        prompt: forcePrompt ? 'consent' : '',
-        callback: (resp) => {},
-      });
-
-      oauth.accessToken = await new Promise((resolve, reject) => {
-        tokenClient.callback = (resp) => {
-          if (resp.error) {
-            console.error("Google Auth Error:", resp);
-            reject(new Error(resp.error));
-          } else {
-            resolve(resp.access_token);
-          }
-        };
-        // Always prompt for consent if forcing, otherwise let Google decide
-        tokenClient.requestAccessToken({ prompt: forcePrompt ? 'consent' : '' });
-      });
-
-      oauth.expiresAt = Date.now() + 55 * 60 * 1000; // Token lasts ~1 hour, refresh after 55 min
-      $("#googleUser").textContent = 'Authorized';
-      toast("Google Drive authorized.", { timeout: 2000 });
-      return oauth.accessToken;
-    }
-
-    /**
-     * Main function to trigger the full upload process.
-     */
+    
     async function uploadAllToDrive() {
       if (!records.length) {
-        toast("No records to upload.");
+        toast("No records to upload");
         return;
       }
-      
       const folderId = settings.folderId?.trim() || null;
-      if (!folderId) {
-        toast("Error: Drive Folder ID not set in Settings.");
-        switchTab("settings");
-        return;
-      }
-      
       toast("Starting Drive upload...", { timeout: 2000 });
-      
       try {
         const token = await ensureDriveToken();
         const result = await uploadDatasetToDrive(records, { accessToken: token, folderId });
@@ -1605,39 +1043,219 @@ ${text.slice(0, 4000)}
       } catch (e) {
         console.error("Drive upload failed:", e);
         toast(`Drive upload failed: ${e.message}`);
-        oauth.accessToken = null; // Force re-auth next time
+        oauth.accessToken = null;
         $("#googleUser").textContent = 'Auth failed';
       }
     }
+    $("#uploadDriveBtn")?.addEventListener("click", uploadAllToDrive);
+    $("#googleSignIn")?.addEventListener("click", async () => {
+      try {
+        await ensureDriveToken();
+      } catch(e) {
+        console.error('Sign in failed:', e);
+      }
+    });
 
-    // ===== Init =====
-    // Set default date on form
-    const dateInput = $("#expenseForm")?.elements?.namedItem("date");
-    if(dateInput && !dateInput.value) {
-      dateInput.value = new Date().toISOString().slice(0, 10);
-    }
-
-    persistAndRender(); // This chain already calls renderTable, updateStats, etc.
-    
-    if (window.lucide) {
-      window.lucide.createIcons();
-    } else {
-      console.warn("Lucide library not loaded. Retrying in 1s.");
-      // This is a fallback in case lucide loads after the initial script run
-      setTimeout(() => {
-        if (window.lucide) {
-          console.log("Lucide loaded on retry.");
-          window.lucide.createIcons();
-          applyTheme(settings.theme||"auto"); // Re-apply theme to fix icons
-        } else {
-          console.error("Lucide still not loaded. Icons will be missing.");
+    $("#fileInput")?.addEventListener("change", onFiles);
+    document.addEventListener("dragover", e=>e.preventDefault());
+    document.addEventListener("drop", e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
+    $("#parsePasteBtn")?.addEventListener("click", parseFromPaste);
+    function onFiles(e){ handleFiles(e.target.files); e.target.value=""; }
+    async function handleFiles(fileList){
+      if(!fileList?.length) return; const files=Array.from(fileList);
+      const container=$("#ingestPreview"); container.innerHTML="";
+      for(const f of files){
+        if(settings.useTesseract && f.type.startsWith("image/")){ await processImageWithOCR(f, container); }
+        else{
+          const row=document.createElement("div"); row.className="meta"; row.style.padding="8px";
+          row.innerHTML=`<i data-lucide="file" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> ${escapeHtml(f.name)} <span class="meta">(${(f.size/1024).toFixed(1)} KB) (non-image)</span>`;
+          container.appendChild(row);
         }
-      }, 1000);
+      }
+      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', container) });
+      toast(`${files.length} file(s) ingested`,{timeout:1400});
     }
-    applyTheme(settings.theme||"auto");
+    async function processImageWithOCR(file, container){
+      const id=Math.random().toString(36).slice(2);
+      const card=document.createElement("div"); card.className="card"; card.style.marginBottom="10px";
+      card.innerHTML=`<div class="card-b"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-weight:700; display: flex; align-items: center; gap: 8px;"><i data-lucide="image"></i> ${escapeHtml(file.name)}</div><div class="meta">image OCR</div></div><div class="bar"><span id="bar-${id}" style="width:0%; transition: width 0.2s ease;"></span></div><div id="txt-${id}" class="meta" style="margin-top:8px; max-height: 100px; overflow-y: auto;">Recognizing…</div><div style="display:flex;gap:8px;margin-top:8px"><button id="use-${id}" class="btn-s" disabled><i data-lucide="file-pen-line"></i> Parse into form</button><button id="copy-${id}" class="btn-s" disabled><i data-lucide="clipboard"></i> Copy text</button></div></div>`;
+      container.appendChild(card);
+      if(window.lucide) window.lucide.createIcons({ nodes: [card] });
+      try{
+        if (typeof Tesseract === 'undefined') {
+          throw new Error("Tesseract.js failed to load");
+        }
+        const progressBar=$("#bar-"+id); const textEl=$("#txt-"+id);
+        const res=await Tesseract.recognize(file,"eng",{logger:(m)=>{
+          if(m.status==="recognizing text"){ const p=Math.max(0,Math.min(1,m.progress||0)); progressBar.style.width=(p*100).toFixed(0)+"%"; }
+        }});
+        const text=(res?.data?.text||"").trim(); textEl.textContent = text ? (text.length>500?text.slice(0,500)+"…":text) : "(no text)";
+        const useBtn=$("#use-"+id), copyBtn=$("#copy-"+id); useBtn.disabled=!text; copyBtn.disabled=!text;
+        useBtn.addEventListener("click",()=> parseFromText(text, 'ocr', file.name));
+        copyBtn.addEventListener("click", async()=>{ try{ const ta = document.createElement("textarea");ta.value = text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();toast("Copied OCR text",{timeout:1200}); }catch{} });
+      }catch(err){ console.error("OCR Error:", err);$("#txt-"+id).textContent=`OCR failed: ${err.message}`; $("#txt-"+id).style.color = "var(--bad)";}
+    }
+    function parseFromPaste(){
+      const text=($("#pasteBox").value||"").trim(); if(!text){ toast("Nothing to parse",{timeout:1200}); return; }
+      parseFromText(text, 'paste', '');
+    }
+    async function parseFromText(text, sourceType, sourceFilename) {
+      let rec = roughParse(text);
+      rec.source_type = sourceType;
+      rec.source_filename = sourceFilename;
+      if (settings.allowLLM && settings.geminiKey) {
+        toast("Parsing with AI...", { timeout: 3000 });
+        try {
+          const llm = await geminiParse(text, settings.geminiKey);
+          rec = { ...rec, ...llm, amount: llm.amount || rec.amount,date: llm.date || rec.date,source_type: sourceType, source_filename: sourceFilename };
+        } catch (e) {
+          console.error("Gemini parse failed:", e);
+          toast("AI parse failed, using basic parser.", { timeout: 2000 });
+        }
+      }
+      const { rec: rec2 } = applyRules(rec, rulesAllowOverwrite);
+      fillForm(rec2);
+      switchTab("form");
+      toast("Parsed into form", { timeout: 1400 });
+    }
+    async function geminiParse(text, apiKey) {
+      const model = "gemini-2.0-flash-exp";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const prompt = `You are an expert financial assistant. Extract expense details and return ONLY valid JSON.\nFormat:\n{\n  "date": "YYYY-MM-DD", \n  "vendor": "Vendor Name", \n  "description": "Short description", \n  "category": "Expense Category", \n  "amount": 1234.50, \n  "currency": "PHP"\n}\n\nContext:\n- Today is ${new Date().toLocaleDateString('en-CA')}.\n- Default currency is PHP.\n\nText:\n"""${text.slice(0, 4000)}"""`.trim();
+      const payload = {contents: [{ parts: [{ text: prompt }] }],generationConfig: { temperature: 0.1, topP: 0.1,responseMimeType: "application/json",},};
+      const resp = await fetch(apiUrl, {method: 'POST',headers: { 'Content-Type': 'application/json' },body: JSON.stringify(payload),});
+      if (!resp.ok) {
+        const errBody = await resp.text();
+        console.error("Gemini API Error:", resp.status, errBody);
+        throw new Error(`API failed: ${resp.status}`);
+      }
+      const data = await resp.json();
+      const textOut = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      try { const parsed = JSON.parse(textOut);if(parsed.amount) parsed.amount = Number(parsed.amount);return parsed;} catch (e) { console.error("Failed to parse Gemini JSON:", textOut, e);return {};}
+    }
+    function roughParse(text){
+      const amtMatch = text.match(/(?:PHP|₱)\s?([\d,]+(?:\.\d{2})?)/i) || text.match(/\b([\d,]+(?:\.\d{2})?)\b/);
+      const dateMatch = text.match(/\b(20\d{2}[-/]\d{1,2}[-/]\d{1,2})\b/) || text.match(/\b(\d{1,2}[-/]\d{1,2}[-/](?:20)?\d{2})\b/);
+      const vendorMatch = text.match(/(?:from|at|merchant|vendor)[:\s]+([^\n,]+)/i) || text.match(/^\s*([A-Za-z][A-Za-z0-9 &'.-]{2,})/m);
+      const amount = amtMatch ? Number(amtMatch[1].replace(/,/g,"")) : 0;
+      const dateISO = dateMatch ? toISO(dateMatch[1]) : (new Date().toISOString().slice(0,10));
+      const vendor = vendorMatch ? vendorMatch[1].trim() : "";
+      return {date: dateISO, property:"", vendor, description:"", category:"", subcategory:"",amount, currency:"PHP", payment_method:"", invoice_number:"", reference_id:"",tax_amount:0, tip_amount:0, location:"", notes: text.length>140? text.slice(0,140)+"…" : text,created_at:new Date().toISOString(), processed_at:"", validated:"false", validation_errors:"",source_type:"", source_filename:"", attachment_drive_file_id:"",};
+    }
+    function toISO(s){
+      try {
+        const n=s.replace(/[./]/g,"-"); const parts=n.split("-").map(x=>x.padStart(2,"0"));
+        if(parts[0].length===4) return [parts[0],parts[1],parts[2]].join("-");
+        if(parts[2].length===4) return [parts[2],parts[0],parts[1]].join("-");
+        if(parts[2].length===2) {const year = Number(parts[2]) > 50 ? "19" + parts[2] : "20" + parts[2];return [year, parts[0], parts[1]].join("-");}
+        return "";
+      } catch { return ""; }
+    }
 
+    let lastInvoker=null;
+    function toggleModal(sel, show, invoker){
+      const m=$(sel); if(!m) return;
+      if(show){lastInvoker = invoker || document.activeElement;m.setAttribute("aria-hidden","false");focusTrap(m);}
+      else{m.setAttribute("aria-hidden","true");lastInvoker && lastInvoker.focus?.();}
+    }
+    function focusTrap(modal){
+      const card = modal.querySelector(".modal-card");
+      if(!card) return;
+      const focusables = ()=>$$('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])', card).filter(el=>!el.disabled && el.offsetParent!==null);
+      card.focus({preventScroll:true});
+      const trap = (e)=>{if(e.key!=="Tab") return;const f = focusables(); if(!f.length) { e.preventDefault(); return; }const first=f[0], last=f[f.length-1];if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }};
+      const onClick=(e)=>{ if(e.target===modal) { toggleModal("#"+modal.id, false); cleanup(); } };
+      const onEsc=(e)=>{ if(e.key==="Escape") { toggleModal("#"+modal.id, false); cleanup(); } };
+      const cleanup = () => {modal.removeEventListener("keydown", trap);modal.removeEventListener("click", onClick);document.removeEventListener("keydown", onEsc);};
+      modal.addEventListener("keydown", trap);modal.addEventListener("click", onClick);document.addEventListener("keydown", onEsc);
+    }
+    $("#openRulesBtn")?.addEventListener("click", (e)=>{ renderRules(); toggleModal("#rulesModal", true, e.currentTarget); });
+    $("#rulesClose")?.addEventListener("click", ()=>toggleModal("#rulesModal", false));
+    $("#quickGuideBtn")?.addEventListener("click", (e)=>toggleModal("#guideModal", true, e.currentTarget));
+    $("#guideClose")?.addEventListener("click", ()=>toggleModal("#guideModal", false));
+    $("#rulesAllowOverwrite").checked = !!rulesAllowOverwrite;
+    $("#rulesAllowOverwrite").addEventListener("change", (e)=>{rulesAllowOverwrite = !!e.target.checked; storage.set("cx:rulesAllowOverwrite", rulesAllowOverwrite);const twin=$("#rulesOverwriteToggle"); if(twin){ twin.checked = rulesAllowOverwrite; }});
+    $("#addRuleBtn")?.addEventListener("click", ()=>{const r = { id: cryptoRandomId(), pattern:"", fields:{category:"", subcategory:"", property:"", vendor:"", notes:""}, enabled:true };rules.push(r); saveRules(); renderRules();});
+    $("#exportRulesBtn")?.addEventListener("click", ()=>{download("rules.json", new Blob([JSON.stringify(rules,null,2)], {type:"application/json;charset=utf-8"}));});
+    $("#importRulesFile")?.addEventListener("change", async (e)=>{const f=e.target.files?.[0]; if(!f) return;try{const txt=await f.text(); const arr=JSON.parse(txt);if(Array.isArray(arr)){ rules=arr; saveRules(); renderRules(); toast("Imported rules",{timeout:1400}); }else toast("Invalid rules file");}catch{ toast("Failed to import"); }e.target.value="";});
+    function cryptoRandomId(){ try{ return crypto.randomUUID(); }catch{ return Math.random().toString(36).slice(2); } }
+    function renderRules(){
+      const host=$("#rulesList"); if(!host) return; host.innerHTML="";
+      if(!rules.length){ host.innerHTML=`<div class="empty-state"><i data-lucide="list-filter"></i><div class="empty-state-h">No Rules Added</div><p class="empty-state-p meta">Click "Add Rule" to automatically categorize expenses.</p></div>`;if(window.lucide) window.lucide.createIcons({ nodes: [host] });return; }
+      const fragment = document.createDocumentFragment();
+      rules.forEach((r,idx)=>{
+        const row=document.createElement("div"); row.className="rule-row";
+        row.innerHTML=`<input class="input" placeholder="pattern (substring or /regex/i)" value="${escapeHtml(r.pattern||"")}" aria-label="pattern"><input class="input" placeholder="category" value="${escapeHtml(r.fields?.category||"")}"><input class="input" placeholder="subcategory" value="${escapeHtml(r.fields?.subcategory||"")}"><input class="input" placeholder="property" value="${escapeHtml(r.fields?.property||"")}"><div style="display:flex;gap:6px;justify-content:flex-end"><label class="meta" title="enable/disable"><input type="checkbox" ${r.enabled?"checked":""}/> On</label><button class="btn-s" data-act="edit" title="Edit more fields"><i data-lucide="edit-3"></i></button><button class="btn-s" data-act="up" title="Move up" ${idx===0?'disabled':''}><i data-lucide="arrow-up"></i></button><button class="btn-s" data-act="down" title="Move down" ${idx===rules.length-1?'disabled':''}><i data-lucide="arrow-down"></i></button><button class="btn-s" data-act="del" title="Delete"><i data-lucide="trash-2"></i></button></div>`;
+        const [pat, cat, sub, prop] = row.querySelectorAll("input.input");
+        const en = row.querySelector('input[type="checkbox"]');
+        pat.addEventListener("input", ()=>{ r.pattern=pat.value; saveRules(); });
+        cat.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.category=cat.value; saveRules(); refreshCategoryDatalist(); });
+        sub.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.subcategory=sub.value; saveRules(); });
+        prop.addEventListener("input", ()=>{ r.fields=r.fields||{}; r.fields.property=prop.value; saveRules(); });
+        en.addEventListener("change", ()=>{ r.enabled=en.checked; saveRules(); });
+        row.querySelector('[data-act="edit"]').addEventListener("click", ()=>{const vendor = prompt("Vendor alias (optional)", r.fields?.vendor||"") ?? "";const notes = prompt("Notes (optional)", r.fields?.notes||"") ?? "";r.fields = {...(r.fields||{}), vendor, notes};saveRules(); toast("Rule fields updated",{timeout:1200});});
+        row.querySelector('[data-act="up"]').addEventListener("click", ()=>{ if(idx>0){ const t=rules[idx-1]; rules[idx-1]=rules[idx]; rules[idx]=t; saveRules(); renderRules(); }});
+        row.querySelector('[data-act="down"]').addEventListener("click", ()=>{ if(idx<rules.length-1){ const t=rules[idx+1]; rules[idx+1]=rules[idx]; rules[idx]=t; saveRules(); renderRules(); }});
+        row.querySelector('[data-act="del"]').addEventListener("click", ()=>{ if(confirm("Delete this rule?")){ const prev=rules.slice(); rules.splice(idx,1); saveRules(); renderRules(); refreshCategoryDatalist(); toast("Rule deleted",{actionLabel:"Undo", action:()=>{ rules=prev; saveRules(); renderRules(); }}); }});
+        fragment.appendChild(row);
+      });
+      host.appendChild(fragment);
+      if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', host) });
+    }
+
+    $("#adminLogout")?.addEventListener("click", ()=>{ storage.set("cx:isAdmin", false); isAdmin=false; toast("Admin signed out",{timeout:1200}); switchTab("dashboard"); });
+    $("#driveFolderId").value=settings.folderId||"";
+    $("#googleClientId").value=settings.googleClientId||"";
+    $("#geminiKey").value=settings.geminiKey||"";
+    $("#toggleTesseract").checked=!!settings.useTesseract;
+    $("#toggleLLM").checked=!!settings.allowLLM;
+    $("#saveSettings")?.addEventListener("click", ()=>{settings.folderId=$("#driveFolderId").value.trim();settings.googleClientId=$("#googleClientId").value.trim();settings.geminiKey=$("#geminiKey").value.trim();settings.useTesseract=$("#toggleTesseract").checked;settings.allowLLM=$("#toggleLLM").checked;storage.set("cx:settings",settings); oauth.tokenClient = null;oauth.accessToken = null;$("#googleUser").textContent = 'Not signed in';toast("Settings saved",{timeout:1200});});
+
+    const DEFAULT_CATEGORIES = ["Utilities","Subscriptions","Services","Maintenance","Repairs","Supplies","Cleaning","Internet","Electricity","Water","Gas","Waste","Landscaping","Security","Insurance","Taxes","Fees","Professional Services","Software","Travel","Meals","Office","Other"];
+    function persistAndRender(){ storage.set("cx:records", records); renderTable(); refreshCategoryDatalist(); renderDashboard(); }
+    function allCategoryOptions(){const set=new Set(DEFAULT_CATEGORIES);records.forEach(r=>{ const c=(r.category||"").trim(); if(c) set.add(c); });rules.forEach(r=>{ const c=(r?.fields?.category||"").trim(); if(c) set.add(c); });return Array.from(set).sort((a,b)=>a.localeCompare(b));}
+    function refreshPropertyDatalist(){const dl=$("#propertyList"); if(!dl) return;const set=new Set(records.map(r=>(r.property||"").trim()).filter(Boolean));dl.innerHTML = Array.from(set).sort((a,b)=>a.localeCompare(b)).map(p=>`<option value="${escapeHtml(p)}"></option>`).join("");}
+    function refreshCategoryDatalist(){const dl=$("#categoryList"); if(!dl) return;const opts = allCategoryOptions().map(c=>`<option value="${escapeHtml(c)}"></option>`).join("");dl.innerHTML = opts;buildCategoryMenu();}
+    function renderDashboard(){
+      const count=records.length; const sum=records.reduce((a,r)=>a+Number(r.amount||0),0); const ccy=records[0]?.currency||"PHP";
+      const latest=records.map(r=>r.date).filter(Boolean).sort().pop();
+      const avg=count? sum/count : 0;
+      const topCat=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1])[0];
+      const totalEl=$("#kpiTotal"); totalEl.textContent=fmtMoney(sum, ccy); totalEl.className="v num "+(sum>3000?"num--red":sum>=500?"num--yellow":"num--green");
+      $("#kpiCount").textContent=`${count} item${count!==1?"s":""}`;
+      $("#kpiLatest").textContent=latest||"—";
+      const avgEl=$("#kpiAvg"); avgEl.textContent=count?fmtMoney(avg,ccy):"—"; avgEl.className="v num "+(avg>3E3?"num--red":avg>=500?"num--yellow":"num--green");
+      $("#kpiTopCat").textContent=topCat? topCat[0] : "—";
+      const cont=$("#catBreakdown"); cont.innerHTML="";
+      const catTotals=Object.entries(records.reduce((m,r)=>{const k=r.category||"Uncategorized"; m[k]=(m[k]||0)+Number(r.amount||0); return m;},{})).sort((a,b)=>b[1]-a[1]);
+      if(!catTotals.length){ cont.innerHTML=catEmptyState; if(window.lucide) window.lucide.createIcons({ nodes: [cont] });}
+      else{const max=Math.max(...catTotals.map(x=>x[1]));catTotals.slice(0,8).forEach(([k,v])=>{const row=document.createElement("div"); row.style.marginBottom="10px";row.innerHTML=`<div style="display:flex;justify-content:space-between"><div>${escapeHtml(k)}</div><div class="meta">${fmtMoney(v,ccy)}</div></div><div class="bar"><span style="width:${max? (v/max*100).toFixed(1):0}%"></span></div>`;cont.appendChild(row);});}
+      const recent=$("#recentList"); recent.innerHTML="";
+      if(!records.length){ recent.innerHTML=recentEmptyState; if(window.lucide) window.lucide.createIcons({ nodes: [recent] });}
+      else{const fragment = document.createDocumentFragment();records.slice(-6).reverse().forEach(r=>{const item=document.createElement("div"); item.style.padding="8px 0"; item.style.borderBottom="1px solid var(--border)";item.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><div><i data-lucide="tag" style="width: 1em; height: 1em; vertical-align: -2px; margin-right: 4px;"></i> <strong>${escapeHtml(r.category||"(category)")}</strong> · ${escapeHtml(r.property||"")}</div><div class="num ${amountClass(Number(r.amount||0))}">${fmtMoney(r.amount,r.currency)}</div></div><div class="meta" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;"><span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="calendar" style="width: 1em; height: 1em;"></i> ${r.date||""}</span><span style="display: flex; align-items: center; gap: 4px;"><i data-lucide="receipt" style="width: 1em; height: 1em;"></i> ${escapeHtml(r.vendor||"")}</span></div><div class="meta" style="padding-left: 20px;">${escapeHtml(r.description||"")}</div>`;fragment.appendChild(item);});recent.appendChild(fragment);if(window.lucide) window.lucide.createIcons({ nodes: $$('i[data-lucide]', recent) });}
+    }
+
+    const catInput = $("#expenseForm")?.elements?.namedItem("category");
+    const catMenu = $("#catMenu");
+    function buildCategoryMenu(){if(!catInput || !catMenu) return;const items = allCategoryOptions();catMenu.innerHTML = items.map((c,i)=>`<button type="button" class="ac-item" role="option" data-val="${escapeHtml(c)}" ${i===0?'aria-selected="true"':''}>${escapeHtml(c)}</button>`).join("");}
+    function openCatMenu(){ buildCategoryMenu(); catMenu.classList.remove("hidden"); catInput.setAttribute("aria-expanded","true"); filterCatMenu(catInput.value); }
+    function closeCatMenu(){ catMenu.classList.add("hidden"); catInput.setAttribute("aria-expanded","false"); }
+    function filterCatMenu(q){const ql=q.trim().toLowerCase();const items=[...catMenu.querySelectorAll(".ac-item")];let first=null;items.forEach(btn=>{const keep = !ql || btn.dataset.val.toLowerCase().includes(ql);btn.style.display = keep ? "block" : "none";if(keep && !first) first=btn;btn.setAttribute("aria-selected","false");});if(first) first.setAttribute("aria-selected","true");}
+    catInput?.addEventListener("focus", ()=>{ openCatMenu(); });
+    catInput?.addEventListener("click", ()=>{ openCatMenu(); });
+    catInput?.addEventListener("input", ()=>{ openCatMenu(); filterCatMenu(catInput.value); });
+    document.addEventListener("click",(e)=>{if(!catMenu || !catInput) return;if(e.target.closest("#catMenu")) return;if(e.target===catInput) return;closeCatMenu();});
+    catMenu?.addEventListener("click",(e)=>{const b=e.target.closest(".ac-item"); if(!b) return;catInput.value = b.dataset.val || ""; closeCatMenu(); catInput.dispatchEvent(new Event("change",{bubbles:true}));});
+    catInput?.addEventListener("keydown",(e)=>{if(catMenu.classList.contains("hidden")) return;const items=[...catMenu.querySelectorAll(".ac-item")].filter(i=>i.style.display!=="none");let idx=items.findIndex(i=>i.getAttribute("aria-selected")==="true");if(e.key==="ArrowDown"){ e.preventDefault(); idx=Math.min(items.length-1, idx+1); items.forEach(i=>i.setAttribute("aria-selected","false")); if(items[idx]) { items[idx].setAttribute("aria-selected","true"); items[idx].scrollIntoView({block:"nearest"}); } }if(e.key==="ArrowUp"){ e.preventDefault(); idx=Math.max(0, idx-1); items.forEach(i=>i.setAttribute("aria-selected","false")); if(items[idx]) { items[idx].setAttribute("aria-selected","true"); items[idx].scrollIntoView({block:"nearest"}); } }if(e.key==="Enter"){ e.preventDefault(); const sel=items[idx]; if(sel){ catInput.value=sel.dataset.val||""; closeCatMenu(); } }if(e.key==="Escape"){ closeCatMenu(); }});
+
+    document.addEventListener("keydown",(e)=>{const isInput = !!e.target.closest("input,textarea,select");const onForm = $("#panel-form") && !$("#panel-form").classList.contains("hidden");if((e.ctrlKey||e.metaKey) && e.key==="Enter" && onForm){ e.preventDefault(); $("#addToListBtn")?.click(); }if(e.altKey && (e.key==="v"||e.key==="V")){ e.preventDefault(); $("#validateBtn")?.click(); }if(e.key==="?" || (e.shiftKey && e.key==="/")){ if(!isInput) { e.preventDefault(); toggleModal("#guideModal", true, $("#quickGuideBtn")); } }if(e.altKey && (e.key==="f"||e.key==="F")){ e.preventDefault(); switchTab("form"); }if(e.altKey && (e.key==="b"||e.key==="B")){ e.preventDefault(); switchTab("batch"); }if((e.ctrlKey||e.metaKey) && (e.key==="k"||e.key==="K")){ e.preventDefault(); $("#expenseForm")?.elements?.namedItem("category")?.focus(); }if(isInput) return;});
+
+    const dateInput = $("#expenseForm")?.elements?.namedItem("date");
+    if(dateInput && !dateInput.value) {dateInput.value = new Date().toISOString().slice(0, 10);}
+    switchTab(settings.lastTab || "dashboard");
+    persistAndRender();
+    if (window.lucide) {window.lucide.createIcons();} else {console.warn("Lucide loading...");setTimeout(() => {if (window.lucide) {window.lucide.createIcons();}}, 1000);}
   })();
   </script>
 </body>
 </html>
-

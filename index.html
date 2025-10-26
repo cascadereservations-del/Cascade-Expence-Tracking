@@ -1393,51 +1393,64 @@ Return ONLY: {"category":"..."}`;
       }catch(e){ toast("Setup failed: " + (e?.message||e)); }
     });
 
+    
     async function ensureSheetStructure({token, force=false}){
       const spreadsheetId = (settings.spreadsheetId||"").trim();
-      const sheetName = (settings.sheetName||"Sheet1").trim();
+      const sheetName = (settings.sheetName||"Sheet1").trim() || "Sheet1";
       if(!spreadsheetId) throw new Error("Spreadsheet ID not set");
-      const meta = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=sheets.properties`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(r=>r.json());
-      const sheets = (meta.sheets||[]).map(s=>s.properties);
-      let main = sheets.find(s=>s.title===sheetName);
-      let metaSheet = sheets.find(s=>s.title==="Meta");
-      const requests = [];
 
-      // Create sheets if missing
+      async function getMeta(){
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=sheets(properties(sheetId,title))`;
+        const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if(!r.ok){
+          const body = await r.text();
+          throw new Error(`Unable to read spreadsheet (${r.status}). Check ID & access. ${body.slice(0,180)}`);
+        }
+        const j = await r.json();
+        if(!j?.sheets) throw new Error("No sheets found in spreadsheet (missing permissions?)");
+        return (j.sheets||[]).map(s=>s.properties);
+      }
+
+      let sheets = await getMeta();
+      let main = sheets.find(s=>String(s.title||"").toLowerCase() === sheetName.toLowerCase());
+      let metaSheet = sheets.find(s=>s.title==="Meta");
+
+      const requests = [];
       if(!main){ requests.push({ addSheet: { properties: { title: sheetName } } }); }
       if(!metaSheet){ requests.push({ addSheet: { properties: { title: "Meta", hidden: false } } }); }
 
       if(requests.length){
-        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`, {
-          method:"POST", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" },
-          body: JSON.stringify({ requests })
-        });
-        // Re-fetch to get IDs
-        const meta2 = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=sheets.properties`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(r=>r.json());
-        const sheets2 = (meta2.sheets||[]).map(s=>s.properties);
-        main = sheets2.find(s=>s.title===sheetName);
-        metaSheet = sheets2.find(s=>s.title==="Meta");
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`;
+        const resp = await fetch(url, { method:"POST", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ requests }) });
+        if(!resp.ok){
+          const body = await resp.text();
+          throw new Error(`Failed to create sheets (${resp.status}). ${body.slice(0,180)}`);
+        }
+        sheets = await getMeta();
+        main = sheets.find(s=>String(s.title||"").toLowerCase() === sheetName.toLowerCase()) || sheets[0];
+        metaSheet = sheets.find(s=>s.title==="Meta");
       }
 
-      // Headers
+      if(!main){ throw new Error(`Sheet "${sheetName}" not found (and could not be created). Check the name and permissions.`); }
+
+      // Headers write
       const HEADERS = ["date","property","vendor","description","category","subcategory","amount","currency","payment_method","invoice_number","reference_id","tax_amount","tip_amount","location","notes","validated","validation_errors","source_type","source_filename","attachment_drive_file_id","record_drive_file_id","uploaded_at","sheet_appended_at","created_at","processed_at"];
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(sheetName+'!A1')}:update?valueInputOption=RAW`, {
-        method:"PUT",
-        headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" },
-        body: JSON.stringify({ range: sheetName+"!A1", majorDimension:"ROWS", values: [HEADERS] })
-      });
+      const hdrUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent((sheetName)+'!A1')}:update?valueInputOption=RAW`;
+      const hdrResp = await fetch(hdrUrl, { method:"PUT", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ range: sheetName+"!A1", majorDimension:"ROWS", values: [HEADERS] }) });
+      if(!hdrResp.ok){
+        const body = await hdrResp.text();
+        throw new Error(`Header write failed (${hdrResp.status}). ${body.slice(0,180)}`);
+      }
 
       // Meta categories
+      if(!metaSheet){ sheets = await getMeta(); metaSheet = sheets.find(s=>s.title==="Meta"); }
       const catValues = CATEGORY_TAXONOMY.map(c=>[c]);
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent('Meta!A1')}:update?valueInputOption=RAW`, {
-        method:"PUT",
-        headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" },
-        body: JSON.stringify({ range: 'Meta!A1', majorDimension:"ROWS", values: catValues })
-      });
+      const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent('Meta!A1')}:update?valueInputOption=RAW`;
+      const metaResp = await fetch(metaUrl, { method:"PUT", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ range: 'Meta!A1', majorDimension:"ROWS", values: catValues }) });
+      if(!metaResp.ok){
+        const body = await metaResp.text();
+        throw new Error(`Meta write failed (${metaResp.status}). ${body.slice(0,180)}`);
+      }
 
       // Formatting & validation
       const catRule = {
@@ -1453,14 +1466,14 @@ Return ONLY: {"category":"..."}`;
         { repeatCell: { range: { sheetId: main.sheetId, startColumnIndex: 11, endColumnIndex: 13 }, cell: { userEnteredFormat: { numberFormat: { type: "NUMBER", pattern: "#,##0.00" } } }, fields: "userEnteredFormat.numberFormat" } },
         { setDataValidation: { range: { sheetId: main.sheetId, startRowIndex: 1, startColumnIndex: 4, endColumnIndex: 5 }, rule: catRule } },
       ];
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`, {
-        method:"POST",
-        headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" },
-        body: JSON.stringify({ requests: reqs2 })
-      });
+      const fmtUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`;
+      const fmtResp = await fetch(fmtUrl, { method:"POST", headers:{ Authorization:`Bearer ${token}`, "Content-Type":"application/json" }, body: JSON.stringify({ requests: reqs2 }) });
+      if(!fmtResp.ok){
+        const body = await fmtResp.text();
+        throw new Error(`Formatting failed (${fmtResp.status}). ${body.slice(0,180)}`);
+      }
     }
-
-    // ----- Ingest with manual Start OCR + Smart Parse -----
+// ----- Ingest with manual Start OCR + Smart Parse -----
     $("#fileInput")?.addEventListener("change", onFiles);
     document.addEventListener("dragover", e=>e.preventDefault());
     document.addEventListener("drop", e=>{ e.preventDefault(); if(e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files); });
